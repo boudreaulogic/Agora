@@ -6,12 +6,13 @@ WORKDIR /app
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat openssl
+RUN apk add --no-cache libc6-compat openssl1.1-compat
 COPY package.json package-lock.json* ./
 RUN npm install
 
 # Development stage
 FROM base AS development
+RUN apk add --no-cache openssl1.1-compat
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
