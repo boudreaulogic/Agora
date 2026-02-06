@@ -1,1 +1,59 @@
+version: '3.8'
 
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: agora-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: agora
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: agora
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agora"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agora-network
+
+  # Next.js Web Application
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: agora-web
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://agora:${POSTGRES_PASSWORD:-changeme}@postgres:5432/agora?schema=public
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NODE_ENV: development
+    volumes:
+      - ./src:/app/src
+      - ./prisma:/app/prisma
+      - ./public:/app/public
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    networks:
+      - agora-network
+    command: npm run dev
+
+volumes:
+  postgres-data:
+    driver: local
+
+networks:
+  agora-network:
+    driver: bridge
