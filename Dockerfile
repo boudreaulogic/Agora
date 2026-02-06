@@ -8,7 +8,7 @@ WORKDIR /app
 FROM base AS deps
 RUN apk add --no-cache libc6-compat openssl
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm install
 
 # Development stage
 FROM base AS development
