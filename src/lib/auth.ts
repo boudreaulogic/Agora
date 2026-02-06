@@ -11,9 +11,8 @@ import { verifyPassword, loginRateLimiter } from '@/lib/auth/password';
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(db),
   session: {
-    strategy: 'database',
+    strategy: 'jwt', // Changed from 'database' to 'jwt'
     maxAge: 30 * 24 * 60 * 60,
-    updateAge: 24 * 60 * 60,
   },
   pages: {
     signIn: '/login',
@@ -76,8 +75,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             data: {
               userId: user.id,
               action: 'LOGIN_FAILED',
-              ipAddress: request?.headers?.get('x-forwarded-for') || 'unknown',
-              userAgent: request?.headers?.get('user-agent') || 'unknown',
               metadata: { email, reason: 'Invalid password' },
             },
           });
@@ -93,7 +90,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             failedLoginAttempts: 0,
             lockedUntil: null,
             lastLoginAt: new Date(),
-            lastLoginIp: request?.headers?.get('x-forwarded-for') || 'unknown',
           },
         });
 
@@ -101,8 +97,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           data: {
             userId: user.id,
             action: 'LOGIN_SUCCESS',
-            ipAddress: request?.headers?.get('x-forwarded-for') || 'unknown',
-            userAgent: request?.headers?.get('user-agent') || 'unknown',
           },
         });
 
@@ -115,23 +109,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+    async session({ session, token }) {
       if (session.user) {
-        session.user.id = user.id;
+        session.user.id = token.id as string;
       }
       return session;
-    },
-  },
-  events: {
-    async signOut({ session, token }) {
-      if (session?.user?.id) {
-        await db.auditLog.create({
-          data: {
-            userId: session.user.id,
-            action: 'LOGOUT',
-          },
-        });
-      }
     },
   },
 });
