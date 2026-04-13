@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -12,8 +11,6 @@ services:
       POSTGRES_DB: agora
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U agora"]
       interval: 10s
@@ -21,13 +18,44 @@ services:
       retries: 5
     networks:
       - agora-network
+    # NO ports: section — only accessible within Docker network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # WebSocket Server
+  ws-server:
+    build:
+      context: ./ws-server
+      dockerfile: Dockerfile
+    container_name: agora-ws-server
+    restart: unless-stopped
+    environment:
+      WS_PORT: 3001
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+    ports:
+      - "3001:3001"
+    expose:
+      - "3002"
+    networks:
+      - agora-network
+    depends_on:
+      - postgres
+    # Port 3002 only exposed internally via 'expose', not to host
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Next.js Web Application
   web:
     build:
       context: .
       dockerfile: Dockerfile
-      target: development
+      target: production
     container_name: agora-web
     restart: unless-stopped
     depends_on:
@@ -35,23 +63,78 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://agora:${POSTGRES_PASSWORD:-changeme}@postgres:5432/agora?schema=public
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_URL: ""
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-      NODE_ENV: development
+      NODE_ENV: production
+      PUBLIC_URL: https://agora.boudreaulogic.com
     volumes:
-      - ./src:/app/src
-      - ./prisma:/app/prisma
-      - ./public:/app/public
-      - /app/node_modules
-      - /app/.next
+      - uploads-data:/app/uploads
     ports:
       - "3000:3000"
     networks:
       - agora-network
-    command: npm run dev
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ==========================================================================
+  # Maintenance Daemon — zero-touch cleanup service
+  # Runs daily (3 AM) and weekly (4 AM Sunday) cleanup tasks
+  # ==========================================================================
+  maintenance:
+    build:
+      context: ./maintenance
+      dockerfile: Dockerfile
+    container_name: agora-maintenance
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://agora:${POSTGRES_PASSWORD:-changeme}@postgres:5432/agora?schema=public
+      # Override retention periods if desired (in days)
+      # NOTIFICATION_RETENTION_DAYS: 90
+      # ACTIVITY_LOG_RETENTION_DAYS: 21
+      # AUDIT_LOG_RETENTION_DAYS: 365
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - maintenance-logs:/var/log/agora-maintenance
+    networks:
+      - agora-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+   # Automation Scheduler — checks scheduled automations every minute
+  automation-cron:
+    image: curlimages/curl:latest
+    container_name: agora-automation-cron
+    restart: unless-stopped
+    entrypoint: /bin/sh
+    command: >
+      -c 'echo "Automation scheduler starting..."; while true; do
+        curl -s "http://web:3000/api/automations/cron?secret=${CRON_SECRET:-agora-cron-secret}" || true;
+        sleep 60;
+      done'
+    depends_on:
+      - web
+    networks:
+      - agora-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
 
 volumes:
   postgres-data:
+    driver: local
+  maintenance-logs:
+    driver: local
+  uploads-data:
     driver: local
 
 networks:

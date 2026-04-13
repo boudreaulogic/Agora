@@ -1,0 +1,157 @@
+AGORA DMZ DEPLOYMENT GUIDE
+========================================
+
+WHAT THIS DOES
+--------------
+The DMZ is a nginx reverse proxy that sits in front of Agora and only
+exposes specific routes to the internet. Everything else returns 403.
+
+Allowed through the DMZ:
+  /forms/*           Public form pages and submissions
+  /approvals/*       Token-based approval pages (no login needed)
+  /api/v1/*          REST API (API key in header)
+  /api/public/*      Public form submission endpoint
+  /api/webhooks/*    Incoming webhook receivers
+  /_next/*           Static assets (so pages render properly)
+
+Blocked:
+  /                  Dashboard, tables, admin panel, settings
+  /tables/*          All table views
+  /admin/*           Admin panel
+  /api/tables/*      Internal table APIs
+  /api/users         User management
+  /api/notifications Notifications
+  /login             Login page
+  /setup             Setup wizard
+  EVERYTHING ELSE    403 Forbidden
+
+
+FILE STRUCTURE
+--------------
+Place these files in your Agora project root:
+
+  agora/
+  ├── docker-compose.yml          (your existing file)
+  ├── docker-compose.dmz.yml      (new — DMZ overlay)
+  └── dmz/
+      ├── Dockerfile               (nginx container)
+      └── nginx.conf               (proxy rules)
+
+
+SETUP STEPS
+-----------
+
+1. Copy the DMZ files into your project:
+
+     mkdir dmz
+     # Copy nginx.conf, Dockerfile into dmz/
+     # Copy docker-compose.dmz.yml to project root
+
+2. First-time SSL certificate setup (replace YOUR_DOMAIN and YOUR_EMAIL):
+
+     # Start DMZ without SSL first (comment out the ssl server block temporarily)
+     docker compose -f docker-compose.yml -f docker-compose.dmz.yml up -d dmz
+
+     # Get initial certificate
+     docker compose -f docker-compose.yml -f docker-compose.dmz.yml run --rm certbot \
+       certbot certonly --webroot -w /var/www/certbot \
+       -d YOUR_DOMAIN.com --email YOUR_EMAIL --agree-tos --no-eff-email
+
+     # Uncomment the SSL server block in nginx.conf
+     # Update server_name to YOUR_DOMAIN.com
+     # Restart
+     docker compose -f docker-compose.yml -f docker-compose.dmz.yml up -d
+
+3. Start everything:
+
+     docker compose -f docker-compose.yml -f docker-compose.dmz.yml up -d
+
+4. Verify:
+
+     # Should work (form page):
+     curl https://YOUR_DOMAIN.com/forms/your-form-slug
+
+     # Should return 403:
+     curl https://YOUR_DOMAIN.com/
+     curl https://YOUR_DOMAIN.com/tables/anything
+     curl https://YOUR_DOMAIN.com/admin/users
+
+
+FOR LAN-ONLY TESTING (no SSL)
+------------------------------
+If you want to test the DMZ locally without SSL, create a simplified
+nginx.conf that only has the HTTP server block (no SSL, no certbot).
+
+Replace the entire nginx.conf with:
+
+  upstream agora_backend {
+      server agora-web:3000;
+  }
+  server {
+      listen 80;
+      server_name _;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-DMZ-Request "true";
+      client_max_body_size 10m;
+
+      location /forms/     { proxy_pass http://agora_backend; }
+      location /api/public/ { proxy_pass http://agora_backend; }
+      location /approvals/ { proxy_pass http://agora_backend; }
+      location /api/v1/    { proxy_pass http://agora_backend; }
+      location /api/webhooks/ { proxy_pass http://agora_backend; }
+      location /_next/     { proxy_pass http://agora_backend; }
+      location = /favicon.svg { proxy_pass http://agora_backend; }
+      location ~* \.(woff2?|ttf|eot|css|js|png|jpg|jpeg|gif|ico|svg)$ {
+          proxy_pass http://agora_backend;
+      }
+      location / {
+          return 403 '{"error":"Access denied"}';
+      }
+  }
+
+And update docker-compose.dmz.yml to only expose port 80.
+
+
+FOR CLOUDFLARE TUNNEL
+---------------------
+If using Cloudflare Tunnel instead of direct SSL:
+
+  1. Point the tunnel to the DMZ container (port 80)
+  2. You don't need certbot — Cloudflare handles SSL
+  3. Remove the SSL server block and certbot service
+  4. Keep only the HTTP server block in nginx.conf
+
+
+FOR DIGITAL OCEAN
+-----------------
+  1. Create a droplet (Ubuntu 22.04, Docker pre-installed)
+  2. Clone your Agora repo
+  3. Point your domain DNS to the droplet IP
+  4. Run the setup steps above
+  5. Certbot handles SSL automatically
+  6. Agora stays on internal Docker network (not exposed)
+  7. DMZ is the only container with public ports
+
+
+SECURITY NOTES
+--------------
+  - The DMZ adds X-DMZ-Request: true header. Agora can use this to
+    detect external requests and apply stricter validation.
+  - Rate limiting: 30 req/min for forms, 10 req/min for approvals,
+    60 req/min for API. Burst allows short spikes.
+  - The Agora web container should NOT have its ports exposed publicly.
+    The docker-compose.dmz.yml override removes the port binding.
+  - The WebSocket server (port 3001) is NOT exposed through the DMZ.
+    Real-time collaboration only works on LAN/VPN.
+
+
+TROUBLESHOOTING
+---------------
+  - "502 Bad Gateway" — Agora web container isn't running or not on
+    the agora-network. Check: docker compose ps
+  - "SSL certificate not found" — Run certbot step first
+  - Forms not rendering — Make sure /_next/* route is allowed
+  - API returning 403 — Check that the request path starts with /api/v1/
+    (not /api/tables/ which is internal-only)

@@ -1,0 +1,15 @@
+{
+  "name": "agora-maintenance",
+  "version": "1.0.0",
+  "description": "Agora zero-touch maintenance daemon",
+  "main": "maintenance.js",
+  "scripts": {
+    "start": "node maintenance.js",
+    "cleanup:daily": "node -e \"require('./maintenance.js')\" --run-daily",
+    "cleanup:weekly": "node -e \"require('./maintenance.js')\" --run-weekly"
+  },
+  "dependencies": {
+    "node-cron": "^3.0.3",
+    "pg": "^8.13.1"
+  }
+}

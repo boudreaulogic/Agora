@@ -1,0 +1,185 @@
+import { auth } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { NextResponse } from 'next/server';
+import { evaluateFormula } from '@/lib/formula';
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string; columnId: string } }
+) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const body = await request.json();
+  const { name, type, settings, width, order, formula, linkedTableId, linkedDisplayColumnId, required, showInNewRow, lookupLinkedColumnId, lookupFieldId, rollupLinkedColumnId, rollupFieldId, rollupFunction } = body;
+
+  const { getTablePermission } = await import('@/lib/tablePermissions');
+  const permission = await getTablePermission(session.user.id, params.id);
+  if (!permission || permission === 'viewer' || permission === 'editor') {
+    return NextResponse.json({ error: 'Forbidden — admin access required' }, { status: 403 });
+  }
+
+  const column = await db.agoraColumn.findUnique({
+    where: { id: params.columnId },
+    include: { table: true },
+  });
+
+  if (!column || column.tableId !== params.id) {
+    return NextResponse.json({ error: 'Column not found' }, { status: 404 });
+  }
+
+  // Validate formula if changing to formula type
+  if (type === 'formula') {
+    if (!formula || !formula.trim()) {
+      return NextResponse.json({ error: 'Formula is required for formula columns' }, { status: 400 });
+    }
+
+    // Test parse the formula to validate syntax
+    try {
+      // Get table columns to validate column references
+      const columns = await db.agoraColumn.findMany({
+        where: { tableId: params.id },
+        select: { id: true, name: true, type: true },
+      });
+
+      // Try to evaluate with empty row data to check for syntax errors
+      const testResult = evaluateFormula(formula, {}, columns);
+      
+      if (!testResult.success) {
+        return NextResponse.json({ 
+          error: `Invalid formula: ${testResult.error}` 
+        }, { status: 400 });
+      }
+    } catch (error) {
+      return NextResponse.json({ 
+        error: `Formula validation failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      }, { status: 400 });
+    }
+  }
+
+  // Validate linked table if changing to linked_record type
+  if (type === 'linked_record') {
+    if (!linkedTableId || !linkedTableId.trim()) {
+      return NextResponse.json({ error: 'Linked table is required for linked record columns' }, { status: 400 });
+    }
+
+    // Verify the linked table exists
+    const linkedTable = await db.agoraTable.findUnique({
+      where: { id: linkedTableId },
+    });
+
+    if (!linkedTable) {
+      return NextResponse.json({ error: 'Linked table not found' }, { status: 404 });
+    }
+
+    // If changing linked table, delete all existing links
+    if (column.linkedTableId && column.linkedTableId !== linkedTableId) {
+      await db.linkedRecord.deleteMany({
+        where: { columnId: params.columnId },
+      });
+    }
+  }
+
+  // Build update object with only provided fields
+  const updateData: any = {};
+  if (name !== undefined) updateData.name = name;
+  if (type !== undefined) updateData.type = type;
+  if (settings !== undefined) updateData.settings = settings;
+  if (width !== undefined) updateData.width = width;
+  if (order !== undefined) updateData.order = order;
+  if (required !== undefined) updateData.required = required;
+  if (showInNewRow !== undefined) updateData.showInNewRow = showInNewRow;
+  
+  // Handle formula field
+  if (type === 'formula') {
+    updateData.formula = formula;
+  } else if (type !== undefined && type !== 'formula') {
+    // Clear formula if changing away from formula type
+    updateData.formula = null;
+  }
+
+  // Handle linkedTableId field
+  if (type === 'linked_record') {
+    updateData.linkedTableId = linkedTableId;
+    if (linkedDisplayColumnId !== undefined) updateData.linkedDisplayColumnId = linkedDisplayColumnId;
+  } else if (type !== undefined && type !== 'linked_record') {
+    updateData.linkedTableId = null;
+    if (column.type === 'linked_record') {
+      await db.linkedRecord.deleteMany({
+        where: { columnId: params.columnId },
+      });
+    }
+  }
+
+  // Handle lookup fields
+  if (type === 'lookup') {
+    if (lookupLinkedColumnId !== undefined) updateData.lookupLinkedColumnId = lookupLinkedColumnId;
+    if (lookupFieldId !== undefined) updateData.lookupFieldId = lookupFieldId;
+  } else if (type !== undefined && type !== 'lookup') {
+    updateData.lookupLinkedColumnId = null;
+    updateData.lookupFieldId = null;
+  }
+
+  // Handle rollup fields
+  if (type === 'rollup') {
+    if (rollupLinkedColumnId !== undefined) updateData.rollupLinkedColumnId = rollupLinkedColumnId;
+    if (rollupFieldId !== undefined) updateData.rollupFieldId = rollupFieldId;
+    if (rollupFunction !== undefined) updateData.rollupFunction = rollupFunction;
+  } else if (type !== undefined && type !== 'rollup') {
+    updateData.rollupLinkedColumnId = null;
+    updateData.rollupFieldId = null;
+    updateData.rollupFunction = null;
+  }
+
+  const updatedColumn = await db.agoraColumn.update({
+    where: { id: params.columnId },
+    data: updateData,
+  });
+
+  return NextResponse.json(updatedColumn);
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string; columnId: string } }
+) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { getTablePermission } = await import('@/lib/tablePermissions');
+  const permission = await getTablePermission(session.user.id, params.id);
+  if (!permission || permission === 'viewer' || permission === 'editor') {
+    return NextResponse.json({ error: 'Forbidden — admin access required' }, { status: 403 });
+  }
+
+  const column = await db.agoraColumn.findUnique({
+    where: { id: params.columnId },
+    include: { table: true },
+  });
+
+  if (!column || column.tableId !== params.id) {
+    return NextResponse.json({ error: 'Column not found' }, { status: 404 });
+  }
+
+  // Prevent deletion of system columns
+  if (column.type === 'attachment' && (column.settings as any)?.isSystem) {
+    return NextResponse.json({ error: 'Cannot delete the system Attachments column' }, { status: 403 });
+  }
+
+  // Delete all linked records associated with this column
+  if (column.type === 'linked_record') {
+    await db.linkedRecord.deleteMany({
+      where: { columnId: params.columnId },
+    });
+  }
+
+  await db.agoraColumn.delete({
+    where: { id: params.columnId },
+  });
+
+  return NextResponse.json({ success: true });
+}

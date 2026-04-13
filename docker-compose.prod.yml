@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -19,6 +18,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Next.js Web Application
   web:
@@ -40,9 +44,67 @@ services:
       - "3000:3000"
     networks:
       - agora-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ==========================================================================
+  # Maintenance Daemon — zero-touch cleanup service
+  # Runs daily (3 AM) and weekly (4 AM Sunday) cleanup tasks
+  # ==========================================================================
+  maintenance:
+    build:
+      context: ./maintenance
+      dockerfile: Dockerfile
+    container_name: agora-maintenance-prod
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://agora:${POSTGRES_PASSWORD}@postgres:5432/agora?schema=public
+      # Production retention settings (customize as needed)
+      NOTIFICATION_RETENTION_DAYS: 90
+      ACTIVITY_LOG_RETENTION_DAYS: 21
+      AUDIT_LOG_RETENTION_DAYS: 365
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - maintenance-logs:/var/log/agora-maintenance
+    networks:
+      - agora-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+        
+   # Automation Scheduler — checks scheduled automations every minute
+  automation-cron:
+    image: curlimages/curl:latest
+    container_name: agora-automation-cron-prod
+    restart: always
+    entrypoint: /bin/sh
+    command: >
+      -c 'echo "Automation scheduler starting..."; while true; do
+        curl -s "http://web:3000/api/automations/cron?secret=${CRON_SECRET:-agora-cron-secret}" || true;
+        sleep 60;
+      done'
+    depends_on:
+      - web
+    networks:
+      - agora-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
 
 volumes:
   postgres-data:
+    driver: local
+  maintenance-logs:
     driver: local
 
 networks:

@@ -2,7 +2,8 @@
 // Secure authentication with Argon2id password hashing
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -20,32 +21,45 @@ model User {
   emailVerified DateTime?
   name          String?
   
-  // Argon2id hashed password (most secure)
   passwordHash  String
   
-  // Security
   lastLoginAt   DateTime?
   lastLoginIp   String?
   failedLoginAttempts Int @default(0)
   lockedUntil   DateTime?
   
-  // Account status
   isActive      Boolean   @default(true)
   isEmailVerified Boolean @default(false)
   
-  // Timestamps
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
-  // Relations
   sessions      Session[]
   accounts      Account[]
+  roles         UserRole[]
+  permissions   UserPermission[]
+  groups        GroupMember[]
+  
+  tablesCreated AgoraTable[] @relation("TableCreator")
+  rowsCreated   AgoraRow[]   @relation("RowCreator")
+  viewsCreated  AgoraView[]  @relation("ViewCreator")
+  tableShares   TableShare[]
+  comments      RowComment[] @relation("UserComments")
+  activities    TableActivity[]
+  columnPermissions ColumnPermission[] @relation("UserColumnPermissions")
+  workspacesCreated  Workspace[]       @relation("WorkspaceCreator")
+  workspaceMembers   WorkspaceMember[] @relation("WorkspaceMembers")
+  formsCreated       AgoraForm[]       @relation("FormCreator")
+  chartsCreated      AgoraChart[]      @relation("ChartCreator")
+  notifications      Notification[]    @relation("UserNotifications")
+  apiKeys            ApiKey[]          @relation("UserApiKeys")
+  sheetConnections   GoogleSheetConnection[] @relation("UserSheetConnections")
   
   @@map("users")
 }
 
 // ============================================================================
-// SESSION MANAGEMENT (Secure)
+// SESSION MANAGEMENT
 // ============================================================================
 
 model Session {
@@ -54,18 +68,16 @@ model Session {
   userId       String
   expires      DateTime
   
-  // Security tracking
   ipAddress    String?
   userAgent    String?
   
-  // Relations
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@map("sessions")
 }
 
 // ============================================================================
-// OAUTH ACCOUNTS (For future Google/GitHub login)
+// OAUTH ACCOUNTS
 // ============================================================================
 
 model Account {
@@ -118,20 +130,1001 @@ model PasswordResetToken {
 }
 
 // ============================================================================
-// AUDIT LOG (Security)
+// AUDIT LOG
 // ============================================================================
 
 model AuditLog {
   id          String   @id @default(cuid())
   userId      String?
-  action      String   // LOGIN, LOGOUT, PASSWORD_CHANGE, etc.
+  action      String
   ipAddress   String?
   userAgent   String?
-  metadata    Json?    // Additional context
+  metadata    Json?
   createdAt   DateTime @default(now())
   
   @@index([userId])
   @@index([action])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ============================================================================
+// ROLES & PERMISSIONS SYSTEM
+// ============================================================================
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  isSystem    Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  permissions RolePermission[]
+  users       UserRole[]
+  tableShares TableShare[]
+  workspaceMembers WorkspaceMember[]
+  
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  category    String
+  description String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  roles       RolePermission[]
+  users       UserPermission[]
+  groups      GroupPermission[]
+  
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserPermission {
+  id           String     @id @default(cuid())
+  userId       String
+  permissionId String
+  granted      Boolean    @default(true)
+  
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  
+  createdAt    DateTime   @default(now())
+  
+  @@unique([userId, permissionId])
+  @@map("user_permissions")
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  roleId    String
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  
+  assignedAt DateTime @default(now())
+  
+  @@unique([userId, roleId])
+  @@map("user_roles")
+}
+
+// ============================================================================
+// GROUPS SYSTEM
+// ============================================================================
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  members     GroupMember[]
+  permissions GroupPermission[]
+  
+  tablePermissions  AgoraTablePermission[]
+  tableShares       TableShare[]
+  columnPermissions ColumnPermission[] @relation("GroupColumnPermissions")
+  workspaceMembers  WorkspaceMember[]
+  
+  @@map("groups")
+}
+
+model GroupMember {
+  id        String   @id @default(cuid())
+  groupId   String
+  userId    String
+  role      String   @default("member")
+  
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  joinedAt  DateTime @default(now())
+  
+  @@unique([groupId, userId])
+  @@map("group_members")
+}
+
+model GroupPermission {
+  id           String     @id @default(cuid())
+  groupId      String
+  permissionId String
+  
+  group        Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  
+  @@unique([groupId, permissionId])
+  @@map("group_permissions")
+}
+
+// ============================================================================
+// WORKSPACES
+// ============================================================================
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  icon        String?
+  
+  createdById String
+  createdBy   User     @relation("WorkspaceCreator", fields: [createdById], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  members     WorkspaceMember[]
+  tables      AgoraTable[]
+  
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  userId      String?
+  roleId      String?
+  groupId     String?
+  
+  user        User?     @relation("WorkspaceMembers", fields: [userId], references: [id], onDelete: Cascade)
+  role        Role?     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  group       Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  
+  permission  String    @default("viewer") // "viewer", "editor", "admin", "owner"
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@unique([workspaceId, userId])
+  @@unique([workspaceId, roleId])
+  @@unique([workspaceId, groupId])
+  @@map("workspace_members")
+}
+
+// ============================================================================
+// AGORA TABLES
+// ============================================================================
+
+model AgoraTable {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  icon        String?
+  
+  createdById String
+  createdBy   User     @relation("TableCreator", fields: [createdById], references: [id])
+  
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  
+  rowHeight   String   @default("medium")
+  zebraStripe Boolean  @default(true)
+  
+  rowLevelSecurity Boolean @default(false)
+  inheritPermissions Boolean @default(true) @map("inheritpermissions")
+  notificationTargets Json @default("{}") @map("notificationtargets")
+  isSheetBacked Boolean @default(false) @map("issheetbacked")
+  enabledFeatures Json @default("[]") @map("enabledfeatures")
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  columns              AgoraColumn[]
+  rows                 AgoraRow[]
+  permissions          AgoraTablePermission[]
+  views                AgoraView[]
+  shares               TableShare[]
+  linkedColumns        AgoraColumn[] @relation("LinkedColumns")
+  linkedRecordsFrom    LinkedRecord[] @relation("FromTable")
+  linkedRecordsTo      LinkedRecord[] @relation("ToTable")
+  forms                AgoraForm[]
+  charts               AgoraChart[]
+  
+  @@map("agora_tables")
+}
+
+// ============================================================================
+// TABLE SHARING (RBAC Integration)
+// ============================================================================
+
+model TableShare {
+  id        String   @id @default(cuid())
+  tableId   String
+  
+  userId    String?
+  roleId    String?
+  groupId   String?
+  
+  permission String  @default("viewer")
+  
+  table     AgoraTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role?      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  group     Group?     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  
+  sharedBy  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([tableId, userId])
+  @@unique([tableId, roleId])
+  @@unique([tableId, groupId])
+  @@index([userId])
+  @@index([roleId])
+  @@index([groupId])
+  @@map("table_shares")
+}
+
+// ============================================================================
+// COLUMNS
+// ============================================================================
+
+model AgoraColumn {
+  id       String @id @default(cuid())
+  tableId  String
+  table    AgoraTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  
+  name     String
+  type     String
+  
+  settings Json?
+  formula  String?
+  
+  linkedTableId String?
+  linkedTable   AgoraTable? @relation("LinkedColumns", fields: [linkedTableId], references: [id], onDelete: SetNull)
+  linkedDisplayColumnId String? @map("linkeddisplaycolumnid")
+  
+  lookupLinkedColumnId String?
+  lookupFieldId        String?
+
+  rollupLinkedColumnId String?
+  rollupFieldId        String?
+  rollupFunction       String?
+  
+  width    Int?
+  position Int
+  pinned   Boolean @default(false)
+  hidden   Boolean @default(false)
+  required    Boolean @default(false)
+  showInNewRow Boolean @default(true) @map("showinnewrow")
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([tableId, position])
+  @@map("agora_columns")
+}
+
+model AgoraRow {
+  id        String   @id @default(cuid())
+  tableId   String
+  table     AgoraTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  
+  data      Json
+  position  Int
+  
+  createdById String?
+  createdBy   User?    @relation("RowCreator", fields: [createdById], references: [id])
+  
+  isLocked    Boolean  @default(false)
+  lockedById  String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  linksFrom LinkedRecord[] @relation("FromRow")
+  linksTo   LinkedRecord[] @relation("ToRow")
+  comments  RowComment[]
+  
+  @@map("agora_rows")
+}
+
+// ============================================================================
+// ROW COMMENTS
+// ============================================================================
+
+model RowComment {
+  id        String   @id @default(cuid())
+  rowId     String
+  row       AgoraRow @relation(fields: [rowId], references: [id], onDelete: Cascade)
+  
+  userId    String
+  user      User     @relation("UserComments", fields: [userId], references: [id], onDelete: Cascade)
+  
+  text      String
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([rowId])
+  @@index([userId])
+  @@map("row_comments")
+}
+
+// ============================================================================
+// ACTIVITY LOG
+// ============================================================================
+
+model TableActivity {
+  id        String   @id @default(cuid())
+  tableId   String
+  rowId     String?
+  columnId  String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  action    String
+  details   Json?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([tableId, createdAt])
+  @@index([userId])
+  @@index([rowId])
+  @@map("table_activities")
+}
+
+// ============================================================================
+// LINKED RECORDS
+// ============================================================================
+
+model LinkedRecord {
+  id            String   @id @default(cuid())
+  
+  fromTableId   String
+  fromRowId     String
+  fromTable     AgoraTable @relation("FromTable", fields: [fromTableId], references: [id], onDelete: Cascade)
+  fromRow       AgoraRow   @relation("FromRow", fields: [fromRowId], references: [id], onDelete: Cascade)
+  
+  toTableId     String
+  toRowId       String
+  toTable       AgoraTable @relation("ToTable", fields: [toTableId], references: [id], onDelete: Cascade)
+  toRow         AgoraRow   @relation("ToRow", fields: [toRowId], references: [id], onDelete: Cascade)
+  
+  columnId      String
+  
+  createdAt     DateTime @default(now())
+  
+  @@unique([fromRowId, toRowId, columnId])
+  @@index([fromRowId])
+  @@index([toRowId])
+  @@index([columnId])
+  @@map("linked_records")
+}
+
+model AgoraTablePermission {
+  id          String     @id @default(cuid())
+  tableId     String
+  groupId     String
+  permission  String
+  
+  table       AgoraTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  group       Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  
+  @@unique([tableId, groupId])
+  @@map("agora_table_permissions")
+}
+
+// ============================================================================
+// COLUMN-LEVEL PERMISSIONS
+// ============================================================================
+
+model ColumnPermission {
+  id          String   @id @default(cuid())
+  tableId     String
+  columnId    String
+  
+  userId      String?
+  groupId     String?
+  
+  canView     Boolean  @default(true)
+  canEdit     Boolean  @default(true)
+  
+  user        User?    @relation("UserColumnPermissions", fields: [userId], references: [id], onDelete: Cascade)
+  group       Group?   @relation("GroupColumnPermissions", fields: [groupId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([columnId, userId])
+  @@unique([columnId, groupId])
+  @@index([tableId])
+  @@index([columnId])
+  @@map("column_permissions")
+}
+
+// ============================================================================
+// CHARTS
+// ============================================================================
+
+model AgoraChart {
+  id          String   @id @default(cuid())
+  tableId     String
+  table       AgoraTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  name        String
+  type        String   @default("bar")
+  config      Json     @default("{}")
+  createdById String
+  createdBy   User     @relation("ChartCreator", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("agora_charts")
+}
+
+// ============================================================================
+// FORMS
+// ============================================================================
+
+model AgoraForm {
+  id               String   @id @default(cuid())
+  tableId          String
+  table            AgoraTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  
+  name             String
+  slug             String   @unique
+  description      String?
+  
+  thankYouMessage  String?  @default("Thank you for your submission!")
+  submitButtonText String?  @default("Submit")
+  
+  fields           Json     @default("[]")
+  pages            Json     @default("[]")
+  
+  isActive         Boolean  @default(true)
+  allowMultiple    Boolean  @default(true)
+  
+  createdById      String
+  createdBy        User     @relation("FormCreator", fields: [createdById], references: [id])
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@map("agora_forms")
+}
+
+// ============================================================================
+// SAVED VIEWS
+// ============================================================================
+
+model AgoraView {
+  id          String     @id @default(cuid())
+  tableId     String
+  table       AgoraTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  
+  name        String
+  type        String     @default("grid")
+  config      Json
+  isDefault   Boolean    @default(false)
+  
+  createdById String
+  createdBy   User       @relation("ViewCreator", fields: [createdById], references: [id])
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  @@map("agora_views")
+}
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  
+  type        String   // row_created, row_updated, approval_requested, approval_completed, comment_added, form_submitted
+  title       String
+  message     String
+  
+  tableId     String?
+  rowId       String?
+  
+  metadata    Json?    // extra context like column changes, approval details
+  
+  isRead      Boolean  @default(false)
+  emailSent   Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@index([tableId])
+  @@map("notifications")
+}
+
+// ============================================================================
+// TABLE NOTIFICATION SETTINGS
+// ============================================================================
+
+model TableNotificationSetting {
+  id          String   @id @default(cuid())
+  tableId     String
+  userId      String
+  
+  onRowCreated      Boolean @default(false)
+  onRowUpdated      Boolean @default(false)
+  onRowDeleted      Boolean @default(false)
+  onCommentAdded    Boolean @default(false)
+  onFormSubmission  Boolean @default(false)
+  onApprovalRequest Boolean @default(true)
+  onApprovalComplete Boolean @default(true)
+  
+  emailEnabled      Boolean @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([tableId, userId])
+  @@index([tableId])
+  @@map("table_notification_settings")
+}
+
+// ============================================================================
+// APPROVALS
+// ============================================================================
+
+model ApprovalWorkflow {
+  id          String   @id @default(cuid())
+  tableId     String   @unique
+  
+  name        String
+  description String?
+  
+  // Which column triggers the approval (e.g. Status column)
+  triggerColumnId   String?
+  triggerValue      String?
+  
+  // What happens on final approve/deny
+  approveColumnId   String?
+  approveValue      String?
+  denyColumnId      String?
+  denyValue         String?
+  lockOnApprove     Boolean   @default(true)
+  
+  // The auto-created approval status column
+  approvalColumnId  String?
+  
+  // Stages — ordered array of approval stages
+  // [{ order: 1, name: "Manager", approverUserIds: [], approverGroupIds: [], requireAll: false, condition: null }]
+  stages            Json      @default("[]")
+  
+  isActive    Boolean  @default(true)
+  
+  // Reminder settings
+  reminderEnabled   Boolean @default(false)
+  reminderHours     Int     @default(24)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  requests    ApprovalRequest[]
+  
+  @@index([tableId])
+  @@map("approval_workflows")
+}
+
+model ApprovalRequest {
+  id            String   @id @default(cuid())
+  workflowId    String
+  workflow      ApprovalWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  
+  rowId         String
+  tableId       String
+  
+  requestedById String
+  
+  status        String   @default("pending") // pending, in_progress, approved, denied, cancelled
+  currentStage  Int      @default(1)
+  stageStatuses Json     @default("{}")  // { "1": "approved", "2": "pending", "3": "waiting" }
+  
+  token         String   @unique @default(cuid())
+  
+  dueAt         DateTime?
+  resolvedAt    DateTime?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  actions       ApprovalAction[]
+  
+  @@unique([workflowId, rowId])
+  @@index([rowId])
+  @@index([tableId, status])
+  @@index([token])
+  @@map("approval_requests")
+}
+
+model ApprovalAction {
+  id          String   @id @default(cuid())
+  requestId   String
+  request     ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  
+  userId      String
+  action      String   // approved, denied
+  reason      String?
+  
+  ipAddress   String?
+  geoLocation String?
+  userAgent   String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([requestId])
+  @@index([userId])
+  @@map("approval_actions")
+}
+
+// ============================================================================
+// APPROVAL LEDGER (IMMUTABLE AUDIT TRAIL)
+// ============================================================================
+
+model ApprovalLedger {
+  id              String   @id @default(cuid())
+  
+  tableId         String
+  rowId           String
+  workflowId      String
+  requestId       String?
+  
+  action          String   // submitted, stage_approved, stage_denied, advanced, completed, denied, cancelled
+  stage           Int?
+  stageName       String?
+  
+  actorId         String
+  actorName       String
+  actorEmail      String
+  
+  rowSnapshot     Json
+  
+  reason          String?
+  workflowName    String
+  requiredApprovers Json?
+  
+  previousHash    String?
+  entryHash       String
+  
+  ipAddress       String?
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([tableId, rowId])
+  @@index([tableId, createdAt])
+  @@index([requestId])
+  @@index([entryHash])
+  @@map("approval_ledger")
+}
+
+// ============================================================================
+// SYSTEM SETTINGS (KEY-VALUE STORE)
+// ============================================================================
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  encrypted Boolean  @default(false)
+  
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  
+  @@map("system_settings")
+}
+
+// ============================================================================
+// GOOGLE SHEET CONNECTIONS
+// ============================================================================
+
+model GoogleSheetConnection {
+  id              String   @id @default(cuid())
+  
+  spreadsheetId   String   @map("spreadsheetid")
+  spreadsheetName String   @map("spreadsheetname")
+  spreadsheetUrl  String   @map("spreadsheeturl")
+  
+  syncInterval    Int      @default(60) @map("syncinterval")
+  lastSyncAt      DateTime? @map("syncdat")
+  syncStatus      String   @default("idle") @map("syncstatus")
+  syncError       String?  @map("syncerror")
+  
+  createdById     String   @map("createdbyid")
+  createdBy       User     @relation("UserSheetConnections", fields: [createdById], references: [id], onDelete: Cascade)
+  
+  isActive        Boolean  @default(true) @map("isactive")
+  
+  createdAt       DateTime @default(now()) @map("createdat")
+  updatedAt       DateTime @updatedAt @map("updatedat")
+  
+  tabs            SheetTabMapping[]
+  
+  @@index([createdById])
+  @@index([spreadsheetId])
+  @@map("google_sheet_connections")
+}
+
+model SheetTabMapping {
+  id              String   @id @default(cuid())
+  connectionId    String   @map("connectionid")
+  connection      GoogleSheetConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  
+  sheetTabId      Int      @map("sheettabid")
+  sheetTabName    String   @map("sheettabname")
+  
+  tableId         String   @unique @map("tableid")
+  
+  columnMapping   Json     @default("{}") @map("columnmapping")
+  
+  lastSyncAt      DateTime? @map("syncdat")
+  
+  createdAt       DateTime @default(now()) @map("createdat")
+  updatedAt       DateTime @updatedAt @map("updatedat")
+  
+  @@index([connectionId])
+  @@index([tableId])
+  @@map("sheet_tab_mappings")
+}
+
+// ============================================================================
+// API KEYS
+// ============================================================================
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  userId      String   @map("userid")
+  user        User     @relation("UserApiKeys", fields: [userId], references: [id], onDelete: Cascade)
+  
+  name        String
+  keyHash     String   @unique @map("keyhash")
+  keyPrefix   String   @map("keyprefix")
+  
+  permissions String   @default("read")
+  tableScope  Json     @default("[]") @map("tablescope")
+  
+  rateLimit   Int      @default(60) @map("ratelimit")
+  
+  lastUsedAt  DateTime? @map("usedat")
+  expiresAt   DateTime? @map("expiresat")
+  isActive    Boolean  @default(true) @map("isactive")
+  
+  createdAt   DateTime @default(now()) @map("createdat")
+  updatedAt   DateTime @updatedAt @map("updatedat")
+  
+  @@index([keyHash])
+  @@index([userId])
+  @@map("api_keys")
+}
+
+// ============================================================================
+// FILE ATTACHMENTS
+// ============================================================================
+
+model FileAttachment {
+  id          String   @id @default(cuid())
+  
+  tableId     String
+  rowId       String
+  columnId    String
+  
+  filename    String
+  originalName String  @map("originalname")
+  mimeType    String   @map("mimetype")
+  size        Int      // bytes
+  path        String   // relative path in uploads directory
+  
+  uploadedById String  @map("uploadedbyid")
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([tableId, rowId, columnId])
+  @@index([rowId])
+  @@map("file_attachments")
+}
+
+// ============================================================================
+// RECORD EXPORT TEMPLATES
+// ============================================================================
+
+model RecordExportTemplate {
+  id              String   @id @default(cuid())
+  
+  tableId         String
+  name            String   @default("Default Template")
+  description     String?
+  templatePath    String
+  originalFilename String
+  filenameColumnId String?
+  fieldMappings   Json     @default("[]")
+  includeAuditPage Boolean @default(true)
+  
+  createdById     String
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([tableId])
+  @@map("record_export_templates")
+}
+
+// ============================================================================
+// DATA CONNECTORS
+// ============================================================================
+
+model DataConnector {
+  id              String   @id @default(cuid())
+  tableId         String
+  
+  name            String
+  type            String   @default("rest_api")  // rest_api, postgres, mysql, mongodb
+  
+  // Connection config (encrypted JSON)
+  config          Json     @default("{}")
+  // {
+  //   url: "https://api.example.com/data",
+  //   method: "GET",
+  //   authType: "none" | "bearer" | "api_key" | "basic",
+  //   authValue: "token_here",
+  //   authHeader: "Authorization",
+  //   headers: { "Accept": "application/json" },
+  //   responseDataPath: "data.results",  // JSONPath to array of records
+  //   uniqueKeyField: "id",  // field used to match/upsert
+  // }
+  
+  // Field mapping: { "api_field": "agora_column_id", ... }
+  fieldMapping    Json     @default("{}")
+  
+  // Sync settings
+  syncMode        String   @default("manual")  // manual, interval
+  syncIntervalMin Int      @default(60)
+  lastSyncAt      DateTime?
+  lastSyncStatus  String   @default("idle")  // idle, syncing, success, error
+  lastSyncError   String?
+  lastSyncStats   Json?    // { rowsCreated, rowsUpdated, rowsSkipped }
+  
+  isActive        Boolean  @default(true)
+  
+  createdById     String
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([tableId])
+  @@index([type])
+  @@map("data_connectors")
+}
+
+// ============================================================================
+// AUTOMATIONS
+// ============================================================================
+
+model Automation {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  enabled     Boolean  @default(true)
+  
+  workspaceId String?
+  createdById String
+  
+  // Trigger config
+  triggerType   String   // row_created | row_updated | row_deleted | column_match | form_submit | scheduled | webhook
+  triggerConfig Json     @default("{}")
+  // row_created/updated/deleted: { tableId: "..." }
+  // column_match:                { tableId: "...", column: "Status", value: "Approved" }
+  // form_submit:                 { tableId: "...", formId: "..." }
+  // scheduled:                   { cron: "0 8 * * 1" }
+  // webhook:                     { tableId: "..." }  (optional, for context)
+  
+  // Webhook trigger gets a unique URL slug
+  webhookSlug String?  @unique @map("webhookslug")
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  actions     AutomationAction[]
+  runs        AutomationRun[]
+  
+  @@index([triggerType])
+  @@index([enabled])
+  @@index([webhookSlug])
+  @@index([createdById])
+  @@map("automations")
+}
+
+model AutomationAction {
+  id            String   @id @default(cuid())
+  automationId  String   @map("automationid")
+  automation    Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  
+  sortOrder     Int      @default(0) @map("sortorder")
+  
+  actionType    String   @map("actiontype")
+  // update_field | create_row | send_email | webhook | lock_row | notify
+  
+  actionConfig  Json     @default("{}") @map("actionconfig")
+  // update_field: { targetTableId, targetRowId, fieldMappings: [{ column, value }] }
+  // create_row:   { targetTableId, fieldMappings: [{ column, value }] }
+  // send_email:   { to, subject, body }
+  // webhook:      { url, method, headers, bodyTemplate }
+  // lock_row:     { targetTableId, targetRowId }
+  // notify:       { userIds: [], message }
+  
+  conditionExpr String?  @map("conditionexpr")
+  // e.g. "{{row.Status}} == 'Approved'"
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([automationId])
+  @@map("automation_actions")
+}
+
+model AutomationRun {
+  id            String   @id @default(cuid())
+  automationId  String   @map("automationid")
+  automation    Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  
+  status        String   @default("pending")
+  // pending | running | success | failed | skipped
+  
+  triggerData   Json?    @map("triggerdata")
+  stepResults   Json?    @map("stepresults")
+  // [{ actionId, actionType, status, output, error, durationMs }]
+  
+  errorMessage  String?  @map("errormessage")
+  
+  startedAt     DateTime @default(now()) @map("startedat")
+  completedAt   DateTime? @map("completedat")
+  
+  @@index([automationId])
+  @@index([status])
+  @@index([startedAt])
+  @@map("automation_runs")
 }

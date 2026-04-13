@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  input, textarea, select {
+    color: rgb(17, 24, 39) !important;
+    -webkit-text-fill-color: rgb(17, 24, 39) !important;
+  }
+  
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill {
+    -webkit-text-fill-color: rgb(17, 24, 39) !important;
+    box-shadow: 0 0 0 1000px white inset !important;
+  }
+}
