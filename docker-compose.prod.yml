@@ -23,7 +23,29 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
+  # WebSocket Server
+  ws-server:
+    build:
+      context: ./ws-server
+      dockerfile: Dockerfile
+    container_name: agora-ws-server-prod
+    restart: always
+    environment:
+      WS_PORT: 3001
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      BROADCAST_SECRET: ${BROADCAST_SECRET}
+    expose:
+      - "3001"
+      - "3002"
+    networks:
+      - agora-network
+    depends_on:
+      - postgres
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
   # Next.js Web Application
   web:
     build:
@@ -39,6 +61,8 @@ services:
       DATABASE_URL: postgresql://agora:${POSTGRES_PASSWORD}@postgres:5432/agora?schema=public
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      BROADCAST_SECRET: ${BROADCAST_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       NODE_ENV: production
     ports:
       - "3000:3000"
@@ -49,7 +73,6 @@ services:
       options:
         max-size: "20m"
         max-file: "3"
-
   # ==========================================================================
   # Maintenance Daemon — zero-touch cleanup service
   # Runs daily (3 AM) and weekly (4 AM Sunday) cleanup tasks
@@ -79,8 +102,7 @@ services:
       options:
         max-size: "5m"
         max-file: "2"
-        
-   # Automation Scheduler — checks scheduled automations every minute
+  # Automation Scheduler — checks scheduled automations every minute
   automation-cron:
     image: curlimages/curl:latest
     container_name: agora-automation-cron-prod
@@ -100,13 +122,11 @@ services:
       options:
         max-size: "5m"
         max-file: "2"
-
 volumes:
   postgres-data:
     driver: local
   maintenance-logs:
     driver: local
-
 networks:
   agora-network:
     driver: bridge

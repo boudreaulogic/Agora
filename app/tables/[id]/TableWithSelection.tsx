@@ -78,6 +78,7 @@ export function TableWithSelection({
   const [searchQuery, setSearchQuery] = useState('');
   const [contextMenu, setContextMenu] = useState<{ row: any; x: number; y: number } | null>(null);
   const [rowEditors, setRowEditors] = useState<Record<string, { userId: string; userName: string; color: string }>>({});
+  const [focusedCell, setFocusedCell] = useState<{ rowIndex: number; colIndex: number } | null>(null);
 
   const { isConnected, send, subscribe } = useWebSocket(table.id, session);
   const { setPresence, removePresence, removeUserPresence } = usePresenceStore();
@@ -180,6 +181,17 @@ export function TableWithSelection({
 
     return unsubscribe;
   }, [subscribe, session?.user, setPresence, removePresence, removeUserPresence, onRemoteCellUpdate]);
+  
+  // Scroll focused cell into view
+  useEffect(() => {
+    if (!focusedCell) return;
+    var row = finalRows[focusedCell.rowIndex];
+    var col = visibleColumns[focusedCell.colIndex];
+    if (row && col) {
+      var cellEl = document.querySelector('[data-cell-id="' + row.id + '-' + col.id + '"]');
+      if (cellEl) cellEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }
+  }, [focusedCell]);
 
   function toggleRow(rowId: string) {
     setSelectedRows(prev => 
@@ -555,8 +567,7 @@ export function TableWithSelection({
                 </th>
                 {visibleColumns.map((column: any, index: number) => {
                   // System column headers — simple, no drag/resize/menu
-                  const isSystemAttachment = column.type === 'attachment' && (column.settings as any)?.isSystem;
-                  if (column.isSystem || isSystemAttachment) {
+                  if (column.isSystem) {
                     return (
                       <th
                         key={column.id}
@@ -828,10 +839,11 @@ export function TableWithSelection({
                         <td
                           key={column.id}
                           data-cell-id={cellId}
-                          onClick={() => setExpandedRow(row)}
+                          onClick={() => { var ri = finalRows.findIndex(function(fr) { return fr.id === row.id; }); var ci = visibleColumns.findIndex(function(vc) { return vc.id === column.id; }); setFocusedCell({ rowIndex: ri, colIndex: ci }); }}
+                          onDoubleClick={() => setExpandedRow(row)}
                           className={`px-6 py-4 text-sm text-gray-900 border-r border-gray-200 overflow-hidden relative cursor-pointer hover:bg-blue-50/50 ${
                             isHighlighted ? 'ring-2 ring-yellow-400 bg-yellow-50' : ''
-                          }`}
+                          } ${focusedCell && finalRows[focusedCell.rowIndex]?.id === row.id && visibleColumns[focusedCell.colIndex]?.id === column.id ? 'ring-2 ring-blue-500 bg-blue-50/30' : ''}`}
                           style={{ maxWidth: `${column.width || 200}px`, ...cellFormatting }}
                         >
                           <CellPresence cellId={cellId} />

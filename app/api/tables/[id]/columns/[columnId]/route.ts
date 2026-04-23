@@ -84,7 +84,7 @@ export async function PATCH(
 
   // Build update object with only provided fields
   const updateData: any = {};
-  if (name !== undefined) updateData.name = name;
+  if (name !== undefined) updateData.name = name.trim();
   if (type !== undefined) updateData.type = type;
   if (settings !== undefined) updateData.settings = settings;
   if (width !== undefined) updateData.width = width;
@@ -168,6 +168,11 @@ export async function DELETE(
   // Prevent deletion of system columns
   if (column.type === 'attachment' && (column.settings as any)?.isSystem) {
     return NextResponse.json({ error: 'Cannot delete the system Attachments column' }, { status: 403 });
+  }
+
+  // Prevent deletion of booking system columns
+  if ((column.settings as any)?.bookingRole && (column.settings as any)?.isSystem) {
+    return NextResponse.json({ error: 'This column is part of the Booking System and cannot be deleted. Uninstall the Booking System from the Marketplace to remove it.' }, { status: 403 });
   }
 
   // Delete all linked records associated with this column

@@ -18,6 +18,7 @@ interface AddOn {
   category: string;
   type: 'feature' | 'solution' | 'connector';
   featureKey?: string;
+  customInstall?: boolean;
   status: 'available' | 'coming_soon';
   tags: string[];
 }
@@ -86,7 +87,7 @@ var ADDONS: AddOn[] = [
     id: 'data_connectors',
     name: 'Data Connectors',
     description: 'Connect external REST APIs and sync data into your tables.',
-    longDescription: 'Pull data from any REST API into Agora tables. Supports bearer token, API key, and basic auth. Map JSON fields to columns, set sync schedules, and upsert by unique key. Connect Canvas LMS, weather APIs, government data feeds, or any service with a JSON endpoint.',
+    longDescription: 'Pull data from any REST API into Agora tables. Supports bearer token, API key, and basic auth. Map JSON fields to columns, set sync schedules, and upsert by unique key.',
     icon: '🔗',
     category: 'table_features',
     type: 'feature',
@@ -98,7 +99,7 @@ var ADDONS: AddOn[] = [
     id: 'api_access',
     name: 'API Access & Keys',
     description: 'Generate scoped API keys for external scripts and integrations.',
-    longDescription: 'Create API keys scoped to specific tables with read, write, or admin permissions. Keys are SHA-256 hashed, rate-limited, and can be set to expire. Use them in PowerShell, Python, or bash scripts to push data into Agora programmatically.',
+    longDescription: 'Create API keys scoped to specific tables with read, write, or admin permissions. Keys are SHA-256 hashed, rate-limited, and can be set to expire.',
     icon: '🔌',
     category: 'table_features',
     type: 'feature',
@@ -109,19 +110,21 @@ var ADDONS: AddOn[] = [
   {
     id: 'booking_system',
     name: 'Booking System',
-    description: 'Public booking pages with calendar integration and confirmations.',
-    longDescription: 'Create shareable booking pages for appointments, meetings, or resource reservations. Automatic email confirmations, calendar sync, and capacity management.',
+    description: 'Resource booking with conflict detection and calendar view.',
+    longDescription: 'Add booking columns (Start, End, Resource) to any table. Automatic conflict detection prevents double-bookings. Combine with Forms for public booking requests and Approval Workflows for managed reservations. Calendar view shows all bookings by resource.',
     icon: '📅',
     category: 'solutions',
-    type: 'solution',
-    status: 'coming_soon',
-    tags: ['scheduling', 'calendar', 'appointments'],
+    type: 'feature',
+    featureKey: 'booking',
+    customInstall: true,
+    status: 'available',
+    tags: ['scheduling', 'calendar', 'appointments', 'rooms', 'facilities'],
   },
   {
     id: 'helpdesk',
     name: 'Helpdesk & Tickets',
     description: 'Ticket submission, assignment, tracking, and resolution.',
-    longDescription: 'Public ticket submission form, automatic assignment rules, status tracking with Kanban view, SLA timers, and resolution workflows. Built on Agora tables with forms and approvals.',
+    longDescription: 'Public ticket submission form, automatic assignment rules, status tracking with Kanban view, SLA timers, and resolution workflows.',
     icon: '🎫',
     category: 'solutions',
     type: 'solution',
@@ -132,7 +135,7 @@ var ADDONS: AddOn[] = [
     id: 'simple_crm',
     name: 'Simple CRM',
     description: 'Contact management with deal pipeline and follow-ups.',
-    longDescription: 'Track contacts, companies, and deals through your sales pipeline. Kanban view for deal stages, activity logging, and follow-up reminders. Lightweight alternative to Salesforce.',
+    longDescription: 'Track contacts, companies, and deals through your sales pipeline. Kanban view for deal stages, activity logging, and follow-up reminders.',
     icon: '🤝',
     category: 'solutions',
     type: 'solution',
@@ -143,7 +146,7 @@ var ADDONS: AddOn[] = [
     id: 'rest_api_connector',
     name: 'REST API Connector',
     description: 'Connect any REST API and sync data into Agora tables.',
-    longDescription: 'Point at any REST API endpoint, map JSON fields to table columns, and set a sync schedule. Import data from Canvas LMS, SaaS tools, or any service with an API. Agora becomes your universal data layer.',
+    longDescription: 'Point at any REST API endpoint, map JSON fields to table columns, and set a sync schedule.',
     icon: '🔌',
     category: 'connectors',
     type: 'connector',
@@ -154,7 +157,7 @@ var ADDONS: AddOn[] = [
     id: 'postgres_connector',
     name: 'PostgreSQL Connector',
     description: 'Connect to external PostgreSQL databases.',
-    longDescription: 'Import tables from external PostgreSQL databases into Agora. Schedule automatic syncs or use Agora as a proxy that reads and writes directly to the external database.',
+    longDescription: 'Import tables from external PostgreSQL databases into Agora.',
     icon: '🐘',
     category: 'connectors',
     type: 'connector',
@@ -165,7 +168,7 @@ var ADDONS: AddOn[] = [
     id: 'mysql_connector',
     name: 'MySQL Connector',
     description: 'Connect to external MySQL databases.',
-    longDescription: 'Import tables from MySQL databases. Same sync and proxy capabilities as the PostgreSQL connector.',
+    longDescription: 'Import tables from MySQL databases.',
     icon: '🐬',
     category: 'connectors',
     type: 'connector',
@@ -176,7 +179,7 @@ var ADDONS: AddOn[] = [
     id: 'mongodb_connector',
     name: 'MongoDB Connector',
     description: 'Connect to MongoDB collections.',
-    longDescription: 'Map MongoDB document collections to Agora tables. Handles nested documents and arrays with automatic column detection.',
+    longDescription: 'Map MongoDB document collections to Agora tables.',
     icon: '🍃',
     category: 'connectors',
     type: 'connector',
@@ -192,6 +195,11 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
   var [selectedTableId, setSelectedTableId] = useState('');
   var [installing, setInstalling] = useState(false);
   var [installResult, setInstallResult] = useState<{ success: boolean; message: string } | null>(null);
+  // Booking system install state
+  var [bookingStartName, setBookingStartName] = useState('Start Date/Time');
+  var [bookingEndName, setBookingEndName] = useState('End Date/Time');
+  var [bookingResourceName, setBookingResourceName] = useState('Resource');
+  var [bookingResources, setBookingResources] = useState('');
 
   var filteredAddons = ADDONS.filter(function(addon) {
     if (selectedCategory !== 'all' && addon.category !== selectedCategory) return false;
@@ -213,7 +221,13 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
 
   function handleInstall() {
     if (!selectedAddOn || !selectedTableId || installing) return;
-    if (selectedAddOn.type !== 'feature' || !selectedAddOn.featureKey) return;
+    if (!selectedAddOn.featureKey) return;
+
+    // Booking system has custom install
+    if (selectedAddOn.customInstall) {
+      handleBookingInstall();
+      return;
+    }
 
     setInstalling(true);
     setInstallResult(null);
@@ -221,14 +235,11 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
     fetch('/api/tables/' + selectedTableId, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        enableFeature: selectedAddOn.featureKey,
-      }),
+      body: JSON.stringify({ enableFeature: selectedAddOn.featureKey }),
     }).then(function(res) {
       return res.json().then(function(data) {
         if (res.ok) {
           setInstallResult({ success: true, message: selectedAddOn!.name + ' has been enabled on your table.' });
-          // Update local table state
           var tableIdx = tables.findIndex(function(t) { return t.id === selectedTableId; });
           if (tableIdx >= 0) {
             var features = ((tables[tableIdx].enabledFeatures as string[]) || []).slice();
@@ -246,21 +257,71 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
     }).finally(function() { setInstalling(false); });
   }
 
+  function handleBookingInstall() {
+    if (!selectedTableId || installing) return;
+    setInstalling(true);
+    setInstallResult(null);
+
+    var resourceOptions = bookingResources.split(',').map(function(r) { return r.trim(); }).filter(function(r) { return r.length > 0; });
+
+    fetch('/api/tables/' + selectedTableId + '/booking/install', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        startColumnName: bookingStartName.trim() || 'Start Date/Time',
+        endColumnName: bookingEndName.trim() || 'End Date/Time',
+        resourceColumnName: bookingResourceName.trim() || 'Resource',
+        resourceOptions: resourceOptions,
+      }),
+    }).then(function(res) {
+      return res.json().then(function(data) {
+        if (res.ok) {
+          setInstallResult({ success: true, message: 'Booking system installed! 3 columns added: ' + data.columns.start.name + ', ' + data.columns.end.name + ', ' + data.columns.resource.name + '. Conflict detection is now active.' });
+          var tableIdx = tables.findIndex(function(t) { return t.id === selectedTableId; });
+          if (tableIdx >= 0) {
+            var features = ((tables[tableIdx].enabledFeatures as string[]) || []).slice();
+            if (!features.includes('booking')) { features.push('booking'); tables[tableIdx].enabledFeatures = features; }
+          }
+        } else {
+          setInstallResult({ success: false, message: data.error || 'Failed to install booking system' });
+        }
+      });
+    }).catch(function() {
+      setInstallResult({ success: false, message: 'Failed to install booking system' });
+    }).finally(function() { setInstalling(false); });
+  }
+
   function handleUninstall() {
     if (!selectedAddOn || !selectedTableId || installing) return;
-    if (selectedAddOn.type !== 'feature' || !selectedAddOn.featureKey) return;
+    if (!selectedAddOn.featureKey) return;
 
     if (!confirm('Remove ' + selectedAddOn.name + ' from this table? Your data won\'t be deleted, but the feature will be hidden.')) return;
 
     setInstalling(true);
     setInstallResult(null);
 
+    // Booking has custom uninstall
+    if (selectedAddOn.customInstall) {
+      fetch('/api/tables/' + selectedTableId + '/booking/install', { method: 'DELETE' })
+        .then(function(res) { return res.json().then(function(data) {
+          if (res.ok) {
+            setInstallResult({ success: true, message: 'Booking system removed. Columns and data preserved.' });
+            var tableIdx = tables.findIndex(function(t) { return t.id === selectedTableId; });
+            if (tableIdx >= 0) {
+              var features = ((tables[tableIdx].enabledFeatures as string[]) || []).filter(function(f: string) { return f !== 'booking'; });
+              tables[tableIdx].enabledFeatures = features;
+            }
+          } else { setInstallResult({ success: false, message: data.error || 'Failed to remove' }); }
+        }); })
+        .catch(function() { setInstallResult({ success: false, message: 'Failed to remove' }); })
+        .finally(function() { setInstalling(false); });
+      return;
+    }
+
     fetch('/api/tables/' + selectedTableId, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        disableFeature: selectedAddOn.featureKey,
-      }),
+      body: JSON.stringify({ disableFeature: selectedAddOn.featureKey }),
     }).then(function(res) {
       return res.json().then(function(data) {
         if (res.ok) {
@@ -270,9 +331,7 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
             var features = ((tables[tableIdx].enabledFeatures as string[]) || []).filter(function(f: string) { return f !== selectedAddOn!.featureKey; });
             tables[tableIdx].enabledFeatures = features;
           }
-        } else {
-          setInstallResult({ success: false, message: data.error || 'Failed to remove' });
-        }
+        } else { setInstallResult({ success: false, message: data.error || 'Failed to remove' }); }
       });
     }).catch(function() {
       setInstallResult({ success: false, message: 'Failed to remove' });
@@ -281,7 +340,6 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
-      {/* Header */}
       <div className="mb-8">
         <div className="flex items-center space-x-3 mb-2">
           <span className="text-3xl">📦</span>
@@ -290,7 +348,6 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
         <p className="text-sm text-gray-500">Add features, solutions, and connectors to your tables.</p>
       </div>
 
-      {/* Search + Categories */}
       <div className="flex items-center space-x-4 mb-6">
         <div className="relative flex-1 max-w-sm">
           <input type="text" value={searchQuery} onChange={function(e) { setSearchQuery(e.target.value); }}
@@ -302,42 +359,29 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
         </div>
         <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
           {CATEGORIES.map(function(cat) {
-            return (
-              <button key={cat.id} onClick={function() { setSelectedCategory(cat.id); }}
-                className={'px-3 py-1.5 text-xs rounded-md transition-all font-medium ' +
-                  (selectedCategory === cat.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
-                <span className="mr-1">{cat.icon}</span>{cat.label}
-              </button>
-            );
+            return (<button key={cat.id} onClick={function() { setSelectedCategory(cat.id); }}
+              className={'px-3 py-1.5 text-xs rounded-md transition-all font-medium ' + (selectedCategory === cat.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+              <span className="mr-1">{cat.icon}</span>{cat.label}
+            </button>);
           })}
         </div>
       </div>
 
-      {/* Add-on Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredAddons.map(function(addon) {
           var isComingSoon = addon.status === 'coming_soon';
           return (
             <div key={addon.id}
-              onClick={function() { if (!isComingSoon) { setSelectedAddOn(addon); setSelectedTableId(''); setInstallResult(null); } }}
-              className={'relative border rounded-xl p-5 transition-all ' +
-                (isComingSoon
-                  ? 'border-gray-200 bg-gray-50 opacity-60 cursor-default'
-                  : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md cursor-pointer')}>
-              {isComingSoon && (
-                <span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-wider bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">Coming Soon</span>
-              )}
+              onClick={function() { if (!isComingSoon) { setSelectedAddOn(addon); setSelectedTableId(''); setInstallResult(null); setBookingStartName('Start Date/Time'); setBookingEndName('End Date/Time'); setBookingResourceName('Resource'); setBookingResources(''); } }}
+              className={'relative border rounded-xl p-5 transition-all ' + (isComingSoon ? 'border-gray-200 bg-gray-50 opacity-60 cursor-default' : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md cursor-pointer')}>
+              {isComingSoon && (<span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-wider bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">Coming Soon</span>)}
               <div className="flex items-start space-x-3">
                 <span className="text-2xl">{addon.icon}</span>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-bold text-gray-900">{addon.name}</h3>
                   <p className="text-xs text-gray-500 mt-1 leading-relaxed">{addon.description}</p>
                   <div className="flex flex-wrap gap-1 mt-3">
-                    {addon.tags.slice(0, 3).map(function(tag) {
-                      return (
-                        <span key={tag} className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{tag}</span>
-                      );
-                    })}
+                    {addon.tags.slice(0, 3).map(function(tag) { return (<span key={tag} className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{tag}</span>); })}
                   </div>
                 </div>
               </div>
@@ -346,17 +390,12 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
         })}
       </div>
 
-      {filteredAddons.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-400 text-sm">No add-ons match your search.</p>
-        </div>
-      )}
+      {filteredAddons.length === 0 && (<div className="text-center py-12"><p className="text-gray-400 text-sm">No add-ons match your search.</p></div>)}
 
       {/* Add-on Detail Modal */}
       {selectedAddOn && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={function() { setSelectedAddOn(null); }}>
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden" onClick={function(e) { e.stopPropagation(); }}>
-            {/* Header */}
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden max-h-[90vh] overflow-y-auto" onClick={function(e) { e.stopPropagation(); }}>
             <div className="px-6 py-5 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -367,32 +406,24 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
                       (selectedAddOn.type === 'feature' ? 'bg-blue-100 text-blue-700' :
                        selectedAddOn.type === 'solution' ? 'bg-purple-100 text-purple-700' :
                        'bg-green-100 text-green-700')}>
-                      {selectedAddOn.type === 'feature' ? 'Table Feature' :
-                       selectedAddOn.type === 'solution' ? 'Solution' : 'Connector'}
+                      {selectedAddOn.type === 'feature' ? 'Table Feature' : selectedAddOn.type === 'solution' ? 'Solution' : 'Connector'}
                     </span>
                   </div>
                 </div>
                 <button onClick={function() { setSelectedAddOn(null); }} className="text-gray-400 hover:text-gray-600">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
             </div>
 
-            {/* Body */}
             <div className="px-6 py-5 space-y-4">
               <p className="text-sm text-gray-600 leading-relaxed">{selectedAddOn.longDescription}</p>
-
-              {/* Tags */}
               <div className="flex flex-wrap gap-1.5">
-                {selectedAddOn.tags.map(function(tag) {
-                  return <span key={tag} className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{tag}</span>;
-                })}
+                {selectedAddOn.tags.map(function(tag) { return <span key={tag} className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{tag}</span>; })}
               </div>
 
-              {/* Install section — only for features */}
-              {selectedAddOn.type === 'feature' && selectedAddOn.featureKey && (
+              {/* Install section for features (including booking) */}
+              {selectedAddOn.featureKey && selectedAddOn.status === 'available' && (
                 <div className="border-t border-gray-200 pt-4">
                   <label className="block text-xs font-semibold text-gray-700 mb-2">Select a table to install on:</label>
                   <select value={selectedTableId} onChange={function(e) { setSelectedTableId(e.target.value); setInstallResult(null); }}
@@ -404,6 +435,38 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
                     })}
                   </select>
 
+                  {/* Booking System custom config */}
+                  {selectedAddOn.customInstall && selectedTableId && !isFeatureInstalled(selectedAddOn.featureKey, selectedTableId) && (
+                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+                      <h4 className="text-xs font-bold text-blue-900 uppercase">Configure Booking Columns</h4>
+                      <p className="text-[10px] text-blue-700">These system columns will be added to your table. You can rename them.</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-medium text-blue-800 mb-1">Start Column</label>
+                          <input type="text" value={bookingStartName} onChange={function(e) { setBookingStartName(e.target.value); }}
+                            className="w-full px-2 py-1.5 text-xs border border-blue-300 rounded bg-white text-gray-900 focus:ring-1 focus:ring-blue-500" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-medium text-blue-800 mb-1">End Column</label>
+                          <input type="text" value={bookingEndName} onChange={function(e) { setBookingEndName(e.target.value); }}
+                            className="w-full px-2 py-1.5 text-xs border border-blue-300 rounded bg-white text-gray-900 focus:ring-1 focus:ring-blue-500" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-medium text-blue-800 mb-1">Resource Column</label>
+                          <input type="text" value={bookingResourceName} onChange={function(e) { setBookingResourceName(e.target.value); }}
+                            className="w-full px-2 py-1.5 text-xs border border-blue-300 rounded bg-white text-gray-900 focus:ring-1 focus:ring-blue-500" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-blue-800 mb-1">Resources (comma-separated)</label>
+                        <input type="text" value={bookingResources} onChange={function(e) { setBookingResources(e.target.value); }}
+                          placeholder="e.g., Conference Room A, Gym, Auditorium, Vehicle 1"
+                          className="w-full px-2 py-1.5 text-xs border border-blue-300 rounded bg-white text-gray-900 focus:ring-1 focus:ring-blue-500" />
+                        <p className="text-[9px] text-blue-600 mt-0.5">You can add more resources later through the column settings.</p>
+                      </div>
+                    </div>
+                  )}
+
                   {selectedTableId && (
                     <div className="mt-3 flex space-x-2">
                       {isFeatureInstalled(selectedAddOn.featureKey, selectedTableId) ? (
@@ -414,7 +477,7 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
                       ) : (
                         <button onClick={handleInstall} disabled={installing}
                           className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
-                          {installing ? 'Installing...' : 'Install on Table'}
+                          {installing ? 'Installing...' : selectedAddOn.customInstall ? 'Install Booking System' : 'Install on Table'}
                         </button>
                       )}
                     </div>
@@ -429,8 +492,8 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
                 </div>
               )}
 
-              {/* Coming soon for solutions/connectors */}
-              {selectedAddOn.type !== 'feature' && (
+              {/* Coming soon */}
+              {selectedAddOn.status === 'coming_soon' && (
                 <div className="border-t border-gray-200 pt-4">
                   <div className="bg-gray-50 rounded-lg p-4 text-center">
                     <p className="text-sm text-gray-500">This {selectedAddOn.type} is coming soon.</p>

@@ -27,7 +27,7 @@ services:
     image: cloudflare/cloudflared:latest
     container_name: agora-cloudflared
     restart: unless-stopped
-    command: tunnel --no-autoupdate run --token eyJhIjoiYzZlMThiN2Q3ZWNmOTJjY2ZiZjY0OTJhZjlhYzdhMTkiLCJ0IjoiZDE1YzA1MGEtYmJhNi00ZDBjLWE5NDAtZWMxYWQwNjVkNzhjIiwicyI6Ik1qVXhPRFF5TnpVdE56UTNNUzAwWmpKa0xXRmxNVEF0T0RnNVpHTXlNekUyT1RJdyJ9
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
     depends_on:
       - dmz
     networks:

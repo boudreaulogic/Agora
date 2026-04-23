@@ -14,6 +14,7 @@ import { ActivityPanel } from './ActivityPanel';
 import { KanbanBoard } from './KanbanBoard';
 import { CalendarBoard } from './CalendarBoard';
 import { GalleryBoard } from './GalleryBoard';
+import { GanttChart } from './GanttChart';
 import { RowExpandPanel } from './RowExpandPanel';
 import { ColumnPermissionsModal } from './ColumnPermissionsModal';
 import { FormsManager } from './FormsManager';
@@ -226,12 +227,31 @@ export function TableViewClient({
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      // Don't capture keys when typing in inputs/textareas
+      var tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
         setIsFindReplaceOpen(true);
         return;
       }
+      // Escape — close any open panel/modal
+      if (e.key === 'Escape') {
+        if (isNewRowOpen) { setIsNewRowOpen(false); return; }
+        if (isFindReplaceOpen) { setIsFindReplaceOpen(false); return; }
+        if (showTableMenu) { setShowTableMenu(false); return; }
+        if (showFieldsMenu) { setShowFieldsMenu(false); return; }
+        if (isActivityOpen) { setIsActivityOpen(false); return; }
+        return;
+      }
       if (isViewer) return;
+      // Ctrl+N — new row
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        setIsNewRowOpen(true);
+        return;
+      }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
         const action = undo();
@@ -694,7 +714,7 @@ export function TableViewClient({
               </div>
             )}
 
-            {isAdminUser && <ImportCSVButton tableId={table.id} />}
+            {isAdminUser && <ImportCSVButton tableId={table.id} columns={table.columns} />}
             {isAdminUser && <AddColumnModal tableId={table.id} />}
 
             {canEdit && (
@@ -727,9 +747,11 @@ export function TableViewClient({
       {currentView?.type === 'kanban' ? (
         <KanbanBoard rows={rowOrder} columns={table.columns} kanbanColumnId={currentView.config?.kanbanColumnId} tableId={table.id} onCardMove={handleKanbanCardMove} onCardClick={(row) => setExpandedRow(row)} />
       ) : currentView?.type === 'calendar' ? (
-        <CalendarBoard rows={rowOrder} columns={table.columns} dateColumnId={currentView.config?.calendarDateColumnId} tableId={table.id} onEventClick={(row) => setExpandedRow(row)} onEventMove={handleCalendarEventMove} />
+        <CalendarBoard rows={rowOrder} columns={table.columns} dateColumnId={currentView.config?.calendarDateColumnId} tableId={table.id} onEventClick={(row) => setExpandedRow(row)} onEventMove={handleCalendarEventMove} bookingConfig={((table as any).enabledFeatures as string[] || []).includes('booking') ? ((table as any).notificationTargets as any)?.__bookingConfig || null : null} />
       ) : currentView?.type === 'gallery' ? (
         <GalleryBoard rows={rowOrder} columns={table.columns} tableId={table.id} onCardClick={(row) => setExpandedRow(row)} />
+      ) : currentView?.type === 'gantt' ? (
+        <GanttChart rows={rowOrder} columns={table.columns} startColumnId={currentView.config?.ganttStartColumnId} endColumnId={currentView.config?.ganttEndColumnId || undefined} tableId={table.id} onBarClick={(row) => setExpandedRow(row)} />
       ) : (
         <TableWithSelection
           table={{ ...table, rows: rowOrder }}
@@ -775,6 +797,7 @@ export function TableViewClient({
           session={session}
           onRowLockChange={handleRowLockChange}
           wsSend={wsSendRef.current || undefined}
+		  bookingConfig={((table as any).enabledFeatures as string[] || []).includes('booking') ? ((table as any).notificationTargets as any)?.__bookingConfig || null : null}
         />
       )}
 

@@ -351,7 +351,7 @@ export function EditableCell({
         return <a href={`mailto:${value}`} className="text-blue-600 hover:underline">{value}</a>;
       
       case 'url':
-        return <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{value}</a>;
+        return <a href={value && (value.startsWith('http://') || value.startsWith('https://')) ? value : '#'} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{value}</a>;
       
       case 'phone':
         return <a href={`tel:${value}`} className="text-blue-600 hover:underline">{value}</a>;

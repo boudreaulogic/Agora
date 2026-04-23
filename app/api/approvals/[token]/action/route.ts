@@ -97,6 +97,35 @@ export async function POST(
   if (existingAction) {
     return NextResponse.json({ error: `You have already ${existingAction.action} this request` }, { status: 400 });
   }
+  
+  // Atomic check-and-create to prevent race condition
+  var actionRecord;
+  try {
+    actionRecord = await db.$transaction(async function(tx) {
+      var existing = await tx.approvalAction.findFirst({
+        where: { requestId: approvalRequest.id, userId },
+      });
+      if (existing) throw new Error('ALREADY_ACTED:' + existing.action);
+
+      return await tx.approvalAction.create({
+        data: {
+          requestId: approvalRequest.id,
+          userId,
+          action,
+          reason: reason || null,
+          ipAddress,
+          geoLocation: geoLocation || null,
+          userAgent: userAgent || null,
+        } as any,
+      });
+    });
+  } catch (txErr: any) {
+    if (txErr.message?.startsWith('ALREADY_ACTED')) {
+      var prevAction = txErr.message.split(':')[1];
+      return NextResponse.json({ error: 'You have already ' + prevAction + ' this request' }, { status: 400 });
+    }
+    throw txErr;
+  }
 
   // Get the user info for the ledger
   const actor = await db.user.findUnique({
@@ -207,6 +236,18 @@ export async function POST(
       rowId: approvalRequest.rowId,
       sendEmailNotification: true,
     });
+	
+	// Fire approval_denied automation trigger
+    try {
+      var { onApprovalDenied } = await import('@/lib/automations/hooks');
+      onApprovalDenied(approvalRequest.tableId, approvalRequest.rowId, rowData, {
+        workflowId: approvalRequest.workflowId,
+        workflowName: approvalRequest.workflow.name,
+        requestId: approvalRequest.id,
+        deniedBy: userId,
+        reason: reason || undefined,
+      });
+    } catch (autoErr) { console.error('[Approval] Automation trigger error:', autoErr); }
 
     return NextResponse.json({ success: true, status: 'denied' });
   }
@@ -396,6 +437,17 @@ export async function POST(
     } catch (e) {
       console.error('[Auto-PDF] Failed to auto-generate PDF on approval:', e);
     }
+	
+	// Fire approval_completed automation trigger
+    try {
+      var { onApprovalCompleted } = await import('@/lib/automations/hooks');
+      onApprovalCompleted(approvalRequest.tableId, approvalRequest.rowId, rowData, {
+        workflowId: approvalRequest.workflowId,
+        workflowName: approvalRequest.workflow.name,
+        requestId: approvalRequest.id,
+        approvedBy: userId,
+      });
+    } catch (autoErr) { console.error('[Approval] Automation trigger error:', autoErr); }
 
     return NextResponse.json({ success: true, status: 'approved' });
   }

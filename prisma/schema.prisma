@@ -55,6 +55,11 @@ model User {
   apiKeys            ApiKey[]          @relation("UserApiKeys")
   sheetConnections   GoogleSheetConnection[] @relation("UserSheetConnections")
   
+  mfaEnabled          Boolean           @default(false) @map("mfa_enabled")
+  mfaMethod           String?           @default("email") @map("mfa_method")
+  totpSecret          String?           @map("totp_secret")
+  mfaCodes            MfaCode[]         @relation("UserMfaCodes")
+  
   @@map("users")
 }
 
@@ -1051,6 +1056,7 @@ model Automation {
   enabled     Boolean  @default(true)
   
   workspaceId String?
+  tableId     String?
   createdById String
   
   // Trigger config
@@ -1127,4 +1133,20 @@ model AutomationRun {
   @@index([status])
   @@index([startedAt])
   @@map("automation_runs")
+}
+
+model MfaCode {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  code      String
+  method    String   @default("email")
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  user      User     @relation("UserMfaCodes", fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("mfa_codes")
 }

@@ -22,6 +22,7 @@ export function AdminNav({
 	  { name: 'Email', href: '/admin/smtp' },
 	  { name: 'Google Sheets', href: '/admin/google-sheets' },
 	  { name: 'Dashboard', href: '/admin/dashboard' },
+	  { name: 'Security', href: '/admin/security' },
 	];
 
   const isActive = (href: string) => {

@@ -1,32 +1,50 @@
 import crypto from 'crypto';
 
-const ALGORITHM = 'aes-256-gcm';
+var ALGORITHM = 'aes-256-gcm';
+var IV_LENGTH = 12;
 
-function getKey(): Buffer {
-  const secret = process.env.NEXTAUTH_SECRET || '';
+function getEncryptionKey(): Buffer {
+  // Use dedicated ENCRYPTION_KEY if available, fall back to NEXTAUTH_SECRET for backwards compatibility
+  var key = process.env.ENCRYPTION_KEY;
+  if (key) {
+    var buf = Buffer.from(key, 'hex');
+    if (buf.length !== 32) throw new Error('ENCRYPTION_KEY must be 32 bytes (64 hex chars)');
+    return buf;
+  }
+  // Fallback — log warning in production
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('[Security] ENCRYPTION_KEY not set — falling back to NEXTAUTH_SECRET. Set a separate ENCRYPTION_KEY for production.');
+  }
+  var secret = process.env.NEXTAUTH_SECRET || '';
   return crypto.createHash('sha256').update(secret).digest();
 }
 
+function deriveKey(purpose: string): Buffer {
+  return Buffer.from(
+    crypto.hkdfSync('sha256', getEncryptionKey(), '', purpose, 32)
+  );
+}
+
 export function encrypt(text: string): string {
-  const key = getKey();
-  const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
-  let encrypted = cipher.update(text, 'utf8', 'hex');
+  var key = deriveKey('agora-field-encryption-v1');
+  var iv = crypto.randomBytes(IV_LENGTH);
+  var cipher = crypto.createCipheriv(ALGORITHM, key, iv) as any;
+  var encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
-  const authTag = cipher.getAuthTag().toString('hex');
+  var authTag = cipher.getAuthTag().toString('hex');
   return iv.toString('hex') + ':' + authTag + ':' + encrypted;
 }
 
 export function decrypt(encryptedText: string): string {
-  const key = getKey();
-  const parts = encryptedText.split(':');
+  var key = deriveKey('agora-field-encryption-v1');
+  var parts = encryptedText.split(':');
   if (parts.length !== 3) throw new Error('Invalid encrypted format');
-  const iv = Buffer.from(parts[0], 'hex');
-  const authTag = Buffer.from(parts[1], 'hex');
-  const encrypted = parts[2];
-  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+  var iv = Buffer.from(parts[0], 'hex');
+  var authTag = Buffer.from(parts[1], 'hex');
+  var encrypted = parts[2];
+  var decipher = crypto.createDecipheriv(ALGORITHM, key, iv) as any;
   decipher.setAuthTag(authTag);
-  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+  var decrypted = decipher.update(encrypted, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
   return decrypted;
 }

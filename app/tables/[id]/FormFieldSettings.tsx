@@ -115,19 +115,18 @@ export function FormFieldSettings({
 
             {isCalculated && (
               <div className="space-y-2 bg-orange-50/50 dark:bg-orange-900/10 rounded-lg p-2 border border-orange-200 dark:border-orange-800">
-                <h6 className="text-[9px] font-bold text-orange-600 dark:text-orange-400 uppercase">Formula</h6>
+                <h6 className="text-[9px] font-bold text-orange-600 dark:text-orange-400 uppercase">Formula Builder</h6>
 
-                {/* Operations list */}
-                <div className="space-y-1.5">
+                {/* Visual formula display */}
+                <div className="min-h-[36px] px-2 py-1.5 bg-white dark:bg-gray-800 border-2 border-orange-300 dark:border-orange-700 rounded-lg flex flex-wrap items-center gap-1">
+                  {(field.formula?.operations || []).length === 0 && (
+                    <span className="text-[10px] text-gray-400 italic">Click columns below to build formula...</span>
+                  )}
                   {(field.formula?.operations || []).map((op: any, oi: number) => {
                     const isRgAgg = op.type === 'rg_aggregate';
-                    const currentSelectValue = isRgAgg
-                      ? 'rg_agg__' + op.rgFieldId + '__' + op.columnName
-                      : op.fieldId || '';
-
-                    return (
-                      <div key={oi} className="flex items-center space-x-1">
-                        {oi > 0 && (
+                    if (oi > 0) {
+                      return (
+                        <span key={'op-' + oi} className="flex items-center">
                           <select
                             value={op.operator || '+'}
                             onChange={e => {
@@ -135,108 +134,150 @@ export function FormFieldSettings({
                               ops[oi] = { ...ops[oi], operator: e.target.value };
                               update({ formula: { ...field.formula, operations: ops } });
                             }}
-                            className="w-10 px-0.5 py-0.5 text-[10px] border border-orange-300 dark:border-orange-700 rounded bg-white dark:bg-gray-800 dark:text-gray-200 text-center font-bold"
+                            className="w-7 h-6 text-[11px] font-bold text-orange-700 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 border-0 rounded text-center cursor-pointer appearance-none px-0"
                           >
                             <option value="+">+</option>
                             <option value="-">−</option>
                             <option value="*">×</option>
                             <option value="/">÷</option>
                           </select>
-                        )}
-                        <select
-                          value={currentSelectValue}
-                          onChange={e => {
-                            const ops = [...(field.formula?.operations || [])];
-                            const val = e.target.value;
-                            if (val === '__constant') {
-                              ops[oi] = { ...ops[oi], fieldId: '__constant', type: 'field', rgFieldId: undefined, columnName: undefined, constantValue: op.constantValue || 0 };
-                            } else if (val.startsWith('rg_agg__')) {
-                              const parts = val.split('__');
-                              const rgFieldId = parts[1];
-                              const columnName = parts.slice(2).join('__');
-                              ops[oi] = { ...ops[oi], fieldId: undefined, type: 'rg_aggregate', rgFieldId, columnName, aggregation: 'sum' };
-                            } else {
-                              ops[oi] = { ...ops[oi], fieldId: val, type: 'field', rgFieldId: undefined, columnName: undefined };
-                            }
-                            update({ formula: { ...field.formula, operations: ops } });
-                          }}
-                          className="flex-1 px-1 py-0.5 text-[10px] border border-orange-300 dark:border-orange-700 rounded bg-white dark:bg-gray-800 dark:text-gray-200"
-                        >
-                          <option value="">Select field...</option>
-
-                          {/* Regular numeric fields */}
-                          {allFields
-                            .filter(f => f.columnId !== field.columnId && ['number', 'currency', 'percent', 'rating'].includes(f.columnType || ''))
-                            .map(f => (
-                              <option key={f.columnId} value={f.columnId}>{f.label}</option>
-                            ))}
-
-                          {/* Repeating group aggregates */}
-                          {rgAggregateOptions.length > 0 && (
-                            <optgroup label="─── Repeating Group Totals ───">
-                              {rgAggregateOptions.map(rga => (
-                                <option key={rga.value} value={rga.value}>{rga.label}</option>
-                              ))}
-                            </optgroup>
+                          {isRgAgg ? (
+                            <span className="inline-flex items-center space-x-0.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 px-1.5 py-0.5 rounded text-[9px] font-bold">
+                              <span>Σ {rgAggregateOptions.find(r => r.rgFieldId === op.rgFieldId && r.columnName === op.columnName)?.label || op.columnName}</span>
+                              <select value={op.aggregation || 'sum'} onChange={e => { const ops = [...(field.formula?.operations || [])]; ops[oi] = { ...ops[oi], aggregation: e.target.value }; update({ formula: { ...field.formula, operations: ops } }); }} className="w-10 text-[8px] bg-transparent border-0 font-bold text-teal-600 cursor-pointer">
+                                <option value="sum">SUM</option><option value="avg">AVG</option><option value="min">MIN</option><option value="max">MAX</option><option value="count">CNT</option>
+                              </select>
+                              <button onClick={() => { const ops = (field.formula?.operations || []).filter((_: any, i: number) => i !== oi); update({ formula: { ...field.formula, operations: ops } }); }} className="text-teal-400 hover:text-red-500 ml-0.5">×</button>
+                            </span>
+                          ) : op.fieldId === '__constant' ? (
+                            <span className="inline-flex items-center bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-[9px] font-bold text-gray-700 dark:text-gray-300">
+                              <input type="number" value={op.constantValue ?? ''} onChange={e => { const ops = [...(field.formula?.operations || [])]; ops[oi] = { ...ops[oi], constantValue: parseFloat(e.target.value) || 0 }; update({ formula: { ...field.formula, operations: ops } }); }} className="w-10 bg-transparent border-0 text-[9px] font-bold text-center" placeholder="0" />
+                              <button onClick={() => { const ops = (field.formula?.operations || []).filter((_: any, i: number) => i !== oi); update({ formula: { ...field.formula, operations: ops } }); }} className="text-gray-400 hover:text-red-500 ml-0.5">×</button>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded text-[9px] font-bold">
+                              {allFields.find(f => f.columnId === op.fieldId)?.label || 'Unknown'}
+                              <button onClick={() => { const ops = (field.formula?.operations || []).filter((_: any, i: number) => i !== oi); update({ formula: { ...field.formula, operations: ops } }); }} className="text-blue-400 hover:text-red-500 ml-1">×</button>
+                            </span>
                           )}
-
-                          <option value="__constant">Constant value</option>
-                        </select>
-                        {op.fieldId === '__constant' && (
-                          <input
-                            type="number"
-                            value={op.constantValue ?? ''}
-                            onChange={e => {
-                              const ops = [...(field.formula?.operations || [])];
-                              ops[oi] = { ...ops[oi], constantValue: parseFloat(e.target.value) || 0 };
-                              update({ formula: { ...field.formula, operations: ops } });
-                            }}
-                            className="w-14 px-1 py-0.5 text-[10px] border border-orange-300 dark:border-orange-700 rounded bg-white dark:bg-gray-800 dark:text-gray-200"
-                            placeholder="0"
-                          />
-                        )}
-                        {isRgAgg && (
-                          <select
-                            value={op.aggregation || 'sum'}
-                            onChange={e => {
-                              const ops = [...(field.formula?.operations || [])];
-                              ops[oi] = { ...ops[oi], aggregation: e.target.value };
-                              update({ formula: { ...field.formula, operations: ops } });
-                            }}
-                            className="w-12 px-0.5 py-0.5 text-[8px] border border-teal-300 dark:border-teal-700 rounded bg-white dark:bg-gray-800 dark:text-gray-200 text-center font-bold"
-                          >
-                            <option value="sum">SUM</option>
-                            <option value="avg">AVG</option>
-                            <option value="min">MIN</option>
-                            <option value="max">MAX</option>
-                            <option value="count">CNT</option>
+                        </span>
+                      );
+                    }
+                    // First operand (no operator before it)
+                    if (isRgAgg) {
+                      return (
+                        <span key={'op-' + oi} className="inline-flex items-center space-x-0.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 px-1.5 py-0.5 rounded text-[9px] font-bold">
+                          <span>Σ {rgAggregateOptions.find(r => r.rgFieldId === op.rgFieldId && r.columnName === op.columnName)?.label || op.columnName}</span>
+                          <select value={op.aggregation || 'sum'} onChange={e => { const ops = [...(field.formula?.operations || [])]; ops[oi] = { ...ops[oi], aggregation: e.target.value }; update({ formula: { ...field.formula, operations: ops } }); }} className="w-10 text-[8px] bg-transparent border-0 font-bold text-teal-600 cursor-pointer">
+                            <option value="sum">SUM</option><option value="avg">AVG</option><option value="min">MIN</option><option value="max">MAX</option><option value="count">CNT</option>
                           </select>
-                        )}
-                        <button
-                          onClick={() => {
-                            const ops = (field.formula?.operations || []).filter((_: any, i: number) => i !== oi);
-                            update({ formula: { ...field.formula, operations: ops } });
-                          }}
-                          className="text-orange-400 hover:text-red-500"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
+                          <button onClick={() => { const ops = (field.formula?.operations || []).filter((_: any, i: number) => i !== oi); update({ formula: { ...field.formula, operations: ops } }); }} className="text-teal-400 hover:text-red-500 ml-0.5">×</button>
+                        </span>
+                      );
+                    }
+                    if (op.fieldId === '__constant') {
+                      return (
+                        <span key={'op-' + oi} className="inline-flex items-center bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-[9px] font-bold text-gray-700 dark:text-gray-300">
+                          <input type="number" value={op.constantValue ?? ''} onChange={e => { const ops = [...(field.formula?.operations || [])]; ops[oi] = { ...ops[oi], constantValue: parseFloat(e.target.value) || 0 }; update({ formula: { ...field.formula, operations: ops } }); }} className="w-10 bg-transparent border-0 text-[9px] font-bold text-center" placeholder="0" />
+                          <button onClick={() => { const ops = (field.formula?.operations || []).filter((_: any, i: number) => i !== oi); update({ formula: { ...field.formula, operations: ops } }); }} className="text-gray-400 hover:text-red-500 ml-0.5">×</button>
+                        </span>
+                      );
+                    }
+                    return (
+                      <span key={'op-' + oi} className="inline-flex items-center bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded text-[9px] font-bold">
+                        {allFields.find(f => f.columnId === op.fieldId)?.label || 'Unknown'}
+                        <button onClick={() => { const ops = (field.formula?.operations || []).filter((_: any, i: number) => i !== oi); update({ formula: { ...field.formula, operations: ops } }); }} className="text-blue-400 hover:text-red-500 ml-1">×</button>
+                      </span>
                     );
                   })}
                 </div>
 
-                <button
-                  onClick={() => {
-                    const ops = [...(field.formula?.operations || []), { fieldId: '', operator: '+', type: 'field' }];
+                {/* Operator buttons */}
+                <div className="flex items-center space-x-1">
+                  <span className="text-[8px] text-gray-400 mr-1">Operators:</span>
+                  {[{ label: '+', value: '+' }, { label: '−', value: '-' }, { label: '×', value: '*' }, { label: '÷', value: '/' }].map(op => (
+                    <button key={op.value} onClick={() => {
+                      const ops = [...(field.formula?.operations || [])];
+                      if (ops.length === 0) return;
+                      ops.push({ fieldId: '', operator: op.value, type: 'field' });
+                      update({ formula: { ...field.formula, operations: ops } });
+                    }} className="w-6 h-6 text-[11px] font-bold rounded bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 hover:bg-orange-200 disabled:opacity-30" disabled={(field.formula?.operations || []).length === 0}>
+                      {op.label}
+                    </button>
+                  ))}
+                  <button onClick={() => {
+                    const ops = [...(field.formula?.operations || [])];
+                    if (ops.length === 0) return;
+                    ops.push({ fieldId: '__constant', operator: '+', type: 'field', constantValue: 0 });
                     update({ formula: { ...field.formula, operations: ops } });
-                  }}
-                  className="text-[9px] text-orange-600 dark:text-orange-400 hover:text-orange-800 font-medium"
-                >
-                  + Add operand
-                </button>
+                  }} className="px-1.5 h-6 text-[8px] font-bold rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 disabled:opacity-30" disabled={(field.formula?.operations || []).length === 0}>
+                    123
+                  </button>
+                </div>
+
+                {/* Dynamic content — clickable columns */}
+                <div>
+                  <span className="text-[8px] font-bold text-gray-400 uppercase">Dynamic Content</span>
+                  <div className="mt-1 flex flex-wrap gap-1 max-h-28 overflow-y-auto">
+                    {allFields
+                      .filter(f => f.columnId !== field.columnId && ['number', 'currency', 'percent', 'rating'].includes(f.columnType || ''))
+                      .map(f => (
+                        <button key={f.columnId} onClick={() => {
+                          const ops = [...(field.formula?.operations || [])];
+                          if (ops.length > 0 && ops[ops.length - 1].fieldId !== '' && ops[ops.length - 1].fieldId !== '__constant' && ops[ops.length - 1].type !== 'rg_aggregate') {
+                            ops.push({ fieldId: f.columnId, operator: '+', type: 'field' });
+                          } else if (ops.length > 0 && (ops[ops.length - 1].fieldId === '' || ops[ops.length - 1].fieldId === undefined)) {
+                            ops[ops.length - 1] = { ...ops[ops.length - 1], fieldId: f.columnId, type: 'field' };
+                          } else {
+                            ops.push({ fieldId: f.columnId, operator: '+', type: 'field' });
+                          }
+                          update({ formula: { ...field.formula, operations: ops } });
+                        }} className="px-2 py-1 text-[9px] font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
+                          {f.label}
+                        </button>
+                      ))}
+                    {/* Calculated fields */}
+                    {allFields
+                      .filter(f => f.columnId !== field.columnId && (f.type === 'calculated' || f.calculated))
+                      .map(f => (
+                        <button key={f.columnId} onClick={() => {
+                          const ops = [...(field.formula?.operations || [])];
+                          if (ops.length > 0 && ops[ops.length - 1].fieldId !== '' && ops[ops.length - 1].fieldId !== '__constant' && ops[ops.length - 1].type !== 'rg_aggregate') {
+                            ops.push({ fieldId: f.columnId, operator: '+', type: 'field' });
+                          } else if (ops.length > 0 && (ops[ops.length - 1].fieldId === '' || ops[ops.length - 1].fieldId === undefined)) {
+                            ops[ops.length - 1] = { ...ops[ops.length - 1], fieldId: f.columnId, type: 'field' };
+                          } else {
+                            ops.push({ fieldId: f.columnId, operator: '+', type: 'field' });
+                          }
+                          update({ formula: { ...field.formula, operations: ops } });
+                        }} className="px-2 py-1 text-[9px] font-medium bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800 rounded hover:bg-orange-100 transition-colors">
+                          ƒ {f.label}
+                        </button>
+                      ))}
+                  </div>
+                  {/* Repeating group aggregates */}
+                  {rgAggregateOptions.length > 0 && (
+                    <div className="mt-2">
+                      <span className="text-[8px] font-bold text-teal-500 uppercase">Repeating Group Totals</span>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {rgAggregateOptions.map(rga => (
+                          <button key={rga.value} onClick={() => {
+                            const ops = [...(field.formula?.operations || [])];
+                            const newOp = { type: 'rg_aggregate', rgFieldId: rga.rgFieldId, columnName: rga.columnName, aggregation: 'sum', operator: '+' };
+                            if (ops.length > 0 && (ops[ops.length - 1].fieldId === '' || ops[ops.length - 1].fieldId === undefined) && ops[ops.length - 1].type !== 'rg_aggregate') {
+                              ops[ops.length - 1] = { ...ops[ops.length - 1], ...newOp };
+                            } else {
+                              ops.push(newOp);
+                            }
+                            update({ formula: { ...field.formula, operations: ops } });
+                          }} className="px-2 py-1 text-[9px] font-medium bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800 rounded hover:bg-teal-100 transition-colors">
+                            Σ {rga.columnName}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* Display format */}
                 <div className="space-y-1.5 pt-2 border-t border-orange-200 dark:border-orange-700">
@@ -253,23 +294,13 @@ export function FormFieldSettings({
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="block text-[9px] text-orange-500 mb-0.5">Prefix</label>
-                      <input
-                        type="text"
-                        value={field.formula?.prefix || ''}
-                        onChange={e => update({ formula: { ...field.formula, prefix: e.target.value } })}
-                        placeholder="$"
-                        className="w-full px-2 py-1 text-[10px] border border-orange-300 dark:border-orange-700 rounded bg-white dark:bg-gray-800 dark:text-gray-200"
-                      />
+                      <input type="text" value={field.formula?.prefix || ''} onChange={e => update({ formula: { ...field.formula, prefix: e.target.value } })} placeholder="$"
+                        className="w-full px-2 py-1 text-[10px] border border-orange-300 dark:border-orange-700 rounded bg-white dark:bg-gray-800 dark:text-gray-200" />
                     </div>
                     <div>
                       <label className="block text-[9px] text-orange-500 mb-0.5">Decimals</label>
-                      <input
-                        type="number"
-                        value={field.formula?.decimals ?? 2}
-                        onChange={e => update({ formula: { ...field.formula, decimals: parseInt(e.target.value) || 0 } })}
-                        min="0" max="6"
-                        className="w-full px-2 py-1 text-[10px] border border-orange-300 dark:border-orange-700 rounded bg-white dark:bg-gray-800 dark:text-gray-200"
-                      />
+                      <input type="number" value={field.formula?.decimals ?? 2} onChange={e => update({ formula: { ...field.formula, decimals: parseInt(e.target.value) || 0 } })} min="0" max="6"
+                        className="w-full px-2 py-1 text-[10px] border border-orange-300 dark:border-orange-700 rounded bg-white dark:bg-gray-800 dark:text-gray-200" />
                     </div>
                   </div>
                 </div>

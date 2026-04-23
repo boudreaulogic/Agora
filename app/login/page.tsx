@@ -3,7 +3,6 @@ import { auth, signIn } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import { LoginForm } from './LoginForm';
-
 export default async function LoginPage({
   searchParams,
 }: {
@@ -14,20 +13,26 @@ export default async function LoginPage({
   if (userCount === 0) {
     redirect('/setup');
   }
-
   const session = await auth();
   
   if (session?.user) {
     redirect('/');
   }
-
   async function handleLogin(formData: FormData) {
     'use server';
     try {
+      const email = formData.get('email') as string;
+      
+      // Check if user has MFA enabled before signing in
+      const user = await db.user.findUnique({
+        where: { email },
+        select: { mfaEnabled: true },
+      });
+      
       await signIn('credentials', {
-        email: formData.get('email'),
+        email: email,
         password: formData.get('password'),
-        redirectTo: '/',
+        redirectTo: user?.mfaEnabled ? '/verify-mfa' : '/',
       });
     } catch (error: any) {
       if (error?.message?.includes('NEXT_REDIRECT')) throw error;
@@ -41,7 +46,6 @@ export default async function LoginPage({
       redirect('/login?error=CredentialsSignin');
     }
   }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 px-4 [&_input]:!text-gray-900 [&_input]:![-webkit-text-fill-color:rgb(17,24,39)]">
       <div className="max-w-md w-full">
@@ -56,7 +60,6 @@ export default async function LoginPage({
           <h1 className="text-3xl font-bold text-gray-900">Welcome to Agora</h1>
           <p className="text-sm text-gray-500 mt-1">Sign in to manage your data</p>
         </div>
-
         {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
           <LoginForm
@@ -64,7 +67,6 @@ export default async function LoginPage({
             action={handleLogin}
           />
         </div>
-
         {/* Footer */}
         <div className="mt-6 text-center text-xs text-gray-400">
           <p>Your data, your way. Secure and self-hosted.</p>

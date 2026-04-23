@@ -20,6 +20,7 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
   var safs = useState(false); var showAddField = safs[0]; var setShowAddField = safs[1];
   var fss = useState(''); var fieldSearch = fss[0]; var setFieldSearch = fss[1];
   var srgss = useState(false); var showRepeatingGroupSetup = srgss[0]; var setShowRepeatingGroupSetup = srgss[1];
+  var ergis = useState<number | null>(null); var editingRgIndex = ergis[0]; var setEditingRgIndex = ergis[1];
   var rms = useState<'choose'|'manual'|'auto'>('choose'); var rgMode = rms[0]; var setRgMode = rms[1];
   var rls = useState('Line Items'); var rgLabel = rls[0]; var setRgLabel = rls[1];
   var rmrs = useState(5); var rgMaxRows = rmrs[0]; var setRgMaxRows = rmrs[1];
@@ -39,7 +40,26 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
   function addSectionHeader() { setFields(function(prev) { return prev.concat([{ columnId: 'section_' + Date.now(), label: 'Section Header', type: 'section_header', visible: true, required: false, order: prev.length, description: '', pageId: activePageId }]); }); }
   function addDivider() { setFields(function(prev) { return prev.concat([{ columnId: 'divider_' + Date.now(), label: '', type: 'divider', visible: true, required: false, order: prev.length, pageId: activePageId }]); }); }
 
-  function openRepeatingGroupSetup() { setRgMode('choose'); setRgLabel('Line Items'); setRgMaxRows(5); setRgDefaultVisible(1); setManualSlots([]); setManualRows([]); setRgColumnsPerRow([]); setRgRowCount(5); setRgColumnSearch(''); setShowRepeatingGroupSetup(true); }
+  function openRepeatingGroupSetup(existingFieldIndex?: number) {
+    if (existingFieldIndex !== undefined) {
+      var ef = fields[existingFieldIndex];
+      setEditingRgIndex(existingFieldIndex);
+      setRgMode('manual');
+      setRgLabel(ef.label || 'Line Items');
+      setRgDefaultVisible(ef.defaultVisibleRows || 1);
+      setManualSlots((ef.columnsPerRow || []).slice());
+      setManualRows((ef.rows || []).map(function(r: any) { return (r.fields || []).slice(); }));
+    } else {
+      setEditingRgIndex(null);
+      setRgMode('choose');
+      setRgLabel('Line Items');
+      setRgDefaultVisible(1);
+      setManualSlots([]);
+      setManualRows([]);
+    }
+    setRgMaxRows(5); setRgColumnsPerRow([]); setRgRowCount(5); setRgColumnSearch('');
+    setShowRepeatingGroupSetup(true);
+  }
 
   function addManualRepeatingGroup() {
     if (manualSlots.length === 0 || manualRows.length === 0) return;
@@ -47,18 +67,42 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
     var rows = manualRows.map(function(rowCols, ri) {
       return { rowNum: ri + 1, fields: rowCols, labels: rowCols.map(function(cid) { var col = tableColumns.find(function(c) { return c.id === cid; }); return col ? col.name : cid; }) };
     });
-    setFields(function(prev) { return prev.concat([{ columnId: 'rg_' + Date.now(), label: rgLabel, type: 'repeating_group', rgType: 'mapped', visible: true, required: false, order: prev.length, pageId: activePageId, defaultVisibleRows: rgDefaultVisible, columnsPerRow: colNames, rows: rows, columnFormulas: {}, rgRequireMode: 'none', rgRequiredColumns: [] }]); });
+    if (editingRgIndex !== null) {
+      var existing = fields[editingRgIndex];
+      setFields(function(prev) { return prev.map(function(f, i) {
+        if (i !== editingRgIndex) return f;
+        return Object.assign({}, f, { label: rgLabel, defaultVisibleRows: rgDefaultVisible, columnsPerRow: colNames, rows: rows });
+      }); });
+      setEditingRgIndex(null);
+    } else {
+      setFields(function(prev) { return prev.concat([{ columnId: 'rg_' + Date.now(), label: rgLabel, type: 'repeating_group', rgType: 'mapped', visible: true, required: false, order: prev.length, pageId: activePageId, defaultVisibleRows: rgDefaultVisible, columnsPerRow: colNames, rows: rows, columnFormulas: {}, rgRequireMode: 'none', rgRequiredColumns: [] }]); });
+    }
     setShowRepeatingGroupSetup(false);
   }
 
   function addAutoRepeatingGroup() {
     if (rgColumnsPerRow.length === 0) return;
-    var amc = tableColumns.filter(function(c) { var bn = c.name.replace(/^Line\s+\d+\s+/i, '').trim(); return rgColumnsPerRow.includes(bn); });
-    var rows: any[] = []; var grouped: Record<string, any[]> = {};
-    amc.forEach(function(c) { var m = c.name.match(/^Line\s+(\d+)\s+/i); if (m) { if (!grouped[m[1]]) grouped[m[1]] = []; grouped[m[1]].push(c); } });
+    var grouped: Record<string, any[]> = {};
+    tableColumns.forEach(function(c) {
+      var m = c.name.match(/^(.+?)\s+(\d+)\s+(.+)$/);
+      if (m && rgColumnsPerRow.includes(m[3].trim())) {
+        var num = m[2];
+        if (!grouped[num]) grouped[num] = [];
+        grouped[num].push(c);
+      }
+    });
     var sk = Object.keys(grouped).sort(function(a, b) { return parseInt(a) - parseInt(b); });
     var mr = Math.min(sk.length, rgRowCount);
-    for (var i = 0; i < mr; i++) { var cs = grouped[sk[i]]; cs.sort(function(a: any, b: any) { return rgColumnsPerRow.indexOf(a.name.replace(/^Line\s+\d+\s+/i, '').trim()) - rgColumnsPerRow.indexOf(b.name.replace(/^Line\s+\d+\s+/i, '').trim()); }); rows.push({ rowNum: i + 1, fields: cs.map(function(c: any) { return c.id; }), labels: cs.map(function(c: any) { return c.name; }) }); }
+    var rows: any[] = [];
+    for (var i = 0; i < mr; i++) {
+      var cs = grouped[sk[i]];
+      cs.sort(function(a: any, b: any) {
+        var aBase = a.name.match(/^(.+?)\s+\d+\s+(.+)$/);
+        var bBase = b.name.match(/^(.+?)\s+\d+\s+(.+)$/);
+        return rgColumnsPerRow.indexOf(aBase ? aBase[2].trim() : '') - rgColumnsPerRow.indexOf(bBase ? bBase[2].trim() : '');
+      });
+      rows.push({ rowNum: i + 1, fields: cs.map(function(c: any) { return c.id; }), labels: cs.map(function(c: any) { return c.name; }) });
+    }
     setFields(function(prev) { return prev.concat([{ columnId: 'rg_' + Date.now(), label: rgLabel, type: 'repeating_group', rgType: 'mapped', visible: true, required: false, order: prev.length, pageId: activePageId, defaultVisibleRows: rgDefaultVisible, columnsPerRow: rgColumnsPerRow, rows: rows, columnFormulas: {}, rgRequireMode: 'none', rgRequiredColumns: [] }]); });
     setShowRepeatingGroupSetup(false);
   }
@@ -73,11 +117,39 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
   function addCalculatedField() { setFields(function(prev) { return prev.concat([{ columnId: 'calc_' + Date.now(), label: 'Total', type: 'calculated', columnType: 'calculated', visible: true, required: false, order: prev.length, pageId: activePageId, formula: { operations: [], format: 'number', decimals: 2, prefix: '', suffix: '' } }]); }); }
   function addColumnField(column: any) { setFields(function(prev) { return prev.concat([{ columnId: column.id, label: column.name, columnType: column.type, settings: column.settings || {}, required: column.required || column.settings?.required || false, placeholder: '', order: prev.length, visible: true, pageId: activePageId }]); }); setShowAddField(false); }
 
-  var skipTypes = ['formula', 'lookup', 'rollup', 'linked_record'];
+  var skipTypes = ['lookup', 'rollup', 'linked_record'];
   var rgColIds = new Set(fields.filter(function(f) { return f.type === 'repeating_group'; }).flatMap(function(f: any) { return (f.rows || []).flatMap(function(r: any) { return r.fields || []; }); }));
   var existIds = new Set(fields.map(function(f) { return f.columnId; }).concat(Array.from(rgColIds)));
   var availableColumns = tableColumns.filter(function(c) { return !skipTypes.includes(c.type) && !existIds.has(c.id); });
-  var hasLinePattern = tableColumns.some(function(c) { return /^Line\s+\d+\s+/i.test(c.name); });
+  // Smart detection: find any "Word Number BaseName" patterns (Item 1 Qty, Line 2 Total, etc.)
+  function detectRepeatingPatterns() {
+    var parsed: { col: any; prefix: string; num: number; baseName: string }[] = [];
+    tableColumns.forEach(function(c) {
+      var m = c.name.match(/^(.+?)\s+(\d+)\s+(.+)$/);
+      if (m) parsed.push({ col: c, prefix: m[1].trim(), num: parseInt(m[2]), baseName: m[3].trim() });
+    });
+    // Group by prefix+baseName — only keep patterns that appear 2+ times
+    var groups: Record<string, typeof parsed> = {};
+    parsed.forEach(function(p) {
+      var key = p.prefix + ' _ ' + p.baseName;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(p);
+    });
+    var baseNames: string[] = [];
+    var prefix = '';
+    var rowNums = new Set<number>();
+    Object.keys(groups).forEach(function(key) {
+      if (groups[key].length >= 2) {
+        var p = groups[key][0];
+        prefix = p.prefix;
+        baseNames.push(p.baseName);
+        groups[key].forEach(function(x) { rowNums.add(x.num); });
+      }
+    });
+    return { baseNames: baseNames, prefix: prefix, rowNums: Array.from(rowNums).sort(function(a, b) { return a - b; }), hasPattern: baseNames.length > 0 };
+  }
+  var detectedPattern = detectRepeatingPatterns();
+  var hasLinePattern = detectedPattern.hasPattern;
 
   function addPage() { var nid = 'page_' + Date.now(); setPages(function(prev) { return prev.concat([{ id: nid, title: 'Page ' + (prev.length + 1), description: '' }]); }); setActivePageId(nid); }
   function removePage(pid: string) { if (pages.length <= 1) return; if (!confirm('Delete this page? Fields will be moved to the first page.')) return; var fp = pages.find(function(p) { return p.id !== pid; })?.id; setFields(function(prev) { return prev.map(function(f) { return f.pageId === pid ? Object.assign({}, f, { pageId: fp }) : f; }); }); setPages(function(prev) { return prev.filter(function(p) { return p.id !== pid; }); }); if (activePageId === pid) setActivePageId(fp!); }
@@ -117,7 +189,7 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
           </div>
           <button onClick={addSectionHeader} className="text-[9px] px-2 py-0.5 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded hover:bg-purple-100">+ Section</button>
           <button onClick={addDivider} className="text-[9px] px-2 py-0.5 bg-gray-50 dark:bg-gray-800 text-gray-500 rounded hover:bg-gray-100">+ Divider</button>
-          <button onClick={openRepeatingGroupSetup} className="text-[9px] px-2 py-0.5 bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 rounded hover:bg-teal-100">+ Repeat Group</button>
+          <button onClick={function() { openRepeatingGroupSetup(); }} className="text-[9px] px-2 py-0.5 bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 rounded hover:bg-teal-100">+ Repeat Group</button>
         </div>
         {/* Field list */}
         <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
@@ -128,7 +200,7 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
               var hf = field.columnFormulas && Object.keys(field.columnFormulas).length > 0;
               var cn = (field.columnsPerRow || []);
               var ri = ((field.rows?.length || 0) + ' rows');
-              return (<div key={field.columnId || gi} onClick={function() { setActiveFieldIndex(gi); setShowFieldSettings(false); setShowRgSettings(false); }} className={'px-2.5 py-2 rounded cursor-pointer transition-colors border-l-4 border-teal-400 ' + (isActive ? 'bg-teal-50 dark:bg-teal-900/20 ring-1 ring-teal-300' : 'hover:bg-gray-50 dark:hover:bg-gray-800')}><div className="flex items-center justify-between"><div className="flex items-center space-x-1.5"><div className="flex flex-col mr-1 space-y-0.5"><button onClick={function(e) { e.stopPropagation(); moveField(gi, 'up'); }} className="text-gray-300 hover:text-gray-500"><svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg></button><button onClick={function(e) { e.stopPropagation(); moveField(gi, 'down'); }} className="text-gray-300 hover:text-gray-500"><svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></button></div><span className="text-xs font-bold text-teal-700 dark:text-teal-400">{field.label}</span><span className="text-[8px] font-bold px-1 rounded bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400">REPEAT</span>{hf && <span className="text-[8px] font-bold px-1 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400">f</span>}</div><div className="flex items-center space-x-1">{isActive && (<button onClick={function(e) { e.stopPropagation(); setShowRgSettings(true); setShowFieldSettings(false); }} className="text-[9px] px-1.5 py-0.5 bg-teal-600 text-white rounded hover:bg-teal-700">Settings</button>)}<button onClick={function(e) { e.stopPropagation(); removeField(gi); }} className="text-gray-300 hover:text-red-500"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button></div></div><div className="mt-1 text-[9px] text-gray-400">{cn.join(', ')} | {ri}, {field.defaultVisibleRows} visible</div></div>);
+              return (<div key={field.columnId || gi} onClick={function() { setActiveFieldIndex(gi); setShowFieldSettings(false); setShowRgSettings(false); }} className={'px-2.5 py-2 rounded cursor-pointer transition-colors border-l-4 border-teal-400 ' + (isActive ? 'bg-teal-50 dark:bg-teal-900/20 ring-1 ring-teal-300' : 'hover:bg-gray-50 dark:hover:bg-gray-800')}><div className="flex items-center justify-between"><div className="flex items-center space-x-1.5"><div className="flex flex-col mr-1 space-y-0.5"><button onClick={function(e) { e.stopPropagation(); moveField(gi, 'up'); }} className="text-gray-300 hover:text-gray-500"><svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg></button><button onClick={function(e) { e.stopPropagation(); moveField(gi, 'down'); }} className="text-gray-300 hover:text-gray-500"><svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></button></div><span className="text-xs font-bold text-teal-700 dark:text-teal-400">{field.label}</span><span className="text-[8px] font-bold px-1 rounded bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400">REPEAT</span>{hf && <span className="text-[8px] font-bold px-1 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400">f</span>}</div><div className="flex items-center space-x-1">{isActive && (<><button onClick={function(e) { e.stopPropagation(); openRepeatingGroupSetup(gi); }} className="text-[9px] px-1.5 py-0.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded hover:bg-teal-200">Edit</button><button onClick={function(e) { e.stopPropagation(); setShowRgSettings(true); setShowFieldSettings(false); }} className="text-[9px] px-1.5 py-0.5 bg-teal-600 text-white rounded hover:bg-teal-700">Settings</button></>)}<button onClick={function(e) { e.stopPropagation(); removeField(gi); }} className="text-gray-300 hover:text-red-500"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button></div></div><div className="mt-1 text-[9px] text-gray-400">{cn.join(', ')} | {ri}, {field.defaultVisibleRows} visible</div></div>);
             }
             if (isDivider) { return (<div key={field.columnId || gi} onClick={function() { setActiveFieldIndex(gi); setShowFieldSettings(false); setShowRgSettings(false); }} className={'flex items-center px-3 py-1.5 rounded cursor-pointer transition-colors ' + (isActive ? 'bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-300' : 'hover:bg-gray-50 dark:hover:bg-gray-800')}><div className="flex flex-col mr-1.5 space-y-0.5"><button onClick={function(e) { e.stopPropagation(); moveField(gi, 'up'); }} className="text-gray-300 hover:text-gray-500"><svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg></button><button onClick={function(e) { e.stopPropagation(); moveField(gi, 'down'); }} className="text-gray-300 hover:text-gray-500"><svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></button></div><div className="flex-1 border-b border-gray-300 dark:border-gray-600" /><span className="text-[9px] text-gray-400 mx-2">divider</span><div className="flex-1 border-b border-gray-300 dark:border-gray-600" /><button onClick={function(e) { e.stopPropagation(); removeField(gi); }} className="ml-1 text-gray-400 hover:text-red-500"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button></div>); }
             return (<div key={field.columnId || gi} onClick={function() { setActiveFieldIndex(gi); setShowFieldSettings(false); setShowRgSettings(false); }} className={'flex items-center px-2.5 py-2 rounded cursor-pointer transition-colors ' + (isActive ? 'bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-300 dark:ring-blue-700' : field.visible === false ? 'opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800' : 'hover:bg-gray-50 dark:hover:bg-gray-800')}><div className="flex flex-col mr-1.5 space-y-0.5"><button onClick={function(e) { e.stopPropagation(); moveField(gi, 'up'); }} className="text-gray-300 hover:text-gray-500"><svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg></button><button onClick={function(e) { e.stopPropagation(); moveField(gi, 'down'); }} className="text-gray-300 hover:text-gray-500"><svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></button></div><div className="flex-1 min-w-0"><div className="flex items-center space-x-1.5"><span className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{isSection ? '\u00A7 ' : ''}{field.label}</span>{badges.map(function(b, bi) { return <span key={bi} className={'text-[8px] font-bold px-1 rounded ' + b.color}>{b.label}</span>; })}</div>{!isSection && field.columnType && <span className="text-[9px] text-gray-400">{field.type === 'calculated' ? 'f calculated' : field.columnType}</span>}</div><div className="flex items-center space-x-1 ml-1">{isActive && (<button onClick={function(e) { e.stopPropagation(); setShowFieldSettings(true); setShowRgSettings(false); }} className="text-[9px] px-1.5 py-0.5 bg-blue-600 text-white rounded hover:bg-blue-700">Settings</button>)}<button onClick={function(e) { e.stopPropagation(); updateField(gi, { visible: field.visible === false ? true : false }); }} className={'text-[10px] ' + (field.visible !== false ? 'text-green-500' : 'text-gray-300')}>{field.visible !== false ? '\u25C9' : '\u25CB'}</button><button onClick={function(e) { e.stopPropagation(); removeField(gi); }} className="text-gray-300 hover:text-red-500"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button></div></div>);
@@ -152,7 +224,7 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={function() { setShowRepeatingGroupSetup(false); }}>
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-4 max-h-[85vh] overflow-y-auto" onClick={function(e) { e.stopPropagation(); }}>
             {rgMode === 'choose' && (<>
-              <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Create Repeating Group</h3>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{editingRgIndex !== null ? 'Edit Repeating Group' : 'Create Repeating Group'}</h3>
               <p className="text-[10px] text-gray-500">Choose how to assign columns to your repeating rows.</p>
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={function() { setRgMode('manual'); setManualSlots([]); setManualRows([]); }} className="p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-teal-400 dark:hover:border-teal-600 transition-colors text-left space-y-2">
@@ -161,8 +233,8 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
                 </button>
                 <button onClick={function() { if (hasLinePattern) setRgMode('auto'); }} className={'p-4 rounded-xl border-2 transition-colors text-left space-y-2 ' + (hasLinePattern ? 'border-gray-200 dark:border-gray-700 hover:border-blue-400' : 'border-gray-100 dark:border-gray-800 opacity-50 cursor-not-allowed')}>
                   <div className="flex items-center space-x-2"><span className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold">{'\u26A1'}</span><span className="text-xs font-bold text-gray-900 dark:text-gray-100">Auto-Detect</span></div>
-                  <p className="text-[10px] text-gray-500">Auto-detect Line 1, Line 2... patterns from your table.</p>
-                  {!hasLinePattern && <p className="text-[9px] text-gray-400">No Line N patterns found</p>}
+                  <p className="text-[10px] text-gray-500">{hasLinePattern ? 'Found "' + detectedPattern.prefix + '" pattern with ' + detectedPattern.rowNums.length + ' sets' : 'Auto-detect repeating patterns from your table.'}</p>
+                  {!hasLinePattern && <p className="text-[9px] text-gray-400">No repeating patterns found (e.g. Item 1, Line 1...)</p>}
                 </button>
               </div>
               <div className="flex justify-end pt-2"><button onClick={function() { setShowRepeatingGroupSetup(false); }} className="px-4 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button></div>
@@ -229,7 +301,7 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
 
               <div className="flex justify-end space-x-2 pt-2">
                 <button onClick={function() { setShowRepeatingGroupSetup(false); }} className="px-4 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
-                <button onClick={addManualRepeatingGroup} disabled={manualSlots.length === 0 || manualRows.length === 0} className="px-4 py-1.5 text-xs bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 font-medium">Create Group</button>
+                <button onClick={addManualRepeatingGroup} disabled={manualSlots.length === 0 || manualRows.length === 0} className="px-4 py-1.5 text-xs bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 font-medium">{editingRgIndex !== null ? 'Update Group' : 'Create Group'}</button>
               </div>
             </>)}
 
@@ -240,7 +312,7 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
               <div>
                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Select Column Pattern</label>
                 <input type="text" value={rgColumnSearch} onChange={function(e) { setRgColumnSearch(e.target.value); }} placeholder="Search..." className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-600 rounded mb-2 bg-white dark:bg-gray-800 dark:text-gray-200" />
-                <div className="max-h-32 overflow-y-auto space-y-1">{(function() { var bn = new Set<string>(); tableColumns.forEach(function(c) { var m = c.name.match(/^Line\s+\d+\s+(.+)/i); if (m) bn.add(m[1].trim()); }); return Array.from(bn).filter(function(n) { return n.toLowerCase().includes(rgColumnSearch.toLowerCase()); }).map(function(baseName) { return (<label key={baseName} className="flex items-center space-x-2 px-2 py-1 rounded hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"><input type="checkbox" checked={rgColumnsPerRow.includes(baseName)} onChange={function(e) { if (e.target.checked) setRgColumnsPerRow(function(p) { return p.concat([baseName]); }); else setRgColumnsPerRow(function(p) { return p.filter(function(n) { return n !== baseName; }); }); }} className="w-3.5 h-3.5 rounded border-gray-300 text-teal-600" /><span className="text-xs text-gray-700 dark:text-gray-300">{baseName}</span></label>); }); })()}</div>
+                <div className="max-h-32 overflow-y-auto space-y-1">{detectedPattern.baseNames.filter(function(n) { return n.toLowerCase().includes(rgColumnSearch.toLowerCase()); }).map(function(baseName) { var count = tableColumns.filter(function(c) { var m = c.name.match(/^(.+?)\s+(\d+)\s+(.+)$/); return m && m[3].trim() === baseName; }).length; return (<label key={baseName} className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer border border-gray-100 dark:border-gray-700"><div className="flex items-center space-x-2"><input type="checkbox" checked={rgColumnsPerRow.includes(baseName)} onChange={function(e) { if (e.target.checked) setRgColumnsPerRow(function(p) { return p.concat([baseName]); }); else setRgColumnsPerRow(function(p) { return p.filter(function(n) { return n !== baseName; }); }); }} className="w-3.5 h-3.5 rounded border-gray-300 text-teal-600" /><span className="text-xs text-gray-700 dark:text-gray-300">{baseName}</span></div><span className="text-[9px] text-gray-400">{count} found</span></label>); })}</div>
                 {rgColumnsPerRow.length > 0 && (<div className="mt-2 flex flex-wrap gap-1">{rgColumnsPerRow.map(function(n) { return <span key={n} className="text-[9px] px-2 py-0.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded-full">{n}</span>; })}</div>)}
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -271,12 +343,12 @@ function RgSettingsPanel({ field, fieldIndex, tableColumns, onUpdate, onClose }:
     if (newCount < cc) { updateRg({ rows: cr.slice(0, newCount) }); return; }
     var nr = cr.slice(); var cpr = field.columnsPerRow || []; var grouped: Record<string, any[]> = {};
     tableColumns.forEach(function(c) { var m = c.name.match(/^Line\s+(\d+)\s+/i); if (m) { var bn = c.name.replace(/^Line\s+\d+\s+/i, '').trim(); if (cpr.includes(bn)) { if (!grouped[m[1]]) grouped[m[1]] = []; grouped[m[1]].push(c); } } });
-    var used = new Set<string>(); cr.forEach(function(r: any) { if (r.fields?.[0]) { var col = tableColumns.find(function(c: any) { return c.id === r.fields[0]; }); if (col) { var m = col.name.match(/^Line\s+(\d+)\s+/i); if (m) used.add(m[1]); } } });
+    var used = new Set<string>(); cr.forEach(function(r: any) { if (r.fields?.[0]) { var col = tableColumns.find(function(c: any) { return c.id === r.fields[0]; }); if (col) { var m = col.name.match(/^(.+?)\s+(\d+)\s+(.+)$/); if (m) used.add(m[2]); } } });
     var avail = Object.keys(grouped).filter(function(n) { return !used.has(n); }).sort(function(a, b) { return parseInt(a) - parseInt(b); });
-    var toAdd = newCount - cc; for (var i = 0; i < toAdd && i < avail.length; i++) { var lc = grouped[avail[i]]; lc.sort(function(a: any, b: any) { return cpr.indexOf(a.name.replace(/^Line\s+\d+\s+/i, '').trim()) - cpr.indexOf(b.name.replace(/^Line\s+\d+\s+/i, '').trim()); }); nr.push({ rowNum: cc + i + 1, fields: lc.map(function(c: any) { return c.id; }), labels: lc.map(function(c: any) { return c.name; }) }); }
+    var toAdd = newCount - cc; for (var i = 0; i < toAdd && i < avail.length; i++) { var lc = grouped[avail[i]]; lc.sort(function(a: any, b: any) { var aM = a.name.match(/^(.+?)\s+\d+\s+(.+)$/); var bM = b.name.match(/^(.+?)\s+\d+\s+(.+)$/); return cpr.indexOf(aM ? aM[2].trim() : '') - cpr.indexOf(bM ? bM[2].trim() : ''); }); nr.push({ rowNum: cc + i + 1, fields: lc.map(function(c: any) { return c.id; }), labels: lc.map(function(c: any) { return c.name; }) }); }
     updateRg({ rows: nr });
   }
-  var maxP = 50; var aln = new Set<string>(); tableColumns.forEach(function(c) { var m = c.name.match(/^Line\s+(\d+)\s+/i); if (m) { var bn = c.name.replace(/^Line\s+\d+\s+/i, '').trim(); if (cols.includes(bn)) aln.add(m[1]); } }); if (aln.size > 0) maxP = aln.size;
+  var maxP = 50; var aln = new Set<string>(); tableColumns.forEach(function(c) { var m = c.name.match(/^(.+?)\s+(\d+)\s+(.+)$/); if (m) { var bn = m[3].trim(); if (cols.includes(bn)) aln.add(m[2]); } }); if (aln.size > 0) maxP = aln.size;
   var totalRows = field.rows?.length || 0;
 
   return (

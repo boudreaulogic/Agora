@@ -1,5 +1,7 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimiter';
+import { NextRequest } from 'next/server';
 
 // GET — public form data (no auth)
 export async function GET(
@@ -44,8 +46,18 @@ export async function GET(
       readOnly: field.readOnly || false,
       calculated: field.calculated || false,
       formula: field.formula || null,
-      // Mapped repeating group fields
-      rows: field.rows || undefined,
+      // Mapped repeating group fields — now includes fieldTypes for type-aware rendering
+      rows: (field.rows || []).map(function(row: any) {
+        return {
+          rowNum: row.rowNum,
+          fields: row.fields,
+          labels: row.labels,
+          fieldTypes: (row.fields || []).map(function(fid: string) {
+            var col2 = columns.find(function(c: any) { return c.id === fid; });
+            return col2 ? { type: col2.type, settings: col2.settings || {} } : { type: 'text', settings: {} };
+          }),
+        };
+      }),
       columnsPerRow: field.columnsPerRow || undefined,
       defaultVisibleRows: field.defaultVisibleRows || undefined,
       columnFormulas: field.columnFormulas || undefined,
@@ -72,11 +84,15 @@ export async function GET(
   });
 }
 
-// POST — submit form (no auth)
+// POST — submit form (no auth, rate limited)
 export async function POST(
   request: Request,
   { params }: { params: { slug: string } }
 ) {
+  // Rate limit public form submissions — 20 per minute per IP
+  var rl = checkRateLimit(request as unknown as NextRequest, 'publicForm');
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   const form = await db.agoraForm.findUnique({
     where: { slug: params.slug },
     include: {
@@ -113,13 +129,11 @@ export async function POST(
     if (field.visible === false) continue;
     if (field.type === 'repeating_group') {
       if (field.rgType === 'custom') {
-        // Custom repeating group: store as JSON array in a key matching the group's columnId
         const customData = body[field.columnId];
         if (customData && Array.isArray(customData)) {
           data[field.columnId] = customData;
         }
       } else {
-        // Mapped repeating group: save each sub-field to its real column
         for (const row of (field.rows || [])) {
           for (const fid of (row.fields || [])) {
             if (body[fid] !== undefined && body[fid] !== '') {
@@ -149,11 +163,11 @@ export async function POST(
     },
   });
 
-  // Broadcast new row via WebSocket for live updates
+  // Broadcast new row via WebSocket for live updates (with auth)
   try {
-    const wsMessage = JSON.stringify({
+    var { wsBroadcast } = await import('@/lib/wsBroadcast');
+    wsBroadcast(form.tableId, {
       type: 'form-submission',
-      tableId: form.tableId,
       row: {
         id: row.id,
         tableId: row.tableId,
@@ -166,11 +180,6 @@ export async function POST(
         updatedAt: row.updatedAt,
       },
     });
-    fetch('http://ws-server:3001/broadcast', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: wsMessage,
-    }).catch(() => {});
   } catch {}
 
   // Notify subscribers about form submission

@@ -90,26 +90,71 @@ function RgBlock(props: any) {
   var formulas = field.columnFormulas || {};
   var requiredCols = field.rgRequiredColumns || [];
   var requireMode = field.rgRequireMode || 'none';
+
+  function renderTypedInput(fid: string, colName: string, fieldType: any, value: string, fieldError: string | null) {
+    var type = fieldType?.type || 'text';
+    var settings = fieldType?.settings || {};
+    var baseClass = 'w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent ' + (fieldError ? 'border-red-400 bg-red-50 dark:bg-red-900/10' : 'border-gray-300 dark:border-gray-600');
+    switch (type) {
+      case 'select': {
+        var options = settings.options || [];
+        return (<div key={fid}><select value={value || ''} onChange={function(e) { onFieldChange(fid, e.target.value); }} onBlur={function() { onFieldBlur(fid); }} className={baseClass}><option value="">Select...</option>{options.map(function(o: any) { return <option key={o.value} value={o.value}>{o.label || o.value}</option>; })}</select>{fieldError && <p className="text-[9px] text-red-500 mt-0.5">{fieldError}</p>}</div>);
+      }
+      case 'multi_select': {
+        var msOptions = settings.options || [];
+        var selected = value ? value.split(',') : [];
+        return (<div key={fid}><div className="flex flex-wrap gap-1 p-2 border rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 min-h-[38px]">{msOptions.map(function(o: any) { var checked = selected.includes(o.value); return (<label key={o.value} className={'flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] cursor-pointer ' + (checked ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500')}><input type="checkbox" checked={checked} onChange={function(e) { var newSel = e.target.checked ? selected.concat([o.value]) : selected.filter(function(v: string) { return v !== o.value; }); onFieldChange(fid, newSel.join(',')); }} className="w-3 h-3" /><span>{o.label || o.value}</span></label>); })}</div>{fieldError && <p className="text-[9px] text-red-500 mt-0.5">{fieldError}</p>}</div>);
+      }
+      case 'number':
+        return (<div key={fid}><input type="number" value={value || ''} onChange={function(e) { onFieldChange(fid, e.target.value); }} onBlur={function() { onFieldBlur(fid); }} placeholder={colName || ''} className={baseClass} />{fieldError && <p className="text-[9px] text-red-500 mt-0.5">{fieldError}</p>}</div>);
+      case 'currency':
+        return (<div key={fid}><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-semibold">$</span><input type="number" step="0.01" value={value || ''} onChange={function(e) { onFieldChange(fid, e.target.value); }} onBlur={function() { onFieldBlur(fid); }} placeholder="0.00" className={baseClass + ' pl-7'} /></div>{fieldError && <p className="text-[9px] text-red-500 mt-0.5">{fieldError}</p>}</div>);
+      case 'percent':
+        return (<div key={fid}><div className="relative"><input type="number" min="0" max="100" value={value || ''} onChange={function(e) { onFieldChange(fid, e.target.value); }} onBlur={function() { onFieldBlur(fid); }} placeholder="0" className={baseClass + ' pr-7'} /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-semibold">%</span></div>{fieldError && <p className="text-[9px] text-red-500 mt-0.5">{fieldError}</p>}</div>);
+      case 'date':
+        return (<div key={fid}><input type="date" value={value || ''} onChange={function(e) { onFieldChange(fid, e.target.value); }} onBlur={function() { onFieldBlur(fid); }} className={baseClass} />{fieldError && <p className="text-[9px] text-red-500 mt-0.5">{fieldError}</p>}</div>);
+      case 'datetime':
+        return (<div key={fid}><input type="datetime-local" value={value || ''} onChange={function(e) { onFieldChange(fid, e.target.value); }} onBlur={function() { onFieldBlur(fid); }} className={baseClass} />{fieldError && <p className="text-[9px] text-red-500 mt-0.5">{fieldError}</p>}</div>);
+      case 'checkbox':
+        return (<div key={fid} className="flex items-center py-2"><label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" checked={value === 'true' || String(value) === 'true'} onChange={function(e) { onFieldChange(fid, e.target.checked ? 'true' : 'false'); }} className="w-4 h-4 rounded border-gray-300 text-blue-600" /><span className="text-sm text-gray-700 dark:text-gray-300">Yes</span></label></div>);
+      case 'email':
+        return (<div key={fid}><input type="email" value={value || ''} onChange={function(e) { onFieldChange(fid, e.target.value); }} onBlur={function() { onFieldBlur(fid); }} placeholder="email@example.com" className={baseClass} />{fieldError && <p className="text-[9px] text-red-500 mt-0.5">{fieldError}</p>}</div>);
+      case 'phone':
+        return (<div key={fid}><input type="tel" value={value || ''} onChange={function(e) { onFieldChange(fid, e.target.value); }} onBlur={function() { onFieldBlur(fid); }} placeholder="(555) 123-4567" className={baseClass} />{fieldError && <p className="text-[9px] text-red-500 mt-0.5">{fieldError}</p>}</div>);
+      case 'url':
+        return (<div key={fid}><input type="url" value={value || ''} onChange={function(e) { onFieldChange(fid, e.target.value); }} onBlur={function() { onFieldBlur(fid); }} placeholder="https://..." className={baseClass} />{fieldError && <p className="text-[9px] text-red-500 mt-0.5">{fieldError}</p>}</div>);
+      case 'long_text': case 'textarea':
+        return (<div key={fid}><textarea value={value || ''} onChange={function(e) { onFieldChange(fid, e.target.value); }} onBlur={function() { onFieldBlur(fid); }} placeholder={colName || ''} rows={2} className={baseClass + ' resize-none'} />{fieldError && <p className="text-[9px] text-red-500 mt-0.5">{fieldError}</p>}</div>);
+      case 'rating': {
+        var maxRating = settings.max || 5;
+        var numVal = parseInt(value || '0');
+        return (<div key={fid} className="flex items-center space-x-1 py-1">{Array.from({ length: maxRating }, function(_, i) { return i + 1; }).map(function(n) { return (<button key={n} type="button" onClick={function() { onFieldChange(fid, String(n)); }} className={'w-7 h-7 rounded-full text-sm font-medium transition-colors ' + (numVal >= n ? 'bg-yellow-400 text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200')}>★</button>); })}{numVal > 0 && <button type="button" onClick={function() { onFieldChange(fid, '0'); }} className="text-[9px] text-gray-400 hover:text-red-500 ml-1">✕</button>}</div>);
+      }
+      case 'color':
+        return (<div key={fid} className="flex items-center space-x-2"><input type="color" value={value || '#3B82F6'} onChange={function(e) { onFieldChange(fid, e.target.value); }} className="w-8 h-8 rounded border border-gray-300 cursor-pointer" /><span className="text-xs text-gray-500">{value || '#3B82F6'}</span></div>);
+      case 'formula':
+        return (<div key={fid} className="w-full px-3 py-2 text-sm border-2 border-purple-200 dark:border-purple-800 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 font-medium">{value || '—'}<span className="text-[8px] text-purple-400 ml-2">ƒ formula</span></div>);
+      default:
+        return (<div key={fid}><input type="text" value={value || ''} onChange={function(e) { onFieldChange(fid, e.target.value); }} onBlur={function() { onFieldBlur(fid); }} placeholder={colName || ''} className={baseClass} />{fieldError && <p className="text-[9px] text-red-500 mt-0.5">{fieldError}</p>}</div>);
+    }
+  }
+
   return (
     <div className="border-2 border-teal-200 dark:border-teal-800 rounded-lg p-4 bg-teal-50/30 dark:bg-teal-900/10 space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-sm font-bold text-teal-700 dark:text-teal-400">{field.label}</span>
         <span className="text-xs text-teal-500">{visibleCount} of {maxRows} rows</span>
       </div>
-      <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(' + (cols.length || 1) + ', 1fr)' }}>
-        {cols.map(function(colName: string, ci: number) {
-          var isCalc = !!formulas[colName];
-          var isReq = requiredCols.includes(colName) && requireMode !== 'none';
-          return <span key={ci} className={'text-[10px] font-semibold uppercase ' + (isCalc ? 'text-orange-500' : 'text-gray-500')}>{colName}{isCalc ? ' (auto)' : ''}{isReq ? ' *' : ''}</span>;
-        })}
-      </div>
+     
       {(field.rows || []).slice(0, visibleCount).map(function(row: any, ri: number) {
         return (
-          <div key={ri} className="grid gap-2 items-start" style={{ gridTemplateColumns: 'repeat(' + (cols.length || 1) + ', 1fr)' }}>
+          <div key={ri} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800/50 space-y-3">
+            <div className="text-[10px] font-bold text-teal-600 dark:text-teal-400 uppercase">Row {ri + 1}</div>
             {(row.fields || []).map(function(fid: string, ci: number) {
               var colName = cols[ci];
               var formula = formulas[colName];
               var fieldError = touched[fid] ? errors[fid] : null;
+              var fieldType = row.fieldTypes ? row.fieldTypes[ci] : null;
               if (formula && formula.operations && formula.operations.length > 0) {
                 var calcResult = calcRowFormula(formula, row, cols, values);
                 var prefix = formula.format === 'currency' ? (formula.prefix || '$') : '';
@@ -120,17 +165,16 @@ function RgBlock(props: any) {
                   setTimeout(function() { onCalcUpdate(fid, calcResult !== null ? String(calcResult) : '0'); }, 0);
                 }
                 return (
-                  <div key={fid} className="w-full px-3 py-2 text-sm border-2 border-orange-200 dark:border-orange-800 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 font-semibold">
-                    {prefix}{displayVal}{suffix}
+                  <div key={fid}>
+                    <label className="block text-xs font-medium text-orange-500 mb-1">{colName} (auto)</label>
+                    <div className="w-full px-3 py-2 text-sm border-2 border-orange-200 dark:border-orange-800 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 font-semibold">
+                      {prefix}{displayVal}{suffix}
+                    </div>
                   </div>
                 );
               }
-              return (
-                <div key={fid}>
-                  <input type="text" value={values[fid] || ''} onChange={function(e) { onFieldChange(fid, e.target.value); }} onBlur={function() { onFieldBlur(fid); }} placeholder={colName || ''} className={'w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent ' + (fieldError ? 'border-red-400 bg-red-50 dark:bg-red-900/10' : 'border-gray-300 dark:border-gray-600')} />
-                  {fieldError && <p className="text-[9px] text-red-500 mt-0.5">{fieldError}</p>}
-                </div>
-              );
+              var isReqCol = requiredCols.includes(colName) && requireMode !== 'none';
+              return (<div key={fid}><label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{colName}{isReqCol ? <span className="text-red-500 ml-0.5">*</span> : null}</label>{renderTypedInput(fid, colName, fieldType, values[fid] || '', fieldError)}</div>);
             })}
           </div>
         );
@@ -205,7 +249,7 @@ function CustomRgBlock(props: any) {
         <span className="text-sm font-bold text-teal-700 dark:text-teal-400">{field.label}</span>
         <span className="text-xs text-teal-500">{rows.length} of {maxRows} rows</span>
       </div>
-      <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(' + (cols.length || 1) + ', 1fr)' }}>
+      <div className="grid gap-2" style={{ gridTemplateColumns: cols.map(function(c: string, ci: number) { var ft = (field.rows && field.rows[0] && field.rows[0].fieldTypes) ? field.rows[0].fieldTypes[ci] : null; var t = ft?.type || 'text'; return (t === 'text' || t === 'long_text' || t === 'textarea') ? '2fr' : '1fr'; }).join(' ') }}>
         {cols.map(function(col: any) {
           var isReq = (col.required || reqCols.includes(col.label)) && reqMode !== 'none';
           return <span key={col.id} className="text-[10px] font-semibold uppercase text-gray-500">{col.label}{isReq ? ' *' : ''}</span>;
@@ -213,7 +257,8 @@ function CustomRgBlock(props: any) {
       </div>
       {rows.map(function(row: any, ri: number) {
         return (
-          <div key={ri} className="grid gap-2 items-start" style={{ gridTemplateColumns: 'repeat(' + (cols.length || 1) + ', 1fr)' }}>
+          <div key={ri} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-800/50 space-y-2">
+            <div className="text-[10px] font-bold text-teal-600 dark:text-teal-400 uppercase">Row {ri + 1}</div>
             {cols.map(function(col: any) { return renderCustomInput(col, row[col.id], ri); })}
           </div>
         );
@@ -277,7 +322,6 @@ export default function PublicFormPage(pageProps: any) {
           if (field.type === 'repeating_group') {
             rgInit[field.columnId] = field.defaultVisibleRows || 1;
             if (field.rgType === 'custom') {
-              // Custom RG: init with defaultVisibleRows empty row objects
               var defRows = field.defaultVisibleRows || 1;
               var emptyRows: any[] = [];
               for (var dr = 0; dr < defRows; dr++) {
@@ -341,17 +385,13 @@ export default function PublicFormPage(pageProps: any) {
       var err = validateField(field, values[field.columnId]);
       if (err) newErrors[field.columnId] = err;
     });
-
-    // Validate repeating group required fields
     var rgFields = getVisibleFieldsForPage(pageIndex).filter(function(f: any) { return f.type === 'repeating_group'; });
     rgFields.forEach(function(rgField: any) {
       var mode = rgField.rgRequireMode;
       if (!mode || mode === 'none') return;
       var requiredCols = rgField.rgRequiredColumns || [];
       if (requiredCols.length === 0 && !(rgField.rgType === 'custom')) return;
-
       if (rgField.rgType === 'custom') {
-        // Custom RG validation
         var cRows = customRgData[rgField.columnId] || [];
         var customCols = rgField.customColumns || [];
         var cMaxRow = mode === 'first' ? 1 : cRows.length;
@@ -367,7 +407,6 @@ export default function PublicFormPage(pageProps: any) {
           }
         }
       } else {
-        // Mapped RG validation
         if (requiredCols.length === 0) return;
         var cols = rgField.columnsPerRow || [];
         var rows = rgField.rows || [];
@@ -388,7 +427,6 @@ export default function PublicFormPage(pageProps: any) {
         }
       }
     });
-
     return newErrors;
   }
 
@@ -431,18 +469,14 @@ export default function PublicFormPage(pageProps: any) {
             var cRows = customRgData[f.columnId] || [];
             var cMaxRow = f.rgRequireMode === 'first' ? 1 : cRows.length;
             for (var cri = 0; cri < cMaxRow && cri < cRows.length; cri++) {
-              (f.customColumns || []).forEach(function(cc: any) {
-                touchAll[f.columnId + '__' + cri + '__' + cc.id] = true;
-              });
+              (f.customColumns || []).forEach(function(cc: any) { touchAll[f.columnId + '__' + cri + '__' + cc.id] = true; });
             }
           } else if (f.rows) {
             var vc = rgRows[f.columnId] || f.defaultVisibleRows || 1;
             var maxRow = f.rgRequireMode === 'first' ? 1 : vc;
             for (var ri = 0; ri < maxRow && ri < f.rows.length; ri++) {
               var row = f.rows[ri];
-              for (var fi = 0; fi < (row.fields || []).length; fi++) {
-                touchAll[row.fields[fi]] = true;
-              }
+              for (var fi = 0; fi < (row.fields || []).length; fi++) { touchAll[row.fields[fi]] = true; }
             }
           }
         }
@@ -461,7 +495,6 @@ export default function PublicFormPage(pageProps: any) {
     setCurrentPage(pageIndex);
   }
 
-  // Helper: compute repeating group aggregate for a given column across all rows
   function computeRgAggregate(rgFieldId: string, columnName: string, aggregation: string): number {
     if (!form) return 0;
     var rgField = form.fields.find(function(f: any) { return f.columnId === rgFieldId && f.type === 'repeating_group'; });
@@ -481,43 +514,17 @@ export default function PublicFormPage(pageProps: any) {
       if (colFormula && colFormula.operations && colFormula.operations.length > 0) {
         var calcResult = calcRowFormula(colFormula, row, cols, values);
         rowVal = calcResult !== null ? calcResult : 0;
-      } else {
-        rowVal = parseFloat(values[fid]) || 0;
-      }
+      } else { rowVal = parseFloat(values[fid]) || 0; }
       rowValues.push(rowVal);
     }
     if (rowValues.length === 0) return 0;
     switch (aggregation) {
-      case 'sum': {
-        var sum = 0;
-        for (var si = 0; si < rowValues.length; si++) sum = sum + rowValues[si];
-        return sum;
-      }
-      case 'avg': {
-        var total = 0;
-        for (var ai = 0; ai < rowValues.length; ai++) total = total + rowValues[ai];
-        return total / rowValues.length;
-      }
-      case 'min': {
-        var mn = rowValues[0];
-        for (var mi = 1; mi < rowValues.length; mi++) { if (rowValues[mi] < mn) mn = rowValues[mi]; }
-        return mn;
-      }
-      case 'max': {
-        var mx = rowValues[0];
-        for (var mxi = 1; mxi < rowValues.length; mxi++) { if (rowValues[mxi] > mx) mx = rowValues[mxi]; }
-        return mx;
-      }
-      case 'count': {
-        var cnt = 0;
-        for (var ci = 0; ci < rowValues.length; ci++) { if (rowValues[ci] !== 0) cnt = cnt + 1; }
-        return cnt;
-      }
-      default: {
-        var defSum = 0;
-        for (var di = 0; di < rowValues.length; di++) defSum = defSum + rowValues[di];
-        return defSum;
-      }
+      case 'sum': { var sum = 0; for (var si = 0; si < rowValues.length; si++) sum = sum + rowValues[si]; return sum; }
+      case 'avg': { var total = 0; for (var ai = 0; ai < rowValues.length; ai++) total = total + rowValues[ai]; return total / rowValues.length; }
+      case 'min': { var mn = rowValues[0]; for (var mi = 1; mi < rowValues.length; mi++) { if (rowValues[mi] < mn) mn = rowValues[mi]; } return mn; }
+      case 'max': { var mx = rowValues[0]; for (var mxi = 1; mxi < rowValues.length; mxi++) { if (rowValues[mxi] > mx) mx = rowValues[mxi]; } return mx; }
+      case 'count': { var cnt = 0; for (var ci = 0; ci < rowValues.length; ci++) { if (rowValues[ci] !== 0) cnt = cnt + 1; } return cnt; }
+      default: { var defSum = 0; for (var di = 0; di < rowValues.length; di++) defSum = defSum + rowValues[di]; return defSum; }
     }
   }
 
@@ -528,21 +535,13 @@ export default function PublicFormPage(pageProps: any) {
     for (var i = 0; i < formula.operations.length; i++) {
       var op = formula.operations[i];
       var operandValue = 0;
-
-      if (op.type === 'rg_aggregate') {
-        // Repeating group aggregate — apply selected aggregation across all rows
-        operandValue = computeRgAggregate(op.rgFieldId, op.columnName, op.aggregation || 'sum');
-      } else if (op.fieldId === '__constant') {
-        operandValue = op.constantValue || 0;
-      } else if (op.fieldId) {
+      if (op.type === 'rg_aggregate') { operandValue = computeRgAggregate(op.rgFieldId, op.columnName, op.aggregation || 'sum'); }
+      else if (op.fieldId === '__constant') { operandValue = op.constantValue || 0; }
+      else if (op.fieldId) {
         var refField = form.fields.find(function(f: any) { return f.columnId === op.fieldId; });
-        if (refField?.type === 'calculated' || refField?.calculated) {
-          operandValue = evaluateFormula(refField) ?? 0;
-        } else {
-          operandValue = parseFloat(values[op.fieldId]) || 0;
-        }
+        if (refField?.type === 'calculated' || refField?.calculated) { operandValue = evaluateFormula(refField) ?? 0; }
+        else { operandValue = parseFloat(values[op.fieldId]) || 0; }
       }
-
       if (result === null) { result = operandValue; } else {
         switch (op.operator) {
           case '+': result = result + operandValue; break;
@@ -558,43 +557,28 @@ export default function PublicFormPage(pageProps: any) {
 
   function handleSubmit(e?: any) {
     if (e) e.preventDefault();
-    setShowConfirm(false);
-    setFormError('');
-    var allErrors: any = {};
-    var allTouched: any = {};
-    var pe: any = {};
+    setShowConfirm(false); setFormError('');
+    var allErrors: any = {}; var allTouched: any = {}; var pe: any = {};
     pages.forEach(function(_: any, pi: number) {
       var errs = validatePage(pi);
       Object.assign(allErrors, errs);
       getVisibleFieldsForPage(pi).forEach(function(f: any) {
         allTouched[f.columnId] = true;
-        // Also touch all repeating group sub-fields so error states show
         if (f.type === 'repeating_group') {
           if (f.rgType === 'custom') {
             var cRows = customRgData[f.columnId] || [];
             var cMaxRow = f.rgRequireMode === 'first' ? 1 : cRows.length;
-            for (var cri = 0; cri < cMaxRow && cri < cRows.length; cri++) {
-              (f.customColumns || []).forEach(function(cc: any) {
-                allTouched[f.columnId + '__' + cri + '__' + cc.id] = true;
-              });
-            }
+            for (var cri = 0; cri < cMaxRow && cri < cRows.length; cri++) { (f.customColumns || []).forEach(function(cc: any) { allTouched[f.columnId + '__' + cri + '__' + cc.id] = true; }); }
           } else if (f.rows) {
             var vc = rgRows[f.columnId] || f.defaultVisibleRows || 1;
             var maxRow = f.rgRequireMode === 'first' ? 1 : vc;
-            for (var ri = 0; ri < maxRow && ri < f.rows.length; ri++) {
-              var row = f.rows[ri];
-              for (var fi = 0; fi < (row.fields || []).length; fi++) {
-                allTouched[row.fields[fi]] = true;
-              }
-            }
+            for (var ri = 0; ri < maxRow && ri < f.rows.length; ri++) { var row = f.rows[ri]; for (var fi = 0; fi < (row.fields || []).length; fi++) { allTouched[row.fields[fi]] = true; } }
           }
         }
       });
       pe[pi] = Object.keys(errs).length;
     });
-    setTouched(allTouched);
-    setErrors(allErrors);
-    setPageErrors(pe);
+    setTouched(allTouched); setErrors(allErrors); setPageErrors(pe);
     if (Object.keys(allErrors).length > 0) {
       var firstErrorPage = pages.findIndex(function(_: any, pi: number) { return pe[pi] > 0; });
       if (firstErrorPage >= 0) setCurrentPage(firstErrorPage);
@@ -610,20 +594,14 @@ export default function PublicFormPage(pageProps: any) {
       var result = evaluateFormula(f);
       if (result !== null) submitValues[f.columnId] = String(result);
     });
-    // Include custom repeating group data
     form.fields.filter(function(f: any) { return f.type === 'repeating_group' && f.rgType === 'custom'; }).forEach(function(f: any) {
       var cRows = customRgData[f.columnId] || [];
       var nonEmpty = cRows.filter(function(row: any) { return Object.values(row).some(function(v: any) { return v !== '' && v !== false; }); });
       if (nonEmpty.length > 0) submitValues[f.columnId] = nonEmpty;
     });
-    fetch('/api/public/forms/' + params.slug, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(submitValues),
-    }).then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
-      .then(function(r) {
-        if (!r.ok) { setFormError(r.data.error || 'Submission failed'); return; }
-        setThankYouMessage(r.data.message);
-        setSubmitted(true);
-      })
+    fetch('/api/public/forms/' + params.slug, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(submitValues) })
+      .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
+      .then(function(r) { if (!r.ok) { setFormError(r.data.error || 'Submission failed'); return; } setThankYouMessage(r.data.message); setSubmitted(true); })
       .catch(function() { setFormError('Submission failed.'); })
       .finally(function() { setSubmitting(false); });
   }
@@ -636,33 +614,19 @@ export default function PublicFormPage(pageProps: any) {
     var isReadOnly = field.readOnly === true;
     var base = 'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base ' + (isReadOnly ? 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 cursor-not-allowed ' : 'bg-white dark:bg-gray-800 dark:text-gray-200 ') + (fieldError ? 'border-red-400' : 'border-gray-300 dark:border-gray-600');
     if (field.calculated) {
-      var result = evaluateFormula(field);
-      var formula = field.formula || {};
-      var decimals = formula.decimals ?? 2;
-      var prefix = formula.format === 'currency' ? (formula.prefix || '$') : (formula.prefix || '');
-      var suffix = formula.format === 'percent' ? '%' : '';
+      var result = evaluateFormula(field); var formula = field.formula || {}; var decimals = formula.decimals ?? 2;
+      var prefix = formula.format === 'currency' ? (formula.prefix || '$') : (formula.prefix || ''); var suffix = formula.format === 'percent' ? '%' : '';
       var displayValue = result !== null ? result.toFixed(decimals) : '0.' + '0'.repeat(decimals);
       return (<div className="w-full px-4 py-3 border-2 border-orange-200 dark:border-orange-800 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 font-bold text-lg">{prefix}{displayValue}{suffix}</div>);
     }
     switch (field.columnType || field.type) {
-      case 'calculated': {
-        var r2 = evaluateFormula(field); var f2 = field.formula || {}; var d2 = f2.decimals ?? 2;
-        var p2 = f2.format === 'currency' ? (f2.prefix || '$') : (f2.prefix || ''); var s2 = f2.format === 'percent' ? '%' : '';
-        var dv2 = r2 !== null ? r2.toFixed(d2) : '0.' + '0'.repeat(d2);
-        return (<div className="w-full px-4 py-3 border-2 border-orange-200 dark:border-orange-800 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 font-bold text-lg">{p2}{dv2}{s2}</div>);
-      }
+      case 'calculated': { var r2 = evaluateFormula(field); var f2 = field.formula || {}; var d2 = f2.decimals ?? 2; var p2 = f2.format === 'currency' ? (f2.prefix || '$') : (f2.prefix || ''); var s2 = f2.format === 'percent' ? '%' : ''; var dv2 = r2 !== null ? r2.toFixed(d2) : '0.' + '0'.repeat(d2); return (<div className="w-full px-4 py-3 border-2 border-orange-200 dark:border-orange-800 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 font-bold text-lg">{p2}{dv2}{s2}</div>); }
       case 'textarea': case 'long_text': return <textarea value={value || ''} onChange={function(e) { onChange(e.target.value); }} onBlur={onBlur} placeholder={field.placeholder || ''} rows={4} className={base} />;
       case 'number': case 'currency': case 'percent': return <input type="number" value={value || ''} onChange={function(e) { if (!isReadOnly) onChange(e.target.value ? Number(e.target.value) : ''); }} onBlur={onBlur} placeholder={field.placeholder || ''} readOnly={isReadOnly} className={base} />;
       case 'date': return <input type="date" value={value || ''} onChange={function(e) { onChange(e.target.value); }} onBlur={onBlur} className={base} />;
       case 'datetime': return <input type="datetime-local" value={value || ''} onChange={function(e) { onChange(e.target.value); }} onBlur={onBlur} className={base} />;
-      case 'select': {
-        var opts = field.settings?.options || [];
-        return <select value={value || ''} onChange={function(e) { onChange(e.target.value); }} onBlur={onBlur} className={base}><option value="">Select...</option>{opts.map(function(o: any) { return <option key={o.value} value={o.value}>{o.label || o.value}</option>; })}</select>;
-      }
-      case 'multi_select': {
-        var opts2 = field.settings?.options || []; var sel = Array.isArray(value) ? value : [];
-        return <div className="space-y-2">{opts2.map(function(o: any) { return (<label key={o.value} className="flex items-center space-x-3 cursor-pointer"><input type="checkbox" checked={sel.includes(o.value)} onChange={function(e) { onChange(e.target.checked ? sel.concat([o.value]) : sel.filter(function(v: string) { return v !== o.value; })); }} className="w-5 h-5 rounded border-gray-300 text-blue-600" /><span className="text-gray-700 dark:text-gray-300">{o.label || o.value}</span></label>); })}</div>;
-      }
+      case 'select': { var opts = field.settings?.options || []; return <select value={value || ''} onChange={function(e) { onChange(e.target.value); }} onBlur={onBlur} className={base}><option value="">Select...</option>{opts.map(function(o: any) { return <option key={o.value} value={o.value}>{o.label || o.value}</option>; })}</select>; }
+      case 'multi_select': { var opts2 = field.settings?.options || []; var sel = Array.isArray(value) ? value : []; return <div className="space-y-2">{opts2.map(function(o: any) { return (<label key={o.value} className="flex items-center space-x-3 cursor-pointer"><input type="checkbox" checked={sel.includes(o.value)} onChange={function(e) { onChange(e.target.checked ? sel.concat([o.value]) : sel.filter(function(v: string) { return v !== o.value; })); }} className="w-5 h-5 rounded border-gray-300 text-blue-600" /><span className="text-gray-700 dark:text-gray-300">{o.label || o.value}</span></label>); })}</div>; }
       case 'checkbox': return <label className="flex items-center space-x-3 cursor-pointer"><input type="checkbox" checked={!!value} onChange={function(e) { onChange(e.target.checked); }} className="w-5 h-5 rounded border-gray-300 text-blue-600" /><span className="text-gray-700 dark:text-gray-300">Yes</span></label>;
       case 'rating': { var max = field.settings?.max || 5; return <div className="flex space-x-2">{Array.from({ length: max }, function(_, i) { return i + 1; }).map(function(n) { return (<button key={n} type="button" onClick={function() { onChange(n); }} className={'w-10 h-10 rounded-full text-lg font-medium transition-colors ' + (value >= n ? 'bg-yellow-400 text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200')}>*</button>); })}</div>; }
       case 'email': return <input type="email" value={value || ''} onChange={function(e) { onChange(e.target.value); }} onBlur={onBlur} placeholder={field.placeholder || 'email@example.com'} className={base} />;
@@ -695,16 +659,14 @@ export default function PublicFormPage(pageProps: any) {
           <div className="bg-white dark:bg-gray-900 border-x border-gray-200 dark:border-gray-700 px-8 py-4">
             <div className="flex items-center justify-center space-x-1">
               {pages.map(function(page: any, pi: number) {
-                return (
-                  <div key={page.id} className="flex items-center">
+                return (<div key={page.id} className="flex items-center">
                     {pi > 0 && <div className={'w-8 h-0.5 mx-1 ' + (pi <= currentPage ? 'bg-blue-500' : 'bg-gray-200 dark:bg-gray-700')} />}
                     <button onClick={function() { goToPage(pi); }} className={'flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-sm transition-colors ' + (pi === currentPage ? 'bg-blue-600 text-white' : pi < currentPage ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200')}>
                       <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold bg-white/20">{pi < currentPage ? '\u2713' : pi + 1}</span>
                       <span className="hidden sm:inline text-xs font-medium">{page.title}</span>
                       {(pageErrors[pi] || 0) > 0 && (<span className="w-4 h-4 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center font-bold">{pageErrors[pi]}</span>)}
                     </button>
-                  </div>
-                );
+                  </div>);
               })}
             </div>
           </div>
@@ -712,74 +674,32 @@ export default function PublicFormPage(pageProps: any) {
         <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-900 rounded-b-xl shadow-sm border border-gray-200 dark:border-gray-700 border-t-0">
           <div className="p-8 space-y-6">
             {formError && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">{formError}</div>}
-            {isMultiPage && currentPageObj && (
-              <div className="mb-2">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{currentPageObj.title}</h2>
-                {currentPageObj.description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{currentPageObj.description}</p>}
-              </div>
-            )}
+            {isMultiPage && currentPageObj && (<div className="mb-2"><h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{currentPageObj.title}</h2>{currentPageObj.description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{currentPageObj.description}</p>}</div>)}
             {visibleFields.map(function(field: any, fi: number) {
               if (field.type === 'repeating_group') {
                 if (field.rgType === 'custom') {
-                  var cRows = customRgData[field.columnId] || [];
-                  var cMax = field.maxRows || 10;
+                  var cRows = customRgData[field.columnId] || []; var cMax = field.maxRows || 10;
                   return <CustomRgBlock key={fi} field={field} rows={cRows} maxRows={cMax} errors={errors} touched={touched} onChange={function(newRows: any) { setCustomRgData(function(p: any) { return Object.assign({}, p, { [field.columnId]: newRows }); }); }} onAddRow={function() { var nr = cRows.slice(); var empty: any = {}; (field.customColumns || []).forEach(function(cc: any) { empty[cc.id] = cc.type === 'checkbox' ? false : ''; }); nr.push(empty); setCustomRgData(function(p: any) { return Object.assign({}, p, { [field.columnId]: nr }); }); }} onRemoveRow={function() { if (cRows.length > (field.defaultVisibleRows || 1)) { var nr = cRows.slice(0, -1); setCustomRgData(function(p: any) { return Object.assign({}, p, { [field.columnId]: nr }); }); } }} />;
                 }
-                var vc = rgRows[field.columnId] || field.defaultVisibleRows || 1;
-                var mx = field.rows?.length || 0;
+                var vc = rgRows[field.columnId] || field.defaultVisibleRows || 1; var mx = field.rows?.length || 0;
                 return <RgBlock key={fi} field={field} values={values} visibleCount={vc} errors={errors} touched={touched} onFieldChange={handleChange} onFieldBlur={handleBlur} onCalcUpdate={handleCalcUpdate} onAddRow={function() { setRgRows(function(p: any) { return Object.assign({}, p, { [field.columnId]: Math.min(vc + 1, mx) }); }); }} onRemoveRow={function() { setRgRows(function(p: any) { return Object.assign({}, p, { [field.columnId]: vc - 1 }); }); }} />;
               }
               if (field.type === 'divider') return <hr key={fi} className="border-gray-200 dark:border-gray-700" />;
-              if (field.type === 'section_header') return (
-                <div key={fi} className="pt-2"><h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{field.label}</h3>
-                  {field.description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{field.description}</p>}</div>
-              );
+              if (field.type === 'section_header') return (<div key={fi} className="pt-2"><h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{field.label}</h3>{field.description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{field.description}</p>}</div>);
               var fieldError = touched[field.columnId] ? errors[field.columnId] : null;
-              return (
-                <div key={fi} id={'field-' + field.columnId} className="space-y-1.5">
-                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200">
-                    {field.label}{field.required && <span className="text-red-500 ml-1">*</span>}
-                  </label>
-                  {field.description && <p className="text-xs text-gray-500 dark:text-gray-400">{field.description}</p>}
-                  {renderField(field)}
-                  {fieldError && <p className="text-xs text-red-500 flex items-center space-x-1"><span>{fieldError}</span></p>}
-                </div>
-              );
+              return (<div key={fi} id={'field-' + field.columnId} className="space-y-1.5"><label className="block text-sm font-semibold text-gray-800 dark:text-gray-200">{field.label}{field.required && <span className="text-red-500 ml-1">*</span>}</label>{field.description && <p className="text-xs text-gray-500 dark:text-gray-400">{field.description}</p>}{renderField(field)}{fieldError && <p className="text-xs text-red-500 flex items-center space-x-1"><span>{fieldError}</span></p>}</div>);
             })}
           </div>
           <div className="px-8 py-6 bg-gray-50 dark:bg-gray-800 rounded-b-xl border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              {isMultiPage && currentPage > 0 ? (
-                <button type="button" onClick={function() { goToPage(currentPage - 1); }} className="px-6 py-3 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">Back</button>
-              ) : <div />}
-              {isMultiPage && currentPage < pages.length - 1 ? (
-                <button type="button" onClick={function(e) { e.preventDefault(); e.stopPropagation(); goToPage(currentPage + 1); }} className="px-6 py-3 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700">Next</button>
-              ) : (
-                <button type="button" disabled={submitting} onClick={function() { setShowConfirm(true); }} className="px-8 py-3 text-sm font-semibold bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">{submitting ? 'Submitting...' : form.submitButtonText || 'Submit'}</button>
-              )}
+              {isMultiPage && currentPage > 0 ? (<button type="button" onClick={function() { goToPage(currentPage - 1); }} className="px-6 py-3 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">Back</button>) : <div />}
+              {isMultiPage && currentPage < pages.length - 1 ? (<button type="button" onClick={function(e) { e.preventDefault(); e.stopPropagation(); goToPage(currentPage + 1); }} className="px-6 py-3 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700">Next</button>) : (<button type="button" disabled={submitting} onClick={function() { setShowConfirm(true); }} className="px-8 py-3 text-sm font-semibold bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">{submitting ? 'Submitting...' : form.submitButtonText || 'Submit'}</button>)}
             </div>
             {isMultiPage && (<p className="text-center text-xs text-gray-400 mt-3">Page {currentPage + 1} of {pages.length}</p>)}
           </div>
         </form>
-        {showConfirm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={function() { setShowConfirm(false); }}>
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4" onClick={function(e) { e.stopPropagation(); }}>
-              <div className="text-center">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Ready to submit?</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{isMultiPage ? 'Please review all ' + pages.length + ' pages before submitting.' : 'Please review all fields before submitting.'}</p>
-              </div>
-              <div className="flex items-center space-x-3 pt-2">
-                <button type="button" onClick={function() { setShowConfirm(false); }} className="flex-1 px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">Go Back</button>
-                <button type="button" onClick={function() { handleSubmit(); }} disabled={submitting} className="flex-1 px-4 py-3 text-sm font-semibold bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">{submitting ? 'Submitting...' : 'Yes, Submit'}</button>
-              </div>
-            </div>
-          </div>
-        )}
-        <p className="text-center text-xs text-gray-400 mt-4 flex items-center justify-center space-x-1.5">
-          <span>Powered by</span>
-          <svg width="14" height="14" viewBox="0 0 512 512"><circle cx="256" cy="256" r="220" fill="#9CA3AF"/><polygon points="256,100 360,380 300,380 276,310 236,310 212,380 152,380" fill="white"/></svg>
-          <span className="font-medium">Agora</span>
-        </p>
+        {showConfirm && (<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={function() { setShowConfirm(false); }}><div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4" onClick={function(e) { e.stopPropagation(); }}><div className="text-center"><h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Ready to submit?</h3><p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{isMultiPage ? 'Please review all ' + pages.length + ' pages before submitting.' : 'Please review all fields before submitting.'}</p></div><div className="flex items-center space-x-3 pt-2"><button type="button" onClick={function() { setShowConfirm(false); }} className="flex-1 px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">Go Back</button><button type="button" onClick={function() { handleSubmit(); }} disabled={submitting} className="flex-1 px-4 py-3 text-sm font-semibold bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">{submitting ? 'Submitting...' : 'Yes, Submit'}</button></div></div></div>)}
+        <p className="text-center text-xs text-gray-400 mt-4 flex items-center justify-center space-x-1.5"><span>Powered by</span><svg width="14" height="14" viewBox="0 0 512 512"><circle cx="256" cy="256" r="220" fill="#9CA3AF"/><polygon points="256,100 360,380 300,380 276,310 236,310 212,380 152,380" fill="white"/></svg><span className="font-medium">Agora</span></p>
       </div>
     </div>
   );

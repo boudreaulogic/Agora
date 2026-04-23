@@ -38,7 +38,7 @@ export function useWebSocket(tableId: string, session: any) {
         return 'ws://localhost:3001';
       }
       // Production: connect via Cloudflare tunnel using wss://
-      return 'wss://ws.boudreaulogic.com';
+      return process.env.NEXT_PUBLIC_WS_URL || ('wss://' + window.location.host.replace('app.', 'ws.'));
     }
 
     var wsUrl = getWsUrl();

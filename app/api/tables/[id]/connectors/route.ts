@@ -5,6 +5,36 @@ import { getTablePermission } from '@/lib/tablePermissions';
 
 export const dynamic = 'force-dynamic';
 
+// Encrypt sensitive fields before storing
+async function encryptConfig(config: any): Promise<any> {
+  if (!config) return config;
+  var { encrypt } = await import('@/lib/encryption');
+  var encrypted = Object.assign({}, config);
+  if (encrypted.authValue && encrypted.authValue !== '••••••••') {
+    encrypted.authValue = encrypt(encrypted.authValue);
+    encrypted.__authValueEncrypted = true;
+  }
+  if (encrypted.password && encrypted.password !== '••••••••') {
+    encrypted.password = encrypt(encrypted.password);
+    encrypted.__passwordEncrypted = true;
+  }
+  return encrypted;
+}
+
+// Decrypt sensitive fields for use (NOT for sending to client)
+async function decryptConfig(config: any): Promise<any> {
+  if (!config) return config;
+  var { decrypt } = await import('@/lib/encryption');
+  var decrypted = Object.assign({}, config);
+  if (decrypted.__authValueEncrypted && decrypted.authValue) {
+    try { decrypted.authValue = decrypt(decrypted.authValue); } catch {}
+  }
+  if (decrypted.__passwordEncrypted && decrypted.password) {
+    try { decrypted.password = decrypt(decrypted.password); } catch {}
+  }
+  return decrypted;
+}
+
 // GET /api/tables/[id]/connectors — list connectors for a table
 export async function GET(
   request: Request,
@@ -27,6 +57,9 @@ export async function GET(
     var safeConfig = Object.assign({}, config);
     if (safeConfig.authValue) safeConfig.authValue = '••••••••';
     if (safeConfig.password) safeConfig.password = '••••••••';
+    // Remove encryption flags from client response
+    delete safeConfig.__authValueEncrypted;
+    delete safeConfig.__passwordEncrypted;
     return Object.assign({}, c, { config: safeConfig });
   });
 
@@ -52,12 +85,15 @@ export async function POST(
   if (!name?.trim()) return NextResponse.json({ error: 'Name is required' }, { status: 400 });
   if (!type) return NextResponse.json({ error: 'Type is required' }, { status: 400 });
 
+  // Encrypt credentials before storing
+  var encryptedConfig = await encryptConfig(config || {});
+
   var connector = await db.dataConnector.create({
     data: {
       tableId: params.id,
       name: name.trim(),
       type: type || 'rest_api',
-      config: config || {},
+      config: encryptedConfig,
       fieldMapping: fieldMapping || {},
       syncMode: syncMode || 'manual',
       syncIntervalMin: syncIntervalMin || 60,
@@ -91,14 +127,27 @@ export async function PATCH(
     return NextResponse.json({ error: 'Connector not found' }, { status: 404 });
   }
 
-  // If config has masked authValue, keep the existing one
-  if (config && config.authValue === '••••••••') {
+  // If config has masked values, keep the existing encrypted ones
+  if (config) {
     var existingConfig = existing.config as any;
-    config.authValue = existingConfig.authValue;
-  }
-  if (config && config.password === '••••••••') {
-    var existingConfig2 = existing.config as any;
-    config.password = existingConfig2.password;
+    if (config.authValue === '••••••••') {
+      config.authValue = existingConfig.authValue;
+      config.__authValueEncrypted = existingConfig.__authValueEncrypted;
+    } else if (config.authValue) {
+      // New value — encrypt it
+      var { encrypt } = await import('@/lib/encryption');
+      config.authValue = encrypt(config.authValue);
+      config.__authValueEncrypted = true;
+    }
+    if (config.password === '••••••••') {
+      config.password = existingConfig.password;
+      config.__passwordEncrypted = existingConfig.__passwordEncrypted;
+    } else if (config.password) {
+      // New value — encrypt it
+      var { encrypt: encrypt2 } = await import('@/lib/encryption');
+      config.password = encrypt2(config.password);
+      config.__passwordEncrypted = true;
+    }
   }
 
   var updated = await db.dataConnector.update({

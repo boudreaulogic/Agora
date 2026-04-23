@@ -47,6 +47,13 @@ export async function POST(
       return NextResponse.json({ error: 'File type not allowed.' }, { status: 400 });
     }
 
+    // Double-check extension matches — prevents MIME spoofing
+    var BLOCKED_EXTENSIONS = ['.html', '.htm', '.js', '.jsx', '.ts', '.tsx', '.php', '.py', '.sh', '.bat', '.cmd', '.exe', '.msi', '.scr'];
+    var fileExt = path.extname(file.name).toLowerCase();
+    if (BLOCKED_EXTENSIONS.includes(fileExt)) {
+      return NextResponse.json({ error: 'File extension not allowed.' }, { status: 400 });
+    }
+
     // Verify row exists and belongs to table
     const row = await db.agoraRow.findUnique({ where: { id: params.rowId } });
     if (!row || row.tableId !== params.id) {

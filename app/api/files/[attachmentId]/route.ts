@@ -5,19 +5,19 @@ import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 
-const UPLOADS_DIR = '/app/uploads';
+var UPLOADS_DIR = '/app/uploads';
 
-// GET — serve a file by attachment ID
+// GET — serve a file by attachment ID (with table permission check)
 export async function GET(
   request: Request,
   { params }: { params: { attachmentId: string } }
 ) {
-  const session = await auth();
+  var session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const attachment = await db.fileAttachment.findUnique({
+  var attachment = await db.fileAttachment.findUnique({
     where: { id: params.attachmentId },
   });
 
@@ -25,25 +25,33 @@ export async function GET(
     return NextResponse.json({ error: 'File not found' }, { status: 404 });
   }
 
-  const filePath = path.join(UPLOADS_DIR, attachment.path);
+  // SECURITY FIX: Verify user has access to the table this file belongs to
+  var { getTablePermission } = await import('@/lib/tablePermissions');
+  var permission = await getTablePermission(session.user.id, attachment.tableId);
+  if (!permission) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  var filePath = path.join(UPLOADS_DIR, attachment.path);
 
   if (!existsSync(filePath)) {
     return NextResponse.json({ error: 'File missing from storage' }, { status: 404 });
   }
 
-  const buffer = await readFile(filePath);
+  var buffer = await readFile(filePath);
 
-  const { searchParams } = new URL(request.url);
-  const download = searchParams.get('download') === 'true';
+  var { searchParams } = new URL(request.url);
+  var download = searchParams.get('download') === 'true';
 
   return new Response(buffer, {
     headers: {
-      'Content-Type': attachment.mimeType,
+      'Content-Type': (attachment.mimeType === 'image/svg+xml' || attachment.mimeType === 'text/html' || attachment.mimeType === 'application/xhtml+xml' || attachment.mimeType === 'text/xml' || attachment.mimeType === 'application/xml') ? 'application/octet-stream' : attachment.mimeType,
       'Content-Length': String(attachment.size),
       'Content-Disposition': download
-        ? `attachment; filename="${attachment.originalName}"`
-        : `inline; filename="${attachment.originalName}"`,
-      'Cache-Control': 'private, max-age=3600',
+        ? 'attachment; filename="' + attachment.originalName + '"'
+        : 'inline; filename="' + attachment.originalName + '"',
+      'Cache-Control': 'private, no-cache',
+      'X-Content-Type-Options': 'nosniff',
     },
   });
 }

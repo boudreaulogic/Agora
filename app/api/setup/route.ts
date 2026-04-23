@@ -5,8 +5,8 @@ import { hashPassword, validatePasswordStrength } from '@/lib/auth/password';
 // POST /api/setup — first-run setup: create admin + seed permissions
 export async function POST(request: Request) {
   // CRITICAL: Only works when NO users exist
-  const userCount = await db.user.count();
-  if (userCount > 0) {
+  var existingUser = await db.user.findFirst({ select: { id: true } });
+  if (existingUser) {
     return NextResponse.json({ error: 'Setup already completed' }, { status: 403 });
   }
 
@@ -125,7 +125,7 @@ export async function POST(request: Request) {
     }
 
     // ================================================================
-    // STEP 4: Create the admin user
+    // STEP 4: Create the admin user (race-condition safe via unique constraint)
     // ================================================================
     const passwordHash = await hashPassword(password);
 
@@ -158,7 +158,12 @@ export async function POST(request: Request) {
       message: 'Setup complete! You can now sign in.',
     });
   } catch (error: any) {
+    // Race condition: if two requests hit simultaneously, the second one
+    // fails on the unique email constraint — return gracefully
+    if (error?.code === 'P2002') {
+      return NextResponse.json({ error: 'Setup already completed' }, { status: 403 });
+    }
     console.error('Setup error:', error);
-    return NextResponse.json({ error: 'Setup failed: ' + (error.message || 'Unknown error') }, { status: 500 });
+    return NextResponse.json({ error: 'Setup failed' }, { status: 500 });
   }
 }

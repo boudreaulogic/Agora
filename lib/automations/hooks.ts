@@ -1,15 +1,15 @@
 // ============================================================
 // lib/automations/hooks.ts
-// Drop-in hooks to wire automations into existing row routes
+// Drop-in hooks to wire automations into existing Agora code
+// v2.0 — approval triggers, enhanced context
 // ============================================================
 
-import { fireTrigger } from './engine';
-import type { TriggerEvent } from './engine';
+import { fireTrigger, TriggerEvent } from './engine';
 
 /**
- * Call after a new row is created
+ * Call after a new row is created (from API or UI)
  */
-export function onRowCreated(
+export async function onRowCreated(
   tableId: string,
   rowId: string,
   rowData: Record<string, any>,
@@ -26,14 +26,13 @@ export function onRowCreated(
     console.error('[Automations] row_created trigger failed:', err);
   });
 
-  // Also check column_match triggers for the new data
-  fireColumnMatchTriggers(tableId, rowId, rowData);
+  fireColumnMatchTriggers(tableId, rowId, rowData, undefined, userId);
 }
 
 /**
- * Call after a row is updated (cell edit)
+ * Call after a row is updated
  */
-export function onRowUpdated(
+export async function onRowUpdated(
   tableId: string,
   rowId: string,
   newData: Record<string, any>,
@@ -52,14 +51,13 @@ export function onRowUpdated(
     console.error('[Automations] row_updated trigger failed:', err);
   });
 
-  // Check column_match triggers for changed values
-  fireColumnMatchTriggers(tableId, rowId, newData, previousData);
+  fireColumnMatchTriggers(tableId, rowId, newData, previousData, userId);
 }
 
 /**
  * Call after a row is deleted
  */
-export function onRowDeleted(
+export async function onRowDeleted(
   tableId: string,
   rowId: string,
   deletedData: Record<string, any>,
@@ -80,7 +78,7 @@ export function onRowDeleted(
 /**
  * Call after a form is submitted
  */
-export function onFormSubmit(
+export async function onFormSubmit(
   tableId: string,
   formId: string,
   rowId: string,
@@ -97,8 +95,49 @@ export function onFormSubmit(
     console.error('[Automations] form_submit trigger failed:', err);
   });
 
-  // Also fire row_created since form submit creates a row
   onRowCreated(tableId, rowId, rowData);
+}
+
+/**
+ * Call when an approval request is fully approved
+ */
+export async function onApprovalCompleted(
+  tableId: string,
+  rowId: string,
+  rowData: Record<string, any>,
+  approvalData: { workflowId: string; workflowName: string; requestId: string; approvedBy: string }
+) {
+  var event: TriggerEvent = {
+    type: 'approval_completed',
+    tableId: tableId,
+    rowId: rowId,
+    rowData: Object.assign({}, rowData, { _approval: approvalData }),
+    userId: approvalData.approvedBy,
+  };
+  fireTrigger(event).catch(function(err) {
+    console.error('[Automations] approval_completed trigger failed:', err);
+  });
+}
+
+/**
+ * Call when an approval request is denied
+ */
+export async function onApprovalDenied(
+  tableId: string,
+  rowId: string,
+  rowData: Record<string, any>,
+  approvalData: { workflowId: string; workflowName: string; requestId: string; deniedBy: string; reason?: string }
+) {
+  var event: TriggerEvent = {
+    type: 'approval_denied',
+    tableId: tableId,
+    rowId: rowId,
+    rowData: Object.assign({}, rowData, { _approval: approvalData }),
+    userId: approvalData.deniedBy,
+  };
+  fireTrigger(event).catch(function(err) {
+    console.error('[Automations] approval_denied trigger failed:', err);
+  });
 }
 
 /**
@@ -108,7 +147,8 @@ function fireColumnMatchTriggers(
   tableId: string,
   rowId: string,
   currentData: Record<string, any>,
-  previousData?: Record<string, any>
+  previousData?: Record<string, any>,
+  userId?: string
 ) {
   var event: TriggerEvent = {
     type: 'column_match',
@@ -116,6 +156,7 @@ function fireColumnMatchTriggers(
     rowId: rowId,
     rowData: currentData,
     previousData: previousData,
+    userId: userId,
   };
   fireTrigger(event).catch(function(err) {
     console.error('[Automations] column_match trigger failed:', err);

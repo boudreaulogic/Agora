@@ -37,21 +37,30 @@ export async function POST(request: Request, { params }: { params: { token: stri
     return NextResponse.json({ error: 'Not authorized for this stage' }, { status: 403 });
   }
 
-  // Check if already acted on this stage
-  const existing = await db.approvalAction.findFirst({
-    where: { requestId: approvalRequest.id, userId: session.user.id },
-  });
-  if (existing) return NextResponse.json({ error: 'Already acted' }, { status: 409 });
+  // Atomic check-and-create to prevent race condition
+  var actionRecord;
+  try {
+    actionRecord = await db.$transaction(async function(tx) {
+      var existing = await tx.approvalAction.findFirst({
+        where: { requestId: approvalRequest.id, userId: session.user.id },
+      });
+      if (existing) throw new Error('ALREADY_ACTED');
 
-  // Record action
-  await db.approvalAction.create({
-    data: {
-      requestId: approvalRequest.id,
-      userId: session.user.id,
-      action,
-      reason: reason || null,
-    },
-  });
+      return await tx.approvalAction.create({
+        data: {
+          requestId: approvalRequest.id,
+          userId: session.user.id,
+          action,
+          reason: reason || null,
+        },
+      });
+    });
+  } catch (txErr: any) {
+    if (txErr.message === 'ALREADY_ACTED') {
+      return NextResponse.json({ error: 'Already acted' }, { status: 409 });
+    }
+    throw txErr;
+  }
 
   // Ledger entry
   await addLedgerEntry({
@@ -129,6 +138,18 @@ export async function POST(request: Request, { params }: { params: { token: stri
       rowId: approvalRequest.rowId,
       metadata: { requestId: approvalRequest.id, action: 'denied', stage: currentStage.name, reason },
     });
+	
+	// Fire approval_denied automation trigger
+    try {
+      var { onApprovalDenied } = await import('@/lib/automations/hooks');
+      onApprovalDenied(approvalRequest.tableId, approvalRequest.rowId, rowData, {
+        workflowId: approvalRequest.workflowId,
+        workflowName: approvalRequest.workflow.name,
+        requestId: approvalRequest.id,
+        deniedBy: session.user.id,
+        reason: reason || undefined,
+      });
+    } catch (autoErr) { console.error('[Approval] Automation trigger error:', autoErr); }
 
     return NextResponse.json({ success: true, status: 'denied', resolved: true });
   }
@@ -279,6 +300,17 @@ async function finalizeApproval(approvalRequest: any, stageStatuses: any, stages
     rowId: approvalRequest.rowId,
     metadata: { requestId: approvalRequest.id, action: 'approved' },
   });
+  
+  // Fire approval_completed automation trigger
+    try {
+      var { onApprovalCompleted } = await import('@/lib/automations/hooks');
+      onApprovalCompleted(approvalRequest.tableId, approvalRequest.rowId, (row?.data || {}) as Record<string, any>, {
+        workflowId: approvalRequest.workflowId,
+        workflowName: workflow.name,
+        requestId: approvalRequest.id,
+        approvedBy: session.user.id,
+      });
+    } catch (autoErr) { console.error('[Approval] Automation trigger error:', autoErr); }
 
   return NextResponse.json({ success: true, status: 'approved', resolved: true });
 }

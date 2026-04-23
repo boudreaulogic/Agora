@@ -7,12 +7,25 @@ import { authenticateRequest } from '@/lib/authenticateRequest';
 
 export const dynamic = 'force-dynamic';
 
+// Decrypt sensitive fields before use
+async function decryptConfig(config: any): Promise<any> {
+  if (!config) return config;
+  var { decrypt } = await import('@/lib/encryption');
+  var decrypted = Object.assign({}, config);
+  if (decrypted.__authValueEncrypted && decrypted.authValue) {
+    try { decrypted.authValue = decrypt(decrypted.authValue); } catch {}
+  }
+  if (decrypted.__passwordEncrypted && decrypted.password) {
+    try { decrypted.password = decrypt(decrypted.password); } catch {}
+  }
+  return decrypted;
+}
+
 // POST /api/tables/[id]/connectors/sync — trigger a sync for a connector
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  // Support both session and API key auth (for scheduled syncs)
   var authResult = await authenticateRequest(request, params.id, 'write');
   if (authResult instanceof NextResponse) return authResult;
 
@@ -36,14 +49,14 @@ export async function POST(
     return NextResponse.json({ error: 'Connector is inactive' }, { status: 400 });
   }
 
-  // Update status
   await db.dataConnector.update({
     where: { id: connectorId },
     data: { lastSyncStatus: 'syncing' },
   });
 
   try {
-    var config = connector.config as any;
+    // Decrypt credentials before use
+    var config = await decryptConfig(connector.config as any);
     var fieldMapping = connector.fieldMapping as Record<string, string>;
 
     if (connector.type === 'rest_api') {
@@ -58,15 +71,15 @@ export async function POST(
       where: { id: connectorId },
       data: {
         lastSyncStatus: 'error',
-        lastSyncError: error.message || 'Sync failed',
+        lastSyncError: process.env.NODE_ENV === 'production' ? 'Sync failed' : (error.message || 'Sync failed'),
       },
     });
-    return NextResponse.json({ error: 'Sync failed: ' + (error.message || 'Unknown error') }, { status: 500 });
+    return NextResponse.json({ error: 'Sync failed' }, { status: 500 });
   }
 }
 
 // ============================================================================
-// REST API SYNC ENGINE
+// REST API SYNC ENGINE (with SSRF protection)
 // ============================================================================
 async function syncRestApi(
   tableId: string,
@@ -83,7 +96,6 @@ async function syncRestApi(
     'Accept': 'application/json',
   };
 
-  // Add custom headers
   if (config.headers) {
     Object.assign(headers, config.headers);
   }
@@ -99,18 +111,17 @@ async function syncRestApi(
     headers['Authorization'] = 'Basic ' + encoded;
   }
 
-  // Make the request
-  var fetchOptions: any = {
+  // Use SSRF-protected fetch instead of raw fetch
+  var { safeFetch } = await import('@/lib/ssrfProtection');
+  var response = await safeFetch(url, {
     method: config.method || 'GET',
     headers: headers,
-  };
+    body: (config.body && (config.method || 'GET') !== 'GET')
+      ? (typeof config.body === 'string' ? config.body : JSON.stringify(config.body))
+      : undefined,
+    timeoutMs: 30000,
+  });
 
-  if (config.body && fetchOptions.method !== 'GET') {
-    fetchOptions.body = typeof config.body === 'string' ? config.body : JSON.stringify(config.body);
-    if (!headers['Content-Type']) headers['Content-Type'] = 'application/json';
-  }
-
-  var response = await fetch(url, fetchOptions);
   if (!response.ok) {
     throw new Error('API returned ' + response.status + ': ' + response.statusText);
   }
@@ -131,7 +142,6 @@ async function syncRestApi(
   }
 
   if (!Array.isArray(records)) {
-    // If it's a single object, wrap it
     if (records && typeof records === 'object') {
       records = [records];
     } else {
@@ -149,7 +159,6 @@ async function syncRestApi(
   var uniqueKeyField = config.uniqueKeyField || null;
   var uniqueKeyColumn = uniqueKeyField ? fieldMapping[uniqueKeyField] : null;
 
-  // Build a lookup map for existing rows by unique key
   var existingByKey: Record<string, any> = {};
   if (uniqueKeyColumn) {
     existingRows.forEach(function(row) {
@@ -168,7 +177,6 @@ async function syncRestApi(
     var record = records[i];
     if (!record || typeof record !== 'object') continue;
 
-    // Map API fields to Agora columns
     var rowData: Record<string, any> = {};
     var mappingKeys = Object.keys(fieldMapping);
     for (var m = 0; m < mappingKeys.length; m++) {
@@ -180,19 +188,16 @@ async function syncRestApi(
       }
     }
 
-    // Skip empty records
     if (Object.keys(rowData).length === 0) {
       stats.rowsSkipped++;
       continue;
     }
 
-    // Upsert: check if row exists by unique key
     if (uniqueKeyColumn && uniqueKeyField) {
       var recordKey = getNestedValue(record, uniqueKeyField);
       if (recordKey !== undefined && recordKey !== null) {
         var existingRow = existingByKey[String(recordKey)];
         if (existingRow) {
-          // Update existing row
           var currentData = existingRow.data as any;
           var changed = false;
           for (var col in rowData) {
@@ -209,7 +214,6 @@ async function syncRestApi(
               data: { data: mergedData },
             });
 
-            // Broadcast updates
             for (var broadcastCol in rowData) {
               if (String(currentData[broadcastCol] || '') !== String(rowData[broadcastCol] || '')) {
                 wsBroadcast(tableId, { type: 'cell-update', rowId: existingRow.id, columnId: broadcastCol, value: rowData[broadcastCol] });
@@ -224,7 +228,6 @@ async function syncRestApi(
       }
     }
 
-    // Create new row
     maxPosition++;
     var newRow = await db.agoraRow.create({
       data: {
@@ -239,7 +242,6 @@ async function syncRestApi(
     stats.rowsCreated++;
   }
 
-  // Update connector status
   await db.dataConnector.update({
     where: { id: connectorId },
     data: {
@@ -257,7 +259,6 @@ async function syncRestApi(
   };
 }
 
-// Helper: get nested value from object using dot notation
 function getNestedValue(obj: any, path: string): any {
   var parts = path.split('.');
   var current = obj;

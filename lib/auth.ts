@@ -116,14 +116,35 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user }) {
+      // Check for MFA verification signal cookie
+      if (token.mfaRequired && !token.mfaVerified) {
+        try {
+          var { cookies } = await import('next/headers');
+          var signal = cookies().get('mfa-verified-signal');
+          if (signal?.value === 'true') {
+            token.mfaVerified = true;
+            cookies().delete('mfa-verified-signal');
+          }
+        } catch {}
+      }
+
+      // On initial sign-in, set MFA flags
       if (user) {
         token.id = user.id;
+        var dbUser = await db.user.findUnique({
+          where: { id: user.id },
+          select: { mfaEnabled: true },
+        });
+        token.mfaRequired = dbUser?.mfaEnabled || false;
+        token.mfaVerified = false;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).id = token.id as string;
+        (session.user as any).mfaRequired = token.mfaRequired as boolean;
+        (session.user as any).mfaVerified = token.mfaVerified as boolean;
       }
       return session;
     },

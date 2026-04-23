@@ -26,10 +26,25 @@ interface Automation {
   triggerType: string;
   triggerConfig: Record<string, any>;
   webhookSlug?: string;
+  workspaceId?: string;
   actions: any[];
   _count?: { runs: number };
   runs?: any[];
   createdAt: string;
+  creatorName?: string;
+  creatorEmail?: string;
+  workspaceName?: string;
+  workspaceIcon?: string;
+  sharedTableName?: string;
+  sharedTableIcon?: string;
+  tableId?: string;
+  isOwner?: boolean;
+}
+
+interface WorkspaceOption {
+  id: string;
+  name: string;
+  icon?: string;
 }
 
 interface ColumnInfo {
@@ -61,6 +76,9 @@ var TRIGGER_TYPES = [
   { value: 'form_submit', label: 'Form Submitted', icon: '📋', desc: 'When a form is submitted' },
   { value: 'scheduled', label: 'Scheduled', icon: '⏱', desc: 'Run on a cron schedule' },
   { value: 'webhook', label: 'Webhook', icon: '⚡', desc: 'Triggered by HTTP request' },
+  { value: 'manual', label: 'For Selected Row', icon: '👆', desc: 'Run manually on selected rows' },
+  { value: 'approval_completed', label: 'Approval Completed', icon: '✅', desc: 'When an approval is fully approved' },
+  { value: 'approval_denied', label: 'Approval Denied', icon: '❌', desc: 'When an approval is denied' },
 ];
 
 var ACTION_TYPES = [
@@ -69,7 +87,11 @@ var ACTION_TYPES = [
   { value: 'send_email', label: 'Send Email', icon: '✉' },
   { value: 'webhook', label: 'Send Webhook', icon: '⚡' },
   { value: 'lock_row', label: 'Lock Row', icon: '🔒' },
+  { value: 'unlock_row', label: 'Unlock Row', icon: '🔓' },
   { value: 'notify', label: 'Notify', icon: '🔔' },
+  { value: 'trigger_approval', label: 'Trigger Approval', icon: '✅' },
+  { value: 'delay', label: 'Delay', icon: '⏳' },
+  { value: 'condition', label: 'IF / Condition', icon: '🔀' },
 ];
 
 var CRON_PRESETS = [
@@ -205,6 +227,8 @@ export default function AutomationsManager() {
   var [tables, setTables] = useState<TableOption[]>([]);
   var [users, setUsers] = useState<UserInfo[]>([]);
   var [forms, setForms] = useState<Record<string, any[]>>({});
+  var [approvalWorkflows, setApprovalWorkflows] = useState<Record<string, any[]>>({});
+  var [workspaces, setWorkspaces] = useState<WorkspaceOption[]>([]);
   var [loading, setLoading] = useState(true);
   var [view, setView] = useState<'list'|'builder'|'detail'>('list');
   var [selectedAutomation, setSelectedAutomation] = useState<Automation|null>(null);
@@ -216,6 +240,8 @@ export default function AutomationsManager() {
   var [builderActions, setBuilderActions] = useState<AutomationAction[]>([]);
   var [saving, setSaving] = useState(false);
   var [editingId, setEditingId] = useState<string|null>(null);
+  var [builderWorkspaceId, setBuilderWorkspaceId] = useState<string|null>(null);
+  var [builderTableId, setBuilderTableId] = useState<string|null>(null);
   var [expandedRunId, setExpandedRunId] = useState<string|null>(null);
   var [testing, setTesting] = useState(false);
   var [testResult, setTestResult] = useState<any>(null);
@@ -224,13 +250,19 @@ export default function AutomationsManager() {
   var fetchAutomations = useCallback(async function() { try { var r = await fetch('/api/automations'); if (r.ok) setAutomations(await r.json()); } catch(e) { console.error(e); } }, []);
   var fetchTables = useCallback(async function() { try { var r = await fetch('/api/tables'); if (r.ok) { var d = await r.json(); setTables(d.map(function(t:any) { return { id:t.id, name:t.name, columns:(t.columns||[]).map(function(c:any) { return { id:c.id, name:c.name, type:c.type, settings:c.settings }; }) }; })); } } catch(e) { console.error(e); } }, []);
   var fetchUsers = useCallback(async function() { try { var r = await fetch('/api/users'); if (r.ok) { var d = await r.json(); setUsers(d.users || []); } } catch(e) { console.error(e); } }, []);
+  var fetchWorkspaces = useCallback(async function() { try { var r = await fetch('/api/workspaces'); if (r.ok) { var d = await r.json(); setWorkspaces((d.workspaces || d || []).map(function(w: any) { return { id: w.id, name: w.name, icon: w.icon }; })); } } catch(e) { console.error(e); } }, []);
 
   var fetchFormsForTable = useCallback(async function(tableId: string) {
     if (forms[tableId]) return;
     try { var r = await fetch("/api/tables/" + tableId + "/forms"); if (r.ok) { var d = await r.json(); setForms(function(prev) { var next = Object.assign({}, prev); next[tableId] = d.forms || []; return next; }); } } catch(e) { console.error(e); }
   }, [forms]);
+  
+  var fetchApprovalWorkflows = useCallback(async function(tableId: string) {
+    if (approvalWorkflows[tableId]) return;
+    try { var r = await fetch("/api/tables/" + tableId + "/approvals"); if (r.ok) { var d = await r.json(); setApprovalWorkflows(function(prev) { var next = Object.assign({}, prev); next[tableId] = d ? [d] : []; return next; }); } } catch(e) { console.error(e); }
+  }, [approvalWorkflows]);
 
-  useEffect(function() { Promise.all([fetchAutomations(), fetchTables(), fetchUsers()]).then(function() { setLoading(false); }); }, [fetchAutomations, fetchTables, fetchUsers]);
+  useEffect(function() { Promise.all([fetchAutomations(), fetchTables(), fetchUsers(), fetchWorkspaces()]).then(function() { setLoading(false); }); }, [fetchAutomations, fetchTables, fetchUsers, fetchWorkspaces]);
 
   function getTriggerLabel(type:string) { var t = TRIGGER_TYPES.find(function(t) { return t.value===type; }); return t ? t.icon+' '+t.label : type; }
   function getActionLabel(type:string) { var a = ACTION_TYPES.find(function(a) { return a.value===type; }); return a ? a.icon+' '+a.label : type; }
@@ -258,7 +290,9 @@ export default function AutomationsManager() {
       setEditingId(auto.id); setBuilderName(auto.name); setBuilderDesc(auto.description||'');
       setBuilderTrigger(auto.triggerType); setBuilderTriggerConfig(auto.triggerConfig||{});
       setBuilderActions(auto.actions.map(function(a:any,i:number) { return { actionType:a.actionType||a.actiontype, actionConfig:a.actionConfig||a.actionconfig||{}, conditionExpr:a.conditionExpr||a.conditionexpr, sortOrder:i }; }));
-    } else { setEditingId(null); setBuilderName(''); setBuilderDesc(''); setBuilderTrigger('row_created'); setBuilderTriggerConfig({}); setBuilderActions([]); }
+      setBuilderWorkspaceId(auto.workspaceId || null);
+      setBuilderTableId(auto.tableId || null);
+    } else { setEditingId(null); setBuilderName(''); setBuilderDesc(''); setBuilderTrigger('row_created'); setBuilderTriggerConfig({}); setBuilderActions([]); setBuilderWorkspaceId(null); setBuilderTableId(null); }
     setView('builder');
   }
 
@@ -272,7 +306,7 @@ export default function AutomationsManager() {
     setSaving(true);
     try {
       var url = editingId ? '/api/automations/'+editingId : '/api/automations';
-      var r = await fetch(url, { method:editingId?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name:builderName, description:builderDesc||null, triggerType:builderTrigger, triggerConfig:builderTriggerConfig, actions:builderActions }) });
+      var r = await fetch(url, { method:editingId?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name:builderName, description:builderDesc||null, triggerType:builderTrigger, triggerConfig:builderTriggerConfig, actions:builderActions, workspaceId:builderWorkspaceId, tableId:builderTableId }) });
       if (r.ok) { await fetchAutomations(); setView('list'); } else { var e = await r.json(); alert('Error: '+(e.error||'Unknown')); }
     } catch(e) { console.error(e); } finally { setSaving(false); }
   }
@@ -319,24 +353,108 @@ export default function AutomationsManager() {
       {builderTrigger==='webhook' && (<div style={{ padding:'12px', background:'#eff6ff', borderRadius:'8px', border:'1px solid #bfdbfe' }}>
         <span style={{ fontSize:'12px', color:'#1e40af' }}>A unique webhook URL will be generated when saved.</span>
       </div>)}
+	  {builderTrigger==='manual' && (<div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
+        <div><label style={labelStyle}>Table</label>
+          <select value={builderTriggerConfig.tableId||''} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{tableId:e.target.value}); }); }} style={selectStyle}>
+            <option value="">— Select table —</option>
+            {tables.map(function(t) { return <option key={t.id} value={t.id}>{t.name}</option>; })}
+          </select>
+        </div>
+        <div style={{ padding:'12px', background:'#fefce8', borderRadius:'8px', border:'1px solid #fde68a' }}>
+          <span style={{ fontSize:'12px', color:'#92400e' }}>👆 This automation will appear in the "Run Action" menu when users select rows in the table. It will not run automatically.</span>
+        </div>
+      </div>)}
+      {(builderTrigger==='approval_completed' || builderTrigger==='approval_denied') && (<div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
+        <div><label style={labelStyle}>Table</label>
+          <select value={builderTriggerConfig.tableId||''} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{tableId:e.target.value}); }); }} style={selectStyle}>
+            <option value="">— Select table —</option>
+            {tables.map(function(t) { return <option key={t.id} value={t.id}>{t.name}</option>; })}
+          </select>
+        </div>
+        <div style={{ padding:'12px', background: builderTrigger==='approval_completed' ? '#f0fdf4' : '#fef2f2', borderRadius:'8px', border: builderTrigger==='approval_completed' ? '1px solid #bbf7d0' : '1px solid #fecaca' }}>
+          <span style={{ fontSize:'12px', color: builderTrigger==='approval_completed' ? '#166534' : '#991b1b' }}>
+            {builderTrigger==='approval_completed' ? '✅ This automation fires when an approval workflow on this table is fully approved. Use it to send emails, update fields, fire webhooks, etc.' : '❌ This automation fires when an approval workflow on this table is denied. Use it to notify the requester, update status fields, etc.'}
+          </span>
+        </div>
+      </div>)}
     </div>);
   }
 
-  // ---- Action Config ----
-  function ActionConfigEditor({ action, index }: { action:AutomationAction; index:number }) {
+ // ---- Action Config ----
+  // NOTE: This is rendered INLINE (not as a component) to prevent re-mount on keystroke
+  function renderActionConfig(action: AutomationAction, index: number) {
     var config = action.actionConfig||{};
     var triggerCols = getTriggerTableColumns();
     function setConfig(k:string,v:any) { updateAction(index, { actionConfig: Object.assign({},config,{[k]:v}) }); }
     var targetTableId = config.targetTableId || builderTriggerConfig.tableId || '';
     var targetColumns = getSettableColumns(targetTableId);
-
+ 
+    // Dynamic content panel — renders for text/email fields
+    function DynamicContentPanel({ value, onChange, showMeta }: { value: string; onChange: (val: string) => void; showMeta?: boolean }) {
+      if (triggerCols.length === 0 && !showMeta) return null;
+      return (<div style={{ padding:'10px', background:'#f8f7ff', border:'1px solid #e0e7ff', borderRadius:'8px', marginTop:'6px' }}>
+        <div style={{ fontSize:'10px', fontWeight:700, color:'#6b7280', textTransform:'uppercase' as const, letterSpacing:'0.5px', marginBottom:'6px' }}>INSERT DYNAMIC CONTENT</div>
+        {triggerCols.length > 0 && (<div style={{ display:'flex', flexWrap:'wrap' as const, gap:'4px', marginBottom:'8px' }}>
+          {triggerCols.filter(function(c) { return READ_ONLY_TYPES.indexOf(c.type) === -1; }).map(function(col) {
+            return (<button key={col.id} onClick={function() { onChange(value + '{{row.' + col.name + '}}'); }}
+              style={{ background:'#ffffff', border:'1px solid #c7d2fe', borderRadius:'4px', padding:'3px 8px', fontSize:'11px', color:'#4338ca', cursor:'pointer', fontFamily:'monospace' }}>
+              {col.name}
+            </button>);
+          })}
+        </div>)}
+        {showMeta && (<>
+          <div style={{ fontSize:'9px', fontWeight:600, color:'#9ca3af', textTransform:'uppercase' as const, marginBottom:'4px', marginTop:'4px' }}>Metadata</div>
+          <div style={{ display:'flex', flexWrap:'wrap' as const, gap:'4px', marginBottom:'4px' }}>
+            {[
+              { label:'Date', val:'{{meta.date}}' },
+              { label:'Time', val:'{{meta.time}}' },
+              { label:'Timestamp', val:'{{meta.timestamp}}' },
+              { label:'Row ID', val:'{{meta.rowId}}' },
+              { label:'Table ID', val:'{{meta.tableId}}' },
+              { label:'Automation', val:'{{meta.automationName}}' },
+            ].map(function(m) {
+              return (<button key={m.val} onClick={function() { onChange(value + m.val); }}
+                style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:'4px', padding:'3px 8px', fontSize:'10px', color:'#166534', cursor:'pointer', fontFamily:'monospace' }}>
+                {m.label}
+              </button>);
+            })}
+          </div>
+        </>)}
+        {(builderTrigger === 'approval_completed' || builderTrigger === 'approval_denied') && (<>
+          <div style={{ fontSize:'9px', fontWeight:600, color:'#9ca3af', textTransform:'uppercase' as const, marginBottom:'4px', marginTop:'4px' }}>Approval Data</div>
+          <div style={{ display:'flex', flexWrap:'wrap' as const, gap:'4px' }}>
+            {[
+              { label:'Workflow Name', val:'{{approval.workflowName}}' },
+              { label:'Request ID', val:'{{approval.requestId}}' },
+              { label:'Approved/Denied By', val: builderTrigger === 'approval_completed' ? '{{approval.approvedBy}}' : '{{approval.deniedBy}}' },
+              { label:'Workflow ID', val:'{{approval.workflowId}}' },
+            ].concat(builderTrigger === 'approval_denied' ? [{ label:'Reason', val:'{{approval.reason}}' }] : []).map(function(m) {
+              return (<button key={m.val} onClick={function() { onChange(value + m.val); }}
+                style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:'4px', padding:'3px 8px', fontSize:'10px', color:'#991b1b', cursor:'pointer', fontFamily:'monospace' }}>
+                {m.label}
+              </button>);
+            })}
+          </div>
+        </>)}
+        {triggerCols.length > 0 && (<div style={{ fontSize:'9px', fontWeight:600, color:'#9ca3af', textTransform:'uppercase' as const, marginBottom:'4px', marginTop:'8px' }}>Operators</div>)}
+        {triggerCols.length > 0 && (<div style={{ display:'flex', flexWrap:'wrap' as const, gap:'4px' }}>
+          {['==','!=','>','<','>=','<=','contains','startsWith','isEmpty'].map(function(op) {
+            return (<button key={op} onClick={function() { onChange(value + ' ' + op + ' '); }}
+              style={{ background:'#fff7ed', border:'1px solid #fed7aa', borderRadius:'4px', padding:'2px 8px', fontSize:'10px', color:'#c2410c', cursor:'pointer', fontFamily:'monospace' }}>
+              {op}
+            </button>);
+          })}
+        </div>)}
+      </div>);
+    }
+ 
     return (<div style={{ display:'flex', flexDirection:'column', gap:'10px', marginTop:'8px' }}>
-      {['update_field','create_row','lock_row'].indexOf(action.actionType)!==-1 && (<div><label style={labelStyle}>Target Table</label>
+      {['update_field','create_row','lock_row','unlock_row'].indexOf(action.actionType)!==-1 && (<div><label style={labelStyle}>Target Table</label>
         <select value={config.targetTableId||''} onChange={function(e) { setConfig('targetTableId',e.target.value); }} style={selectStyle}>
           <option value="">— Select table —</option>
           {tables.map(function(t) { return <option key={t.id} value={t.id}>{t.name}</option>; })}
         </select></div>)}
-
+ 
       {['update_field','create_row'].indexOf(action.actionType)!==-1 && (<div><label style={labelStyle}>Set Field Values</label>
         {(config.fieldMappings||[]).map(function(mapping:any, fi:number) {
           var selectedCol = targetColumns.find(function(c) { return c.name===mapping.column; });
@@ -349,42 +467,136 @@ export default function AutomationsManager() {
               <button onClick={function() { setConfig('fieldMappings',(config.fieldMappings||[]).filter(function(_:any,i:number) { return i!==fi; })); }} style={Object.assign({},iconBtnStyle,{color:'#ef4444',marginLeft:'8px'})}>✕</button>
             </div>
             {mapping.column && selectedCol ? <DynamicValueInput column={selectedCol} value={mapping.value||''} onChange={function(v) { var m=(config.fieldMappings||[]).slice(); m[fi]=Object.assign({},m[fi],{value:v}); setConfig('fieldMappings',m); }} triggerColumns={triggerCols} />
-            : mapping.column ? <input type="text" value={mapping.value||''} onChange={function(e) { var m=(config.fieldMappings||[]).slice(); m[fi]=Object.assign({},m[fi],{value:e.target.value}); setConfig('fieldMappings',m); }} style={inputStyle} placeholder="Enter value" /> : null}
+            : mapping.column ? (<div><input type="text" value={mapping.value||''} onChange={function(e) { var m=(config.fieldMappings||[]).slice(); m[fi]=Object.assign({},m[fi],{value:e.target.value}); setConfig('fieldMappings',m); }} style={inputStyle} placeholder="Enter value or use dynamic content below" /><DynamicContentPanel value={mapping.value||''} onChange={function(v) { var m=(config.fieldMappings||[]).slice(); m[fi]=Object.assign({},m[fi],{value:v}); setConfig('fieldMappings',m); }} showMeta={true} /></div>) : null}
           </div>);
         })}
         <button onClick={function() { setConfig('fieldMappings',(config.fieldMappings||[]).concat([{column:'',value:''}])); }} style={addBtnStyle}>+ Add Field</button>
       </div>)}
-
-      {['update_field','lock_row'].indexOf(action.actionType)!==-1 && (<div style={{ padding:'8px', background:'#f3f4f6', borderRadius:'6px' }}>
+ 
+      {['update_field','lock_row','unlock_row'].indexOf(action.actionType)!==-1 && (<div style={{ padding:'8px', background:'#f3f4f6', borderRadius:'6px' }}>
         <label style={Object.assign({},labelStyle,{color:'#9ca3af',fontSize:'10px'})}>Row ID (advanced — leave blank for triggering row)</label>
         <input type="text" value={config.targetRowId||''} onChange={function(e) { setConfig('targetRowId',e.target.value); }} style={Object.assign({},inputStyle,{background:'#f9fafb',fontSize:'12px'})} placeholder="Leave blank" />
       </div>)}
-
+ 
       {action.actionType==='send_email' && (<>
-        <div><label style={labelStyle}>To</label><input type="text" value={config.to||''} onChange={function(e) { setConfig('to',e.target.value); }} style={inputStyle} placeholder="email@example.com" /><DynamicFallback value={config.to||''} onChange={function(v) { setConfig('to',v); }} triggerColumns={triggerCols} label="Insert from trigger row" /></div>
-        <div><label style={labelStyle}>Subject</label><input type="text" value={config.subject||''} onChange={function(e) { setConfig('subject',e.target.value); }} style={inputStyle} placeholder="Subject" /><DynamicFallback value={config.subject||''} onChange={function(v) { setConfig('subject',v); }} triggerColumns={triggerCols} label="Insert from trigger row" /></div>
-        <div><label style={labelStyle}>Body (HTML)</label><textarea value={config.body||''} onChange={function(e) { setConfig('body',e.target.value); }} style={Object.assign({},inputStyle,{minHeight:'80px',resize:'vertical' as const})} placeholder="Email body" /><DynamicFallback value={config.body||''} onChange={function(v) { setConfig('body',v); }} triggerColumns={triggerCols} label="Insert from trigger row" /></div>
+        <div><label style={labelStyle}>To (comma-separated for multiple)</label>
+          <input type="text" value={config.to||''} onChange={function(e) { setConfig('to',e.target.value); }} style={inputStyle} placeholder="email@example.com, {{row.Contact Email}}" />
+          <DynamicContentPanel value={config.to||''} onChange={function(v) { setConfig('to',v); }} />
+        </div>
+        <div><label style={labelStyle}>Subject</label>
+          <input type="text" value={config.subject||''} onChange={function(e) { setConfig('subject',e.target.value); }} style={inputStyle} placeholder="Your request has been {{row.Status}}" />
+          <DynamicContentPanel value={config.subject||''} onChange={function(v) { setConfig('subject',v); }} showMeta={true} />
+        </div>
+        <div><label style={labelStyle}>Body (HTML)</label>
+          <textarea value={config.body||''} onChange={function(e) { setConfig('body',e.target.value); }} style={Object.assign({},inputStyle,{minHeight:'100px',resize:'vertical' as const})} placeholder="Hi {{row.Contact Name}},&#10;&#10;Your purchase order for {{row.Total}} has been processed." />
+          <DynamicContentPanel value={config.body||''} onChange={function(v) { setConfig('body',v); }} showMeta={true} />
+        </div>
       </>)}
-
+ 
       {action.actionType==='webhook' && (<>
-        <div><label style={labelStyle}>URL</label><input type="text" value={config.url||''} onChange={function(e) { setConfig('url',e.target.value); }} style={inputStyle} placeholder="https://..." /></div>
-        <div><label style={labelStyle}>Method</label><select value={config.method||'POST'} onChange={function(e) { setConfig('method',e.target.value); }} style={selectStyle}><option value="POST">POST</option><option value="PUT">PUT</option><option value="PATCH">PATCH</option></select></div>
+        <div><label style={labelStyle}>URL</label>
+          <input type="text" value={config.url||''} onChange={function(e) { setConfig('url',e.target.value); }} style={inputStyle} placeholder="https://..." />
+        </div>
+        <div><label style={labelStyle}>Method</label>
+          <select value={config.method||'POST'} onChange={function(e) { setConfig('method',e.target.value); }} style={selectStyle}>
+            <option value="POST">POST</option><option value="PUT">PUT</option><option value="PATCH">PATCH</option><option value="DELETE">DELETE</option>
+          </select>
+        </div>
+        {config.url && (<div>
+          <label style={labelStyle}>Retry on failure (5xx errors)</label>
+          <select value={config.retryCount||'0'} onChange={function(e) { setConfig('retryCount',e.target.value); }} style={selectStyle}>
+            <option value="0">No retry</option>
+            <option value="1">1 retry</option>
+            <option value="2">2 retries</option>
+            <option value="3">3 retries (exponential backoff)</option>
+          </select>
+        </div>)}
       </>)}
-
+ 
       {action.actionType==='notify' && (<>
         <div><label style={labelStyle}>Notify Users</label>
           <UserPicker selectedIds={config.userIds||[]} onChange={function(ids) { setConfig('userIds',ids); }} users={users} />
         </div>
-        <div><label style={labelStyle}>Message</label><input type="text" value={config.message||''} onChange={function(e) { setConfig('message',e.target.value); }} style={inputStyle} placeholder="Notification message" /><DynamicFallback value={config.message||''} onChange={function(v) { setConfig('message',v); }} triggerColumns={triggerCols} label="Insert from trigger row" /></div>
+        <div><label style={labelStyle}>Title</label>
+          <input type="text" value={config.title||''} onChange={function(e) { setConfig('title',e.target.value); }} style={inputStyle} placeholder="Notification title" />
+          <DynamicContentPanel value={config.title||''} onChange={function(v) { setConfig('title',v); }} />
+        </div>
+        <div><label style={labelStyle}>Message</label>
+          <input type="text" value={config.message||''} onChange={function(e) { setConfig('message',e.target.value); }} style={inputStyle} placeholder="Notification message" />
+          <DynamicContentPanel value={config.message||''} onChange={function(v) { setConfig('message',v); }} showMeta={true} />
+        </div>
+        <label style={{ display:'flex', alignItems:'center', gap:'6px', fontSize:'12px', color:'#6b7280', cursor:'pointer' }}>
+          <input type="checkbox" checked={config.sendEmail||false} onChange={function(e) { setConfig('sendEmail',e.target.checked); }} />
+          Also send as email notification
+        </label>
       </>)}
-
+ 
+      {action.actionType==='trigger_approval' && (function() {
+        var approvalTableId = config.targetTableId || builderTriggerConfig.tableId || '';
+        if (approvalTableId) fetchApprovalWorkflows(approvalTableId);
+        var workflows = approvalWorkflows[approvalTableId] || [];
+        return (<div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+          <div><label style={labelStyle}>Table</label>
+            <select value={config.targetTableId||''} onChange={function(e) { setConfig('targetTableId',e.target.value); setConfig('workflowId',''); }} style={selectStyle}>
+              <option value="">— Use trigger table —</option>
+              {tables.map(function(t) { return <option key={t.id} value={t.id}>{t.name}</option>; })}
+            </select>
+          </div>
+          <div><label style={labelStyle}>Approval Workflow</label>
+            {workflows.length === 0 ? (
+              <div style={{ padding:'10px', background:'#fefce8', borderRadius:'6px', border:'1px solid #fde68a' }}>
+                <span style={{ fontSize:'11px', color:'#92400e' }}>No approval workflows found. Install from Marketplace first.</span>
+              </div>
+            ) : (
+              <select value={config.workflowId||''} onChange={function(e) { setConfig('workflowId',e.target.value); }} style={selectStyle}>
+                <option value="">— Select workflow —</option>
+                {workflows.map(function(wf: any) { return <option key={wf.id} value={wf.id}>{wf.name} ({(wf.stages||[]).length} stage{(wf.stages||[]).length!==1?'s':''})</option>; })}
+              </select>
+            )}
+          </div>
+          <div style={{ padding:'10px', background:'#f0fdf4', borderRadius:'6px', border:'1px solid #bbf7d0' }}>
+            <span style={{ fontSize:'11px', color:'#166534' }}>✅ Submits the row into the approval workflow, locks the row, and notifies approvers.</span>
+          </div>
+        </div>);
+      })()}
+ 
+      {action.actionType==='unlock_row' && (<div style={{ padding:'10px', background:'#f0fdf4', borderRadius:'6px', border:'1px solid #bbf7d0' }}>
+        <span style={{ fontSize:'11px', color:'#166534' }}>🔓 Unlocks the row, allowing it to be edited again.</span>
+      </div>)}
+ 
+      {action.actionType==='delay' && (<div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+        <div style={{ display:'flex', gap:'10px', alignItems:'flex-end' }}>
+          <div style={{ flex:1 }}><label style={labelStyle}>Hours</label>
+            <input type="number" min="0" max="24" value={config.delayHours||'0'} onChange={function(e) { setConfig('delayHours',e.target.value); }} style={inputStyle} />
+          </div>
+          <div style={{ flex:1 }}><label style={labelStyle}>Minutes</label>
+            <input type="number" min="0" max="59" value={config.delayMinutes||'0'} onChange={function(e) { setConfig('delayMinutes',e.target.value); }} style={inputStyle} />
+          </div>
+          <div style={{ flex:1 }}><label style={labelStyle}>Seconds</label>
+            <input type="number" min="0" max="59" value={config.delaySeconds||'0'} onChange={function(e) { setConfig('delaySeconds',e.target.value); }} style={inputStyle} />
+          </div>
+        </div>
+        <div style={{ padding:'10px', background:'#fefce8', borderRadius:'6px', border:'1px solid #fde68a' }}>
+          <span style={{ fontSize:'11px', color:'#92400e' }}>⏳ Pauses before the next step. Maximum 1 hour.</span>
+        </div>
+      </div>)}
+ 
+      {action.actionType==='condition' && (<div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+        <div><label style={labelStyle}>IF Condition</label>
+          <input type="text" value={config.conditionExpr||''} onChange={function(e) { setConfig('conditionExpr',e.target.value); }} style={inputStyle} placeholder="e.g. {{row.Total}} > 500" />
+          <DynamicContentPanel value={config.conditionExpr||''} onChange={function(v) { setConfig('conditionExpr',v); }} showMeta={true} />
+        </div>
+        <div style={{ padding:'10px', background:'#ede9fe', borderRadius:'6px', border:'1px solid #c4b5fd' }}>
+          <span style={{ fontSize:'11px', color:'#5b21b6' }}>🔀 Steps after this run on the TRUE or FALSE branch. Set the condition on each step.</span>
+        </div>
+      </div>)}
+ 
       <div style={{ padding:'8px', background:'#f3f4f6', borderRadius:'6px' }}>
-        <label style={Object.assign({},labelStyle,{color:'#9ca3af',fontSize:'10px'})}>Condition (advanced — leave blank to always run)</label>
+        <label style={Object.assign({},labelStyle,{color:'#9ca3af',fontSize:'10px'})}>Step condition (leave blank to always run)</label>
         <input type="text" value={action.conditionExpr||''} onChange={function(e) { updateAction(index,{conditionExpr:e.target.value}); }} style={Object.assign({},inputStyle,{background:'#f9fafb',fontSize:'12px'})} placeholder="e.g. {{row.Status}} == 'Approved'" />
       </div>
     </div>);
   }
-
   if (loading) return <div style={{ padding:'40px', textAlign:'center', color:'#9ca3af' }}>Loading automations...</div>;
 
   // ==== LIST ====
@@ -409,10 +621,14 @@ export default function AutomationsManager() {
                   <span style={{ fontSize:'14px', fontWeight:600, color:auto.enabled?'#111827':'#9ca3af' }}>{auto.name}</span>
                   {!auto.enabled && <span style={{ fontSize:'10px', color:'#9ca3af', textTransform:'uppercase' as const, letterSpacing:'1px', fontWeight:600 }}>Disabled</span>}
                 </div>
-                <div style={{ fontSize:'12px', color:'#6b7280', marginTop:'4px', display:'flex', gap:'16px' }}>
+                <div style={{ fontSize:'12px', color:'#6b7280', marginTop:'4px', display:'flex', gap:'16px', flexWrap:'wrap' as const }}>
                   <span>{getTriggerLabel(auto.triggerType)}</span>
                   <span>{auto.actions.length} action{auto.actions.length!==1?'s':''}</span>
                   {auto._count && <span>{auto._count.runs} run{auto._count.runs!==1?'s':''}</span>}
+                  {auto.creatorName && <span style={{ color:'#9ca3af' }}>by {auto.creatorName}</span>}
+                  {auto.workspaceName && <span style={{ padding:'1px 6px', background:'#f3e8ff', color:'#7c3aed', borderRadius:'4px', fontSize:'10px', fontWeight:600 }}>{auto.workspaceIcon || '📁'} {auto.workspaceName}</span>}
+                  {auto.sharedTableName && <span style={{ padding:'1px 6px', background:'#dbeafe', color:'#1e40af', borderRadius:'4px', fontSize:'10px', fontWeight:600 }}>{auto.sharedTableIcon || '📊'} {auto.sharedTableName}</span>}
+                  {auto.isOwner === false && <span style={{ padding:'1px 6px', background:'#f0fdf4', color:'#166534', borderRadius:'4px', fontSize:'10px', fontWeight:600 }}>Shared</span>}
                 </div>
               </div>
               <div style={{ display:'flex', gap:'6px', alignItems:'center' }}>
@@ -438,6 +654,31 @@ export default function AutomationsManager() {
       <div style={Object.assign({},cardStyle,{marginBottom:'16px'})}>
         <div style={{ marginBottom:'12px' }}><label style={labelStyle}>Name</label><input type="text" value={builderName} onChange={function(e) { setBuilderName(e.target.value); }} style={inputStyle} placeholder="e.g. Notify on approval" /></div>
         <div><label style={labelStyle}>Description (optional)</label><input type="text" value={builderDesc} onChange={function(e) { setBuilderDesc(e.target.value); }} style={inputStyle} placeholder="What does this automation do?" /></div>
+        <div style={{ marginTop:'12px' }}><label style={labelStyle}>Share with</label>
+          <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+            <div>
+              <span style={{ fontSize:'10px', fontWeight:600, color:'#9ca3af', textTransform:'uppercase' as const, letterSpacing:'0.5px' }}>Workspace</span>
+              {workspaces.length > 0 ? (
+                <select value={builderWorkspaceId||''} onChange={function(e) { setBuilderWorkspaceId(e.target.value||null); }} style={selectStyle}>
+                  <option value="">None</option>
+                  {workspaces.map(function(ws) { return <option key={ws.id} value={ws.id}>{ws.icon || '📁'} {ws.name}</option>; })}
+                </select>
+              ) : (
+                <div style={{ padding:'6px 10px', background:'#f9fafb', borderRadius:'6px', border:'1px solid #e5e7eb', fontSize:'11px', color:'#9ca3af' }}>No workspaces — create one from the sidebar</div>
+              )}
+            </div>
+            <div>
+              <span style={{ fontSize:'10px', fontWeight:600, color:'#9ca3af', textTransform:'uppercase' as const, letterSpacing:'0.5px' }}>Table</span>
+              <select value={builderTableId||''} onChange={function(e) { setBuilderTableId(e.target.value||null); }} style={selectStyle}>
+                <option value="">None</option>
+                {tables.map(function(t) { return <option key={t.id} value={t.id}>{t.name}</option>; })}
+              </select>
+            </div>
+            <span style={{ fontSize:'11px', color:'#9ca3af', display:'block' }}>
+              {builderWorkspaceId && builderTableId ? 'Shared with workspace members and table members.' : builderWorkspaceId ? 'All workspace members can see this. Admins can edit.' : builderTableId ? 'Anyone with access to this table can see this automation.' : 'Private — only you and system admins.'}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div style={Object.assign({},cardStyle,{marginBottom:'16px'})}>
@@ -471,7 +712,7 @@ export default function AutomationsManager() {
                 <button onClick={function() { removeAction(idx); }} style={Object.assign({},iconBtnStyle,{color:'#ef4444'})}>✕</button>
               </div>
             </div>
-            <ActionConfigEditor action={action} index={idx} />
+            {renderActionConfig(action, idx)}
           </div>
           {idx<builderActions.length-1 && <div style={{ textAlign:'center', margin:'2px 0' }}><div style={{ width:'2px', height:'16px', background:'#d1d5db', margin:'0 auto' }} /></div>}
         </div>); })}
