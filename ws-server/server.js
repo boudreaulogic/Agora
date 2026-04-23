@@ -140,7 +140,7 @@ server.on('upgrade', async (req, socket, head) => {
 
     // Validate WebSocket origin — prevents Cross-Site WebSocket Hijacking
     const origin = req.headers.origin;
-    const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://agora.boudreaulogic.com,https://app.boudreaulogic.com,http://localhost:3000').split(',');
+    const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',');
     if (origin && !allowedOrigins.includes(origin)) {
       console.log('WS rejected: invalid origin', origin);
       socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
