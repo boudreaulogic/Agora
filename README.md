@@ -135,8 +135,6 @@ For production, we recommend:
 3. **SSL** — Let's Encrypt or Cloudflare for HTTPS
 4. **Backups** — Automated PostgreSQL backups
 
-Each client/organization gets its own Docker instance and database — this is not multi-tenant SaaS. Typical cost: ~$100/month per deployment on DigitalOcean.
-
 ### Environment Variables
 
 See [`.env.example`](.env.example) for all configuration options.
