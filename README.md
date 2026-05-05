@@ -193,7 +193,7 @@ Agora is source-available under the [Agora Community License v1.0](LICENSE).
 - Sell it or offer it as a hosted service (SaaS)
 - Redistribute it as your own product
 
-For commercial licensing, contact hello@boudreaulogic.com.
+For commercial licensing, contact hunter@boudreaulogic.com.
 
 ---
 
