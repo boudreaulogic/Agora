@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { evaluateFormula } from '@/lib/formula';
 import { LinkedRecordPicker } from './LinkedRecordPicker';
 import { AttachmentCell } from './AttachmentCell';
+import { validateColumnValue } from '@/lib/columnValidation';
 
 export function EditableCell({
   rowId,
@@ -49,6 +50,7 @@ export function EditableCell({
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const justSavedRef = useRef(false);
   const cellId = `${rowId}-${columnId}`;
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Calculate formula value if this is a formula column
   const calculatedValue = useMemo(() => {
@@ -76,6 +78,11 @@ export function EditableCell({
       setValue(initialValue || '');
     }
   }, [initialValue, isEditing]);
+  
+  // Clear validation error when entering edit mode
+  useEffect(() => {
+    if (isEditing) setValidationError(null);
+  }, [isEditing]);
 
   // Broadcast focus/blur events
   useEffect(() => {
@@ -100,7 +107,20 @@ export function EditableCell({
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
-
+ 
+    // Validate before saving
+    if (newValue !== '' && newValue !== null && newValue !== undefined) {
+      var validation = validateColumnValue(newValue, columnType, columnSettings);
+      if (!validation.valid) {
+        setValidationError(validation.error || 'Invalid value');
+        return;
+      }
+      newValue = validation.sanitized !== undefined ? validation.sanitized : newValue;
+      setValidationError(null);
+    } else {
+      setValidationError(null);
+    }
+ 
     try {
       const response = await fetch(`/api/tables/${tableId}/rows/${rowId}`, {
         method: 'PATCH',
@@ -530,8 +550,9 @@ export function EditableCell({
   if (['text', 'email', 'url', 'phone', 'long_text', 'duration'].includes(columnType)) {
     const Component = columnType === 'long_text' ? 'textarea' : 'input';
     const inputType = columnType === 'email' ? 'email' : columnType === 'url' ? 'url' : columnType === 'phone' ? 'tel' : 'text';
-
+ 
     return (
+      <div className="relative">
       <Component
         type={Component === 'input' ? inputType : undefined}
         autoFocus
@@ -559,14 +580,17 @@ export function EditableCell({
         }}
         className="w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
         rows={columnType === 'long_text' ? 3 : undefined}
-        placeholder={columnType === 'url' ? 'https://' : columnType === 'duration' ? 'e.g., 1h 30m' : undefined}
+        placeholder={columnType === 'url' ? 'https://' : columnType === 'duration' ? 'e.g., 1h 30m' : columnType === 'email' ? 'email@example.com' : columnType === 'phone' ? '(555) 123-4567' : undefined}
       />
+      {validationError && <div className="absolute top-full left-0 right-0 mt-1 px-2 py-1 bg-red-50 border border-red-200 rounded text-[10px] text-red-600 z-50 shadow-sm">{validationError}</div>}
+      </div>
     );
   }
 
   // Edit mode - NUMBER types with debouncing
   if (['number', 'currency', 'percent', 'progress'].includes(columnType)) {
     return (
+      <div className="relative">
       <input
         type="number"
         step={columnType === 'currency' ? '0.01' : '1'}
@@ -597,6 +621,8 @@ export function EditableCell({
         }}
         className="w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
+      {validationError && <div className="absolute top-full left-0 right-0 mt-1 px-2 py-1 bg-red-50 border border-red-200 rounded text-[10px] text-red-600 z-50 shadow-sm">{validationError}</div>}
+      </div>
     );
   }
 

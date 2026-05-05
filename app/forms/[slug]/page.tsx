@@ -373,7 +373,8 @@ export default function PublicFormPage(pageProps: any) {
     return form.fields.filter(function(f: any) {
       if (f.pageId !== page.id) return false;
       if (f.visible === false) return false;
-      if (f.type === 'section_header' || f.type === 'divider' || f.type === 'calculated' || f.type === 'repeating_group') return true;
+      if (f.type === 'section_header' || f.type === 'divider' || f.type === 'calculated') return true;
+      if (f.type === 'repeating_group') return evaluateConditions(f, values);
       return evaluateConditions(f, values);
     });
   }
@@ -657,21 +658,18 @@ export default function PublicFormPage(pageProps: any) {
         </div>
         {isMultiPage && (
           <div className="bg-white dark:bg-gray-900 border-x border-gray-200 dark:border-gray-700 px-8 py-4">
-            <div className="flex items-center justify-center space-x-1">
+            <div className="flex items-center justify-center flex-wrap gap-2">
               {pages.map(function(page: any, pi: number) {
-                return (<div key={page.id} className="flex items-center">
-                    {pi > 0 && <div className={'w-8 h-0.5 mx-1 ' + (pi <= currentPage ? 'bg-blue-500' : 'bg-gray-200 dark:bg-gray-700')} />}
-                    <button onClick={function() { goToPage(pi); }} className={'flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-sm transition-colors ' + (pi === currentPage ? 'bg-blue-600 text-white' : pi < currentPage ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200')}>
+                return (<button key={page.id} onClick={function() { goToPage(pi); }} className={'inline-flex items-center space-x-1.5 px-4 py-2 rounded-full text-sm transition-colors ' + (pi === currentPage ? 'bg-blue-600 text-white shadow-sm' : pi < currentPage ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200')}>
                       <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold bg-white/20">{pi < currentPage ? '\u2713' : pi + 1}</span>
-                      <span className="hidden sm:inline text-xs font-medium">{page.title}</span>
+                      <span className="text-xs font-medium">{page.title}</span>
                       {(pageErrors[pi] || 0) > 0 && (<span className="w-4 h-4 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center font-bold">{pageErrors[pi]}</span>)}
-                    </button>
-                  </div>);
+                    </button>);
               })}
             </div>
           </div>
         )}
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-900 rounded-b-xl shadow-sm border border-gray-200 dark:border-gray-700 border-t-0">
+        <form onSubmit={handleSubmit}className="bg-white dark:bg-gray-900 rounded-b-xl shadow-sm border border-gray-200 dark:border-gray-700 border-t-0">
           <div className="p-8 space-y-6">
             {formError && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">{formError}</div>}
             {isMultiPage && currentPageObj && (<div className="mb-2"><h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{currentPageObj.title}</h2>{currentPageObj.description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{currentPageObj.description}</p>}</div>)}

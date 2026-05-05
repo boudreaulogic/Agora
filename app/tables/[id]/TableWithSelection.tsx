@@ -602,7 +602,8 @@ export function TableWithSelection({
                       >
                         <div className="flex items-center justify-between group/header">
                           <div className="flex items-center flex-1 min-w-0">
-                            <span className="truncate text-xs font-medium text-gray-600 dark:text-gray-300">{column.name}</span>
+                            <span className="truncate text-xs font-medium text-gray-600 dark:text-gray-300" title={column.settings?.description || ''}>{column.name}</span>
+                            {column.settings?.description && <span className="text-[9px] text-gray-400 ml-1" title={column.settings.description}>ⓘ</span>}
                             {column.type === 'formula' && <span className="text-xs text-gray-400 ml-1">ƒ</span>}
                             {column.type === 'lookup' && <span className="text-xs text-gray-400 ml-1">👀</span>}
                             {column.type === 'rollup' && <span className="text-xs text-gray-400 ml-1">📊</span>}
@@ -723,6 +724,9 @@ export function TableWithSelection({
                           <span className="text-amber-500 flex-shrink-0" title="Row is locked">
                             🔒
                           </span>
+                        )}
+                        {(table as any).isSharePointBacked && (
+                          <span className={'w-2 h-2 rounded-full flex-shrink-0 ' + ((row as any).spItemId ? 'bg-green-400' : 'bg-yellow-400')} title={(row as any).spItemId ? 'Synced to SharePoint' : 'Not yet synced to SharePoint'} />
                         )}
                       </div>
                     </td>

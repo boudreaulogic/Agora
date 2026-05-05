@@ -91,6 +91,10 @@ export async function PATCH(
   if (order !== undefined) updateData.order = order;
   if (required !== undefined) updateData.required = required;
   if (showInNewRow !== undefined) updateData.showInNewRow = showInNewRow;
+  if (body.agoraOnly !== undefined) {
+    var existingSpConfig = column.sharePointConfig as any || {};
+    updateData.sharePointConfig = Object.assign({}, existingSpConfig, { agoraOnly: body.agoraOnly });
+  }
   
   // Handle formula field
   if (type === 'formula') {

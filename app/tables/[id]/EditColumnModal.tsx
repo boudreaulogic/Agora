@@ -69,8 +69,10 @@ export function EditColumnModal({
     column.settings?.options || [{ value: 'option1', label: 'Option 1', color: '#3B82F6' }]
   );
   const [defaultValue, setDefaultValue] = useState<string>(column.settings?.defaultValue || '');
+  const [columnDescription, setColumnDescription] = useState<string>(column.settings?.description || '');
   const [isRequired, setIsRequired] = useState<boolean>(column.required || false);
   const [showInNewRow, setShowInNewRow] = useState<boolean>(column.showInNewRow !== false);
+  const [agoraOnly, setAgoraOnly] = useState<boolean>((column.sharePointConfig as any)?.agoraOnly || false);
   const [allTableColumns, setAllTableColumns] = useState<any[]>([]);
 
   // For linked_record type
@@ -100,7 +102,7 @@ export function EditColumnModal({
       setColumnName(column.name); setSelectedType(column.type); setFormula(column.formula || '');
       setFormulaFormat(column.settings?.format || 'number');
       setOptions(column.settings?.options || [{ value: 'option1', label: 'Option 1', color: '#3B82F6' }]);
-      setDefaultValue(column.settings?.defaultValue || ''); setIsRequired(column.required || false);
+      setDefaultValue(column.settings?.defaultValue || ''); setColumnDescription(column.settings?.description || ''); setIsRequired(column.required || false);
       setShowInNewRow(column.showInNewRow !== false); setLinkedTableId(column.linkedTableId || '');
       setLookupLinkedColumnId(column.lookupLinkedColumnId || ''); setLookupFieldId(column.lookupFieldId || '');
       setRollupLinkedColumnId(column.rollupLinkedColumnId || ''); setRollupFieldId(column.rollupFieldId || '');
@@ -180,6 +182,7 @@ export function EditColumnModal({
       if (selectedType === 'select' || selectedType === 'multi_select') settings.options = options;
       if (selectedType === 'formula') settings.format = formulaFormat;
       if (defaultValue) settings.defaultValue = defaultValue;
+      if (columnDescription) settings.description = columnDescription;
       if (selectedType === 'lookup') {
         const linkedCol = linkedRecordColumns.find((c: any) => c.id === lookupLinkedColumnId);
         const fieldCol = linkedTableColumns.find((c: any) => c.id === lookupFieldId);
@@ -202,7 +205,7 @@ export function EditColumnModal({
           rollupLinkedColumnId: selectedType === 'rollup' ? rollupLinkedColumnId : undefined,
           rollupFieldId: selectedType === 'rollup' ? (rollupFunction === 'COUNT' ? undefined : rollupFieldId) : undefined,
           rollupFunction: selectedType === 'rollup' ? rollupFunction : undefined,
-          required: isRequired, showInNewRow: showInNewRow,
+          required: isRequired, showInNewRow: showInNewRow, agoraOnly: agoraOnly,
         }),
       });
 
@@ -241,6 +244,13 @@ export function EditColumnModal({
             <label className="block text-sm font-medium text-gray-700 mb-2">Column Name <span className="text-red-500">*</span></label>
             <input type="text" value={columnName} onChange={(e) => setColumnName(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
           </div>
+		  
+		  {/* Column Description */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <input type="text" value={columnDescription} onChange={(e) => setColumnDescription(e.target.value)} placeholder="Help text shown to users (e.g. 'Enter your work email')" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            <p className="text-xs text-gray-400 mt-1">Shown as a tooltip on column headers and in forms</p>
+          </div>
 
           {/* Required Field Toggle */}
           {!['formula', 'lookup', 'rollup', 'approval_status'].includes(selectedType) && (
@@ -261,6 +271,21 @@ export function EditColumnModal({
                 <div><h4 className="text-sm font-medium text-gray-900">Show in New Row Panel</h4><p className="text-xs text-gray-500 mt-0.5">When disabled, this field won't appear when users click "+ New"</p></div>
                 <button type="button" onClick={() => setShowInNewRow(!showInNewRow)} className={`relative w-11 h-6 rounded-full transition-colors ${showInNewRow ? 'bg-blue-500' : 'bg-gray-300'}`}>
                   <div className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform" style={{ transform: showInNewRow ? 'translateX(22px)' : 'translateX(2px)' }} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Agora Only Toggle — only for SP-backed columns */}
+          {(column.sharePointConfig as any)?.spColumnName && (
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900">Agora Only</h4>
+                  <p className="text-xs text-gray-500 mt-0.5">When enabled, this column will NOT be pushed to SharePoint. Use for internal tracking, automation triggers, or temporary data.</p>
+                </div>
+                <button type="button" onClick={() => setAgoraOnly(!agoraOnly)} className={`relative w-11 h-6 rounded-full transition-colors ${agoraOnly ? 'bg-blue-500' : 'bg-gray-300'}`}>
+                  <div className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform" style={{ transform: agoraOnly ? 'translateX(22px)' : 'translateX(2px)' }} />
                 </button>
               </div>
             </div>
@@ -455,7 +480,14 @@ export function EditColumnModal({
               <div className="space-y-2">
                 {options.map((option, index) => (
                   <div key={index} className="flex items-center space-x-2">
-                    <input type="color" value={option.color} onChange={(e) => updateOption(index, 'color', e.target.value)} className="w-10 h-10 rounded cursor-pointer" />
+                    <div className="relative">
+                      <button type="button" onClick={(e) => { var el = e.currentTarget.nextElementSibling; if (el) (el as HTMLElement).style.display = (el as HTMLElement).style.display === 'none' ? 'flex' : 'none'; }} className="w-10 h-10 rounded-lg border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors" style={{ backgroundColor: option.color }} />
+                      <div style={{ display: 'none' }} className="absolute left-0 top-12 z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-2 flex flex-wrap gap-1.5 w-[168px]">
+                        {['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#06B6D4','#84CC16','#F97316','#6366F1','#14B8A6','#A855F7'].map((c) => (
+                          <button key={c} type="button" onClick={(e) => { updateOption(index, 'color', c); var panel = (e.currentTarget.parentElement as HTMLElement); if (panel) panel.style.display = 'none'; }} className={'w-8 h-8 rounded-md cursor-pointer transition-all hover:scale-110 ' + (option.color === c ? 'ring-2 ring-offset-2 ring-gray-800' : 'hover:ring-2 hover:ring-offset-1 hover:ring-gray-300')} style={{ backgroundColor: c }} />
+                        ))}
+                      </div>
+                    </div>
                     <input type="text" value={option.label} onChange={(e) => updateOption(index, 'label', e.target.value)} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg" placeholder="Option name" />
                     {options.length > 1 && (
                       <button type="button" onClick={() => removeOption(index)} className="text-red-600 hover:text-red-800">

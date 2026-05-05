@@ -337,6 +337,7 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
         </div>
         <a href={'/tables/' + table.id}
           className={'flex items-center flex-1 min-w-0 px-2 py-1 text-xs rounded-l transition-colors ' + (currentTableId === table.id ? activeClass : 'text-gray-600 hover:bg-gray-100')}>
+          {table.isSharePointBacked && <svg className="w-3.5 h-3.5 mr-1 flex-shrink-0" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#0078D4"/><path d="M8 7h8v2H8V7zm0 4h8v2H8v-2zm0 4h5v2H8v-2z" fill="white"/></svg>}
           <span className="flex-1 truncate">{table.name}</span>
           {!isInWorkspace && <span className="text-[10px] text-gray-400 opacity-0 group-hover:opacity-100">{table._count?.rows || 0}</span>}
         </a>
@@ -471,6 +472,7 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
       {/* Bottom actions — Create */}
       <div className="border-t border-gray-200 pt-2 mt-2 space-y-0.5">
         <Link href="/tables/new" className="flex items-center px-2 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded">+ Create Table</Link>
+		<Link href="/tables/sharepoint-import" className="flex items-center px-2 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded">+ Import from SharePoint</Link>
         <button onClick={function() { setShowConnectSheet(true); }} className="flex items-center w-full px-2 py-1.5 text-xs text-green-600 hover:bg-green-50 rounded">
           <svg className="w-3 h-3 mr-1.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.5 3h-15A1.5 1.5 0 003 4.5v15A1.5 1.5 0 004.5 21h15a1.5 1.5 0 001.5-1.5v-15A1.5 1.5 0 0019.5 3zm-9.75 15h-3v-3h3v3zm0-4.5h-3v-3h3v3zm0-4.5h-3V6h3v3zm4.5 9h-3v-3h3v3zm0-4.5h-3v-3h3v3zm0-4.5h-3V6h3v3zm4.5 9h-3v-3h3v3zm0-4.5h-3v-3h3v3zm0-4.5h-3V6h3v3z"/></svg>
           + Connect Google Sheet

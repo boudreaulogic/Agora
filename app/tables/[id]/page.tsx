@@ -31,7 +31,7 @@ export default async function TableViewPage({ params }: { params: { id: string }
     notFound();
   }
 
-  const hasAccess = await canAccessTable(session.user.id, params.id);
+const hasAccess = await canAccessTable(session.user.id, params.id);
   if (!hasAccess) {
     redirect('/');
   }

@@ -23,6 +23,19 @@ export async function PATCH(
     }
 
     const { columnId, value } = await request.json();
+
+    // Server-side column validation
+    if (value !== null && value !== undefined && value !== '') {
+      const col = await db.agoraColumn.findUnique({ where: { id: columnId }, select: { type: true, settings: true } });
+      if (col) {
+        const { validateColumnValue } = await import('@/lib/columnValidation');
+        var validation = validateColumnValue(value, col.type, col.settings);
+        if (!validation.valid) {
+          return NextResponse.json({ error: validation.error || 'Invalid value' }, { status: 400 });
+        }
+      }
+    }
+
     const row = await db.agoraRow.findUnique({
       where: { id: params.rowId },
     });

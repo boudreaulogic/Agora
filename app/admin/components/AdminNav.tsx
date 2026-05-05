@@ -21,6 +21,7 @@ export function AdminNav({
 	  { name: 'Tables', href: '/admin/tables' },
 	  { name: 'Email', href: '/admin/smtp' },
 	  { name: 'Google Sheets', href: '/admin/google-sheets' },
+	  { name: 'SharePoint', href: '/admin/sharepoint' },
 	  { name: 'Dashboard', href: '/admin/dashboard' },
 	  { name: 'Security', href: '/admin/security' },
 	];

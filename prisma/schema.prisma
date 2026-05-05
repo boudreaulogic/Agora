@@ -355,6 +355,8 @@ model AgoraTable {
   inheritPermissions Boolean @default(true) @map("inheritpermissions")
   notificationTargets Json @default("{}") @map("notificationtargets")
   isSheetBacked Boolean @default(false) @map("issheetbacked")
+  isSharePointBacked Boolean @default(false) @map("issharepointbacked")
+  sharePointConfig   Json    @default("{}") @map("sharepointconfig")
   enabledFeatures Json @default("[]") @map("enabledfeatures")
   
   createdAt   DateTime @default(now())
@@ -436,6 +438,7 @@ model AgoraColumn {
   position Int
   pinned   Boolean @default(false)
   hidden   Boolean @default(false)
+  sharePointConfig Json? @map("sharepointconfig")
   required    Boolean @default(false)
   showInNewRow Boolean @default(true) @map("showinnewrow")
   
@@ -459,6 +462,7 @@ model AgoraRow {
   
   isLocked    Boolean  @default(false)
   lockedById  String?
+  spItemId    String?  @map("spitemid")
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1056,7 +1060,7 @@ model Automation {
   enabled     Boolean  @default(true)
   
   workspaceId String?
-  tableId     String?
+  tableId     String?  @map("tableid")
   createdById String
   
   // Trigger config

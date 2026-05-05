@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { LinkedRecordPicker } from './LinkedRecordPicker';
+import { validateColumnValue } from '@/lib/columnValidation';
 
 // Column types that are NOT editable by users (computed/system)
 const NON_EDITABLE_TYPES = ['formula', 'lookup', 'rollup', 'approval_status', 'attachment'];
@@ -61,33 +62,45 @@ export function NewRowPanel({
       setErrors(prev => { const next = { ...prev }; delete next[columnId]; return next; });
     }
   }
+ 
+  function handleFieldBlur(columnId: string) {
+    var col = editableColumns.find(c => c.id === columnId);
+    if (!col) return;
+    var val = formData[columnId];
+    if (val !== undefined && val !== null && val !== '') {
+      var result = validateColumnValue(val, col.type, col.settings);
+      if (!result.valid) {
+        setErrors(prev => ({ ...prev, [columnId]: result.error || 'Invalid value' }));
+      } else if (result.sanitized !== undefined && result.sanitized !== val) {
+        setFormData(prev => ({ ...prev, [columnId]: result.sanitized }));
+      }
+    }
+  }
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
     editableColumns.forEach(col => {
+      const val = formData[col.id];
+      // Required check
       if (col.required) {
-        const val = formData[col.id];
         if (val === undefined || val === null || val === '' || (typeof val === 'string' && !val.trim())) {
           newErrors[col.id] = `${col.name} is required`;
+          return;
         }
       }
-      // Email validation
-      if (col.type === 'email' && formData[col.id]) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formData[col.id])) {
-          newErrors[col.id] = 'Invalid email address';
-        }
-      }
-      // URL validation
-      if (col.type === 'url' && formData[col.id]) {
-        try { new URL(formData[col.id]); } catch {
-          newErrors[col.id] = 'Invalid URL';
+      // Type validation using shared validator
+      if (val !== undefined && val !== null && val !== '') {
+        var result = validateColumnValue(val, col.type, col.settings);
+        if (!result.valid) {
+          newErrors[col.id] = result.error || 'Invalid value';
+        } else if (result.sanitized !== undefined) {
+          // Apply sanitized value (e.g. lowercase email, auto-add https://)
+          setFormData(prev => ({ ...prev, [col.id]: result.sanitized }));
         }
       }
     });
     setErrors(newErrors);
-    // Mark all required fields as touched
-    setTouched(new Set(editableColumns.filter(c => c.required).map(c => c.id)));
+    setTouched(new Set(editableColumns.map(c => c.id)));
     return Object.keys(newErrors).length === 0;
   }
 
@@ -144,7 +157,7 @@ export function NewRowPanel({
     switch (column.type) {
       case 'text':
       case 'phone':
-        return <input type="text" value={value} onChange={e => updateField(column.id, e.target.value)} className={inputClass} placeholder={`Enter ${column.name.toLowerCase()}...`} />;
+        return <input type="text" value={value} onChange={e => updateField(column.id, e.target.value)} onBlur={() => handleFieldBlur(column.id)} className={inputClass} placeholder="(555) 123-4567" />;
 
       case 'long_text':
         return <textarea value={value} onChange={e => updateField(column.id, e.target.value)} rows={3} className={inputClass + ' resize-none'} placeholder={`Enter ${column.name.toLowerCase()}...`} />;
@@ -169,10 +182,10 @@ export function NewRowPanel({
         );
 
       case 'email':
-        return <input type="email" value={value} onChange={e => updateField(column.id, e.target.value)} className={inputClass} placeholder="email@example.com" />;
+        return <input type="email" value={value} onChange={e => updateField(column.id, e.target.value)} onBlur={() => handleFieldBlur(column.id)} className={inputClass} placeholder="email@example.com" />;
 
       case 'url':
-        return <input type="url" value={value} onChange={e => updateField(column.id, e.target.value)} className={inputClass} placeholder="https://..." />;
+        return <input type="url" value={value} onChange={e => updateField(column.id, e.target.value)} onBlur={() => handleFieldBlur(column.id)} className={inputClass} placeholder="https://..." />;
 
       case 'date':
         return <input type="date" value={value} onChange={e => updateField(column.id, e.target.value)} className={inputClass} />;

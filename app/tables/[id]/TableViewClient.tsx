@@ -726,6 +726,8 @@ export function TableViewClient({
                 <span>New</span>
               </button>
             )}
+			
+			
             {table.isSheetBacked && canEdit && (
               <button
                 onClick={handleSync}

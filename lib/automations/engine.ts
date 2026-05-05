@@ -32,6 +32,7 @@ export type ActionType =
   | 'unlock_row'
   | 'notify'
   | 'trigger_approval'
+  | 'push_to_sharepoint'
   | 'delay'
   | 'condition';
 
@@ -398,7 +399,7 @@ async function executeTriggerApproval(
   context: Record<string, any>
 ): Promise<any> {
   var tableId = config.targetTableId || context.trigger.tableId;
-  var rowId = resolveTemplate(config.targetRowId || '{{row.id}}', context);
+  var rowId = config.targetRowId ? resolveTemplate(config.targetRowId, context) : (context.trigger?.rowId || '');
   var workflowId = config.workflowId;
   var userId = context.trigger?.userId || context._automation?.createdById || 'system';
 
@@ -577,6 +578,9 @@ async function executeAction(
         output = await executeCondition(config, context);
         // Store condition result for downstream IF/ELSE branching
         context._lastCondition = output;
+        break;
+      case 'push_to_sharepoint':
+        output = await executePushToSharePoint(config, context);
         break;
       default:
         throw new Error('Unknown action type: ' + actionType);
@@ -869,4 +873,80 @@ export async function handleWebhookTrigger(
   return latestRun
     ? { automationId: automation.id, runId: latestRun.id }
     : null;
+}
+
+// ============================================================================
+// Push Row to SharePoint
+// ============================================================================
+async function executePushToSharePoint(
+  config: any,
+  context: Record<string, any>
+): Promise<any> {
+  var tableId = config.targetTableId || context.trigger.tableId;
+  var rowId = config.targetRowId ? resolveTemplate(config.targetRowId, context) : (context.trigger?.rowId || '');
+
+  if (!tableId) throw new Error('No table specified for SharePoint push');
+  if (!rowId) throw new Error('No row ID for SharePoint push');
+
+  // Load the row data
+  var row = await db.agoraRow.findUnique({ where: { id: rowId } });
+  if (!row) throw new Error('Row ' + rowId + ' not found');
+
+  // Load sync config
+  var setting = await db.systemSetting.findUnique({ where: { key: 'sp_sync_' + tableId } });
+  if (!setting) throw new Error('No SharePoint sync configured for this table');
+
+  var syncConfig: any;
+  try {
+    var { decrypt } = await import('@/lib/encryption');
+    syncConfig = JSON.parse(setting.encrypted ? decrypt(setting.value) : setting.value);
+  } catch { throw new Error('Failed to read SharePoint sync config'); }
+
+  if (!syncConfig.siteId || !syncConfig.listId || !syncConfig.fieldMapping) {
+    throw new Error('SharePoint sync config incomplete — check field mapping');
+  }
+
+  // Get columns for type info
+  var columns = await db.agoraColumn.findMany({
+    where: { tableId: tableId },
+    select: { id: true, name: true, type: true, sharePointConfig: true },
+  });
+
+  // Filter out agora-only columns
+  var syncColumns = columns.filter(function(c: any) {
+    var spCfg = c.sharePointConfig as any;
+    if (spCfg?.agoraOnly) return false;
+    return true;
+  });
+
+  var { syncRowToSharePoint } = await import('@/lib/sharepoint');
+  var result = await syncRowToSharePoint(
+    {
+      siteId: syncConfig.siteId,
+      listId: syncConfig.listId,
+      fieldMapping: syncConfig.fieldMapping,
+      uniqueKeyColumnId: syncConfig.uniqueKeyColumnId,
+      uniqueKeySpColumn: syncConfig.uniqueKeySpColumn,
+    },
+    row.data as Record<string, any>,
+    syncColumns as any[],
+    row.spItemId ? 'upsert' : 'create'
+  );
+
+  if (!result.success) {
+    throw new Error('SharePoint push failed: ' + result.error);
+  }
+
+  // Save spItemId back to the row
+  if (result.itemId) {
+    await db.agoraRow.update({ where: { id: rowId }, data: { spItemId: String(result.itemId) } });
+  }
+
+  // Log activity
+  try {
+    var { logActivity } = await import('@/lib/activityLog');
+    await logActivity({ tableId: tableId, rowId: rowId, userId: context._automationCreatedBy || 'system', action: 'AUTOMATION_SP_PUSH', details: { spItemId: result.itemId } });
+  } catch {}
+
+  return { pushed: true, spItemId: result.itemId, tableId: tableId, rowId: rowId };
 }

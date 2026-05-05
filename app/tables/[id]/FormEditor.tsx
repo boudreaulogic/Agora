@@ -383,6 +383,31 @@ function RgSettingsPanel({ field, fieldIndex, tableColumns, onUpdate, onClose }:
               <button onClick={function() { var ops = (formulas[colName].operations || []).concat([{ columnIndex: undefined, operator: '*', isConstant: false }]); setColumnFormula(colName, Object.assign({}, formulas[colName], { operations: ops })); }} className="text-[8px] text-orange-600 dark:text-orange-400 hover:text-orange-800 font-medium">+ Add operand</button>
               <div className="grid grid-cols-2 gap-1 pt-1 border-t border-orange-200 dark:border-orange-700"><select value={formulas[colName].format || 'number'} onChange={function(e) { setColumnFormula(colName, Object.assign({}, formulas[colName], { format: e.target.value, prefix: e.target.value === 'currency' ? '$' : '' })); }} className="px-1 py-0.5 text-[8px] border border-orange-300 dark:border-orange-700 rounded bg-white dark:bg-gray-800 dark:text-gray-200"><option value="number">Number</option><option value="currency">Currency</option><option value="percent">Percent</option></select><input type="number" value={formulas[colName].decimals ?? 2} onChange={function(e) { setColumnFormula(colName, Object.assign({}, formulas[colName], { decimals: parseInt(e.target.value) || 0 })); }} min={0} max={6} className="px-1 py-0.5 text-[8px] border border-orange-300 dark:border-orange-700 rounded bg-white dark:bg-gray-800 dark:text-gray-200" placeholder="Decimals" /></div></div>)}
           </div>); })}
+        {/* Conditional Logic for Repeating Group */}
+        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+          <h5 className="text-[9px] font-bold text-gray-400 uppercase mb-1.5">Conditional Logic</h5>
+          <p className="text-[9px] text-gray-400 mb-2">Show this group only when:</p>
+          {(field.conditions || []).map(function(cond: any, ci: number) {
+            return (<div key={ci} className="flex items-center space-x-1 mb-1.5 flex-wrap">
+              <select value={cond.fieldId || ''} onChange={function(e) { var nc = (field.conditions || []).slice(); nc[ci] = Object.assign({}, nc[ci], { fieldId: e.target.value }); updateRg({ conditions: nc }); }} className="flex-1 min-w-0 px-1 py-0.5 text-[9px] border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 dark:text-gray-200">
+                <option value="">Field...</option>
+                {tableColumns.filter(function(c: any) { return c.type !== 'formula' && c.type !== 'lookup' && c.type !== 'rollup'; }).map(function(c: any) { return <option key={c.id} value={c.id}>{c.name}</option>; })}
+              </select>
+              <select value={cond.operator || 'equals'} onChange={function(e) { var nc = (field.conditions || []).slice(); nc[ci] = Object.assign({}, nc[ci], { operator: e.target.value }); updateRg({ conditions: nc }); }} className="px-1 py-0.5 text-[9px] border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 dark:text-gray-200">
+                <option value="equals">equals</option>
+                <option value="not_equals">≠</option>
+                <option value="contains">contains</option>
+                <option value="not_empty">not empty</option>
+                <option value="is_empty">is empty</option>
+              </select>
+              {cond.operator !== 'not_empty' && cond.operator !== 'is_empty' && (
+                <input type="text" value={cond.value || ''} onChange={function(e) { var nc = (field.conditions || []).slice(); nc[ci] = Object.assign({}, nc[ci], { value: e.target.value }); updateRg({ conditions: nc }); }} placeholder="Value..." className="w-16 px-1 py-0.5 text-[9px] border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 dark:text-gray-200" />
+              )}
+              <button onClick={function() { updateRg({ conditions: (field.conditions || []).filter(function(_: any, i: number) { return i !== ci; }) }); }} className="text-red-400 hover:text-red-600"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>);
+          })}
+          <button onClick={function() { updateRg({ conditions: (field.conditions || []).concat([{ fieldId: '', operator: 'equals', value: '' }]) }); }} className="text-[9px] text-blue-600 dark:text-blue-400 hover:text-blue-800">+ Add Condition</button>
+        </div>
       </div>
     </div>
   );

@@ -90,6 +90,7 @@ var ACTION_TYPES = [
   { value: 'unlock_row', label: 'Unlock Row', icon: '🔓' },
   { value: 'notify', label: 'Notify', icon: '🔔' },
   { value: 'trigger_approval', label: 'Trigger Approval', icon: '✅' },
+  { value: 'push_to_sharepoint', label: 'Push to SharePoint', icon: '📤' },
   { value: 'delay', label: 'Delay', icon: '⏳' },
   { value: 'condition', label: 'IF / Condition', icon: '🔀' },
 ];
@@ -324,10 +325,10 @@ export default function AutomationsManager() {
         <div><label style={labelStyle}>Column</label>
           <select value={builderTriggerConfig.column||''} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{column:e.target.value,value:''}); }); }} style={selectStyle}>
             <option value="">— Select column —</option>
-            {getSettableColumns(builderTriggerConfig.tableId).map(function(c) { return <option key={c.id} value={c.name}>{c.name}</option>; })}
+            {getSettableColumns(builderTriggerConfig.tableId).map(function(c) { return <option key={c.id} value={c.id}>{c.name}</option>; })}
           </select></div>
         {builderTriggerConfig.column && (function() {
-          var col = getColumnByName(builderTriggerConfig.tableId, builderTriggerConfig.column);
+          var col = getTableColumns(builderTriggerConfig.tableId).find(function(c) { return c.id === builderTriggerConfig.column; });
           if (!col) return <div><label style={labelStyle}>Equals Value</label><input type="text" value={builderTriggerConfig.value||''} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{value:e.target.value}); }); }} style={inputStyle} /></div>;
           return <div><label style={labelStyle}>Equals Value</label><DynamicValueInput column={col} value={builderTriggerConfig.value||''} onChange={function(v) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{value:v}); }); }} triggerColumns={[]} /></div>;
         })()}
@@ -562,6 +563,10 @@ export default function AutomationsManager() {
  
       {action.actionType==='unlock_row' && (<div style={{ padding:'10px', background:'#f0fdf4', borderRadius:'6px', border:'1px solid #bbf7d0' }}>
         <span style={{ fontSize:'11px', color:'#166534' }}>🔓 Unlocks the row, allowing it to be edited again.</span>
+      </div>)}
+	  
+	  {action.actionType==='push_to_sharepoint' && (<div style={{ padding:'10px', background:'#e0f2fe', borderRadius:'6px', border:'1px solid #7dd3fc' }}>
+        <span style={{ fontSize:'11px', color:'#0c4a6e' }}>📤 Pushes the current row data to the linked SharePoint list. The table must have SharePoint sync configured in the admin panel. Columns marked as "Agora Only" will be excluded from the push.</span>
       </div>)}
  
       {action.actionType==='delay' && (<div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
