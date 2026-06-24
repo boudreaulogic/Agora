@@ -89,7 +89,7 @@ export function SmtpSettingsClient() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Password / App Password</label>
-                <input type="password" value={settings.smtp_pass} onChange={e => setSettings(p => ({ ...p, smtp_pass: e.target.value }))}
+                <input type="password" value={settings.smtp_pass} onChange={e => setSettings(p => ({ ...p, smtp_pass: e.target.value.replace(/\s/g, '') }))}
                   placeholder="••••••••"
                   className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-200" />
                 <p className="text-[9px] text-gray-400 mt-1">🔒 Encrypted with AES-256-GCM before storage</p>
