@@ -5,6 +5,7 @@ import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { getTablePermission } from '@/lib/tablePermissions';
 
 const TEMPLATES_DIR = '/app/uploads/templates';
 
@@ -13,9 +14,9 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const perm = await getTablePermission(session.user.id, params.id);
+  if (!perm) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   try {
     const body = await request.json();

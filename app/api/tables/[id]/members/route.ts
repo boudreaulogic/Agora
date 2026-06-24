@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { getTablePermission } from '@/lib/tablePermissions';
 
 // GET /api/tables/[id]/members — returns all users, groups, and roles with access to this table
 export async function GET(
@@ -8,9 +9,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const perm = await getTablePermission(session.user.id, params.id);
+  if (!perm) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const table = await db.agoraTable.findUnique({
     where: { id: params.id },

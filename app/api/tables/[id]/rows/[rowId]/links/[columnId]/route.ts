@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { auth } from '@/lib/auth';
 import { logActivity } from '@/lib/activityLog';
+import { getTablePermission } from '@/lib/tablePermissions';
 
 export async function GET(
   req: NextRequest,
@@ -9,11 +10,12 @@ export async function GET(
 ) {
   try {
     const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { id, rowId, columnId } = await params;
+    const perm = await getTablePermission(session.user.id, id);
+    if (!perm) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const rowCheck = await db.agoraRow.findUnique({ where: { id: rowId }, select: { tableId: true } });
+    if (!rowCheck || rowCheck.tableId !== id) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     const links = await db.linkedRecord.findMany({
       where: {
@@ -39,11 +41,12 @@ export async function PUT(
 ) {
   try {
     const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { id, rowId, columnId } = await params;
+    const permPut = await getTablePermission(session.user.id, id);
+    if (!permPut || permPut === 'viewer') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const rowCheckPut = await db.agoraRow.findUnique({ where: { id: rowId }, select: { tableId: true } });
+    if (!rowCheckPut || rowCheckPut.tableId !== id) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     const { linkedRecordIds } = await req.json();
 
     // Get existing links before deleting

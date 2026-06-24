@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { getTablePermission } from '@/lib/tablePermissions';
 
 // PATCH update view
 export async function PATCH(
@@ -8,9 +9,9 @@ export async function PATCH(
   { params }: { params: { id: string; viewId: string } }
 ) {
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const perm = await getTablePermission(session.user.id, params.id);
+  if (!perm || perm === 'viewer') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const { name, config, isDefault } = await request.json();
 
@@ -40,9 +41,9 @@ export async function DELETE(
   { params }: { params: { id: string; viewId: string } }
 ) {
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const permD = await getTablePermission(session.user.id, params.id);
+  if (!permD || permD === 'viewer') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   await db.agoraView.delete({
     where: { id: params.viewId },

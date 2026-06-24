@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { auth } from '@/lib/auth';
+import { getTablePermission } from '@/lib/tablePermissions';
 
 // GET /api/tables/[id]/lookups
 // Resolves all lookup column values for a table
@@ -10,9 +11,9 @@ export async function GET(
 ) {
   try {
     const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const perm = await getTablePermission(session.user.id, params.id);
+    if (!perm) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const tableId = params.id;
 
