@@ -52,7 +52,7 @@ export async function PUT(request: Request) {
 
   // Only update password if it's not the masked placeholder
   if (body.smtp_pass && body.smtp_pass !== '••••••••') {
-    settings.push({ key: 'smtp_pass', value: encrypt(body.smtp_pass), encrypted: true });
+    settings.push({ key: 'smtp_pass', value: encrypt(body.smtp_pass.replace(/\s/g, '')), encrypted: true });
   }
 
   for (const s of settings) {
