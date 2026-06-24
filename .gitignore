@@ -50,3 +50,4 @@ tsconfig.tsbuildinfo
 *.temp
 debug.sql
 test_pdf.js
+migrate.sql
