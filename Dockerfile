@@ -48,8 +48,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/.next/server ./.next/server
 
-# Copy Prisma files
+# Copy Prisma files — generated client, schema/migrations, and the CLI
+# The CLI is needed so the entrypoint can run `prisma migrate deploy` on startup
+# using the project-pinned version instead of any globally installed Prisma.
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 COPY --from=builder /app/prisma ./prisma
 
 # Create uploads directory
