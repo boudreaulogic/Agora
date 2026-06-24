@@ -28,19 +28,21 @@ export async function getSmtpSettings() {
     for (const s of settings) {
       map[s.key] = s.encrypted ? decrypt(s.value) : s.value;
     }
+    const port = parseInt(map.smtp_port || process.env.SMTP_PORT || '587');
     return {
       host: map.smtp_host || process.env.SMTP_HOST || '',
-      port: parseInt(map.smtp_port || process.env.SMTP_PORT || '587'),
-      secure: (map.smtp_secure || process.env.SMTP_SECURE) === 'true',
+      port,
+      secure: port === 465,
       user: map.smtp_user || process.env.SMTP_USER || '',
       pass: map.smtp_pass || process.env.SMTP_PASS || '',
       from: map.smtp_from || process.env.SMTP_FROM || 'Agora <noreply@agora.app>',
     };
   } catch {
+    const port = parseInt(process.env.SMTP_PORT || '587');
     return {
       host: process.env.SMTP_HOST || '',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
+      port,
+      secure: port === 465,
       user: process.env.SMTP_USER || '',
       pass: process.env.SMTP_PASS || '',
       from: process.env.SMTP_FROM || 'Agora <noreply@agora.app>',

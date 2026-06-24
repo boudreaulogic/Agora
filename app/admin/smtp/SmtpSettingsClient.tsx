@@ -71,7 +71,10 @@ export function SmtpSettingsClient() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Port</label>
-                <input type="text" value={settings.smtp_port} onChange={e => setSettings(p => ({ ...p, smtp_port: e.target.value }))}
+                <input type="text" value={settings.smtp_port} onChange={e => {
+                  const port = e.target.value;
+                  setSettings(p => ({ ...p, smtp_port: port, smtp_secure: port === '465' ? 'true' : 'false' }));
+                }}
                   placeholder="587"
                   className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-200" />
               </div>
@@ -102,9 +105,12 @@ export function SmtpSettingsClient() {
 
             <label className="flex items-center space-x-2 cursor-pointer">
               <input type="checkbox" checked={settings.smtp_secure === 'true'}
-                onChange={e => setSettings(p => ({ ...p, smtp_secure: e.target.checked ? 'true' : 'false' }))}
+                onChange={e => {
+                  const ssl = e.target.checked;
+                  setSettings(p => ({ ...p, smtp_secure: ssl ? 'true' : 'false', smtp_port: ssl ? '465' : '587' }));
+                }}
                 className="w-4 h-4 rounded border-gray-300 text-blue-600" />
-              <span className="text-sm text-gray-700 dark:text-gray-300">Use SSL/TLS (port 465)</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Use SSL/TLS — sets port to 465 (uncheck for port 587 STARTTLS)</span>
             </label>
           </div>
 
