@@ -43,8 +43,10 @@ prisma/*.db
 # Build artifacts
 dist/
 build/
+tsconfig.tsbuildinfo
 
-# Temporary files
+# Temporary/scratch files
 *.tmp
 *.temp
 debug.sql
+test_pdf.js
