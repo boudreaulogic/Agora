@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: agora
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: agora
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -60,7 +60,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://agora:${POSTGRES_PASSWORD:-changeme}@postgres:5432/agora?schema=public
+      DATABASE_URL: postgresql://agora:${POSTGRES_PASSWORD}@postgres:5432/agora?schema=public
       NEXTAUTH_URL: ""
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       BROADCAST_SECRET: ${BROADCAST_SECRET}
@@ -70,7 +70,7 @@ services:
     volumes:
       - uploads-data:/app/uploads
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     networks:
       - agora-network
     logging:
@@ -92,7 +92,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://agora:${POSTGRES_PASSWORD:-changeme}@postgres:5432/agora?schema=public
+      DATABASE_URL: postgresql://agora:${POSTGRES_PASSWORD}@postgres:5432/agora?schema=public
       # Override retention periods if desired (in days)
       # NOTIFICATION_RETENTION_DAYS: 90
       # ACTIVITY_LOG_RETENTION_DAYS: 21
@@ -115,7 +115,7 @@ services:
     entrypoint: /bin/sh
     command: >
       -c 'echo "Automation scheduler starting..."; while true; do
-        curl -s "http://web:3000/api/automations/cron?secret=${CRON_SECRET:-agora-cron-secret}" || true;
+        curl -s -H "X-Cron-Secret: ${CRON_SECRET}" "http://web:3000/api/automations/cron" || true;
         sleep 60;
       done'
     depends_on:

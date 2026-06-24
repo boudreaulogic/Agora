@@ -43,13 +43,17 @@ export async function GET(
   var { searchParams } = new URL(request.url);
   var download = searchParams.get('download') === 'true';
 
+  // Sanitize filename for Content-Disposition — strip quotes, newlines, and control chars
+  // to prevent header injection (RFC 6266 / OWASP)
+  var safeFilename = (attachment.originalName || 'file')
+    .replace(/[\x00-\x1f\x7f"\\]/g, '_')
+    .slice(0, 255);
+
   return new Response(buffer, {
     headers: {
       'Content-Type': (attachment.mimeType === 'image/svg+xml' || attachment.mimeType === 'text/html' || attachment.mimeType === 'application/xhtml+xml' || attachment.mimeType === 'text/xml' || attachment.mimeType === 'application/xml') ? 'application/octet-stream' : attachment.mimeType,
       'Content-Length': String(attachment.size),
-      'Content-Disposition': download
-        ? 'attachment; filename="' + attachment.originalName + '"'
-        : 'inline; filename="' + attachment.originalName + '"',
+      'Content-Disposition': (download ? 'attachment' : 'inline') + '; filename="' + safeFilename + '"',
       'Cache-Control': 'private, no-cache',
       'X-Content-Type-Options': 'nosniff',
     },

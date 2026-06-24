@@ -311,6 +311,8 @@ server.listen(PORT, () => {
 });
 
 // ---- Hourly cron for approval reminders ----
+const CRON_SECRET = process.env.CRON_SECRET || NEXTAUTH_SECRET;
+
 cron.schedule('0 * * * *', async () => {
   console.log('Hourly cron: checking for approval reminders...');
   try {
@@ -318,7 +320,7 @@ cron.schedule('0 * * * *', async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-cron-secret': NEXTAUTH_SECRET,
+        'x-cron-secret': CRON_SECRET,
       },
     });
     const data = await res.json();
