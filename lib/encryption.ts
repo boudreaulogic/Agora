@@ -11,9 +11,8 @@ function getEncryptionKey(): Buffer {
     if (buf.length !== 32) throw new Error('ENCRYPTION_KEY must be 32 bytes (64 hex chars)');
     return buf;
   }
-  // Fallback — log warning in production
   if (process.env.NODE_ENV === 'production') {
-    console.warn('[Security] ENCRYPTION_KEY not set — falling back to NEXTAUTH_SECRET. Set a separate ENCRYPTION_KEY for production.');
+    throw new Error('ENCRYPTION_KEY env var is not set. Generate one with: openssl rand -hex 32');
   }
   var secret = process.env.NEXTAUTH_SECRET || '';
   return crypto.createHash('sha256').update(secret).digest();
