@@ -224,10 +224,32 @@ wss.on('connection', (ws) => {
       message.userId = ws.userId;
 
       switch (message.type) {
-        case 'register':
-          clients.set(ws, { userId: ws.userId, tableId: message.tableId });
-          console.log(`User ${ws.userId} registered for table ${message.tableId}`);
+        case 'register': {
+          // Verify the user has permission to receive broadcasts for this table
+          const targetTableId = message.tableId;
+          if (!targetTableId) break;
+          try {
+            const permRes = await fetch(
+              `http://agora-web:3000/api/ws/check-table-access?userId=${encodeURIComponent(ws.userId)}&tableId=${encodeURIComponent(targetTableId)}`,
+              { headers: { authorization: 'Bearer ' + BROADCAST_SECRET } }
+            );
+            if (!permRes.ok) {
+              console.log(`WS register denied (HTTP ${permRes.status}): user ${ws.userId} -> table ${targetTableId}`);
+              break;
+            }
+            const { allowed } = await permRes.json();
+            if (!allowed) {
+              console.log(`WS register denied (no permission): user ${ws.userId} -> table ${targetTableId}`);
+              break;
+            }
+          } catch (err) {
+            console.error('WS permission check failed:', err.message);
+            break;
+          }
+          clients.set(ws, { userId: ws.userId, tableId: targetTableId });
+          console.log(`User ${ws.userId} registered for table ${targetTableId}`);
           break;
+        }
         case 'cell-focus':
           broadcastToTable(message.tableId, { type: 'cell-focus', userId: ws.userId, userName: message.userName, cellId: message.cellId, color: message.color }, ws);
           break;
