@@ -5,6 +5,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { getTablePermission } from '@/lib/tablePermissions';
 
 const UPLOADS_DIR = '/app/uploads';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -24,9 +25,9 @@ export async function POST(
   { params }: { params: { id: string; rowId: string } }
 ) {
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const perm = await getTablePermission(session.user.id, params.id);
+  if (!perm || perm === 'viewer') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   try {
     const formData = await request.formData();
@@ -104,9 +105,11 @@ export async function GET(
   { params }: { params: { id: string; rowId: string } }
 ) {
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const permGet = await getTablePermission(session.user.id, params.id);
+  if (!permGet) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const rowCheckG = await db.agoraRow.findUnique({ where: { id: params.rowId }, select: { tableId: true } });
+  if (!rowCheckG || rowCheckG.tableId !== params.id) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const { searchParams } = new URL(request.url);
   const columnId = searchParams.get('columnId');
@@ -128,9 +131,9 @@ export async function DELETE(
   { params }: { params: { id: string; rowId: string } }
 ) {
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const permDel = await getTablePermission(session.user.id, params.id);
+  if (!permDel || permDel === 'viewer') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const { searchParams } = new URL(request.url);
   const attachmentId = searchParams.get('attachmentId');

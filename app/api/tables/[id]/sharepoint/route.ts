@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { encrypt, decrypt } from '@/lib/encryption';
+import { getTablePermission } from '@/lib/tablePermissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,8 @@ export async function GET(
   var { id } = await params;
   var session = await auth();
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  var permGet = await getTablePermission(session.user.id, id);
+  if (!permGet) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   var setting = await db.systemSetting.findUnique({ where: { key: 'sp_sync_' + id } });
   if (!setting) return NextResponse.json({ config: null });
@@ -33,6 +36,8 @@ export async function PUT(
   var { id } = await params;
   var session = await auth();
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  var permPut = await getTablePermission(session.user.id, id);
+  if (!permPut || permPut === 'viewer') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   var body = await request.json();
   var configJson = JSON.stringify(body.config);
@@ -54,6 +59,8 @@ export async function POST(
   var { id } = await params;
   var session = await auth();
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  var permPost = await getTablePermission(session.user.id, id);
+  if (!permPost || permPost === 'viewer') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   // Load sync config
   var setting = await db.systemSetting.findUnique({ where: { key: 'sp_sync_' + id } });

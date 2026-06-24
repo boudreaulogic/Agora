@@ -1,15 +1,16 @@
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { getTablePermission } from '@/lib/tablePermissions';
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const perm = await getTablePermission(session.user.id, params.id);
+  if (!perm) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   try {
     // Get all rollup columns for this table

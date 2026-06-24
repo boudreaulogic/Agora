@@ -5,6 +5,7 @@ import { readFile, unlink } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 import { PDFDocument } from 'pdf-lib';
+import { getTablePermission } from '@/lib/tablePermissions';
 
 const TEMPLATES_DIR = '/app/uploads/templates';
 
@@ -14,9 +15,9 @@ export async function GET(
   { params }: { params: { id: string; templateId: string } }
 ) {
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const perm = await getTablePermission(session.user.id, params.id);
+  if (!perm) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const template = await db.recordExportTemplate.findUnique({
     where: { id: params.templateId },
@@ -51,9 +52,9 @@ export async function PATCH(
   { params }: { params: { id: string; templateId: string } }
 ) {
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const permPatch = await getTablePermission(session.user.id, params.id);
+  if (!permPatch || permPatch === 'viewer') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const template = await db.recordExportTemplate.findUnique({
     where: { id: params.templateId },
@@ -86,9 +87,9 @@ export async function DELETE(
   { params }: { params: { id: string; templateId: string } }
 ) {
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const permDel = await getTablePermission(session.user.id, params.id);
+  if (!permDel || permDel === 'viewer') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const template = await db.recordExportTemplate.findUnique({
     where: { id: params.templateId },
