@@ -8,7 +8,7 @@ function formatValue(value: any, type: string, settings?: any): string {
   if (type === 'percent') return value + '%';
   if (type === 'checkbox') return value === 'true' || value === true ? 'Yes' : 'No';
   if (type === 'select' && settings?.options) {
-    const opt = settings.options.find((o: any) => o.value === value);
+    var opt = settings.options.find(function(o: any) { return o.value === value; });
     return opt?.label || value;
   }
   if (type === 'date' || type === 'datetime') {
@@ -18,25 +18,20 @@ function formatValue(value: any, type: string, settings?: any): string {
 }
 
 export function ApprovalPageClient({ data }: { data: any }) {
-  const [reason, setReason] = useState('');
-  const [showReason, setShowReason] = useState<'approve' | 'deny' | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [result, setResult] = useState<{ action: string; success: boolean; error?: string } | null>(null);
-  const [approverId, setApproverId] = useState(data.approvers.length === 1 ? data.approvers[0].id : '');
+  var [reason, setReason] = useState('');
+  var [showReason, setShowReason] = useState<'approve' | 'deny' | null>(null);
+  var [isSubmitting, setIsSubmitting] = useState(false);
+  var [result, setResult] = useState<{ action: string; success: boolean; error?: string } | null>(null);
 
   async function handleAction(action: 'approve' | 'deny') {
-    if (!approverId) {
-      alert('Please select your name to confirm your identity.');
-      return;
-    }
     setIsSubmitting(true);
     try {
-      const res = await fetch('/api/approvals/' + data.token + '/action', {
+      var res = await fetch('/api/approvals/' + data.token + '/action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, userId: approverId, reason: reason.trim() || null }),
+        body: JSON.stringify({ action, reason: reason.trim() || null }),
       });
-      const responseData = await res.json();
+      var responseData = await res.json();
       if (res.ok) {
         setResult({ action, success: true });
       } else {
@@ -54,7 +49,7 @@ export function ApprovalPageClient({ data }: { data: any }) {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-lg p-12 text-center max-w-md w-full">
           <div className="text-5xl mb-4">
-            {result.success ? (result.action === 'approve' ? '\u2705' : '\u274C') : '\u26A0\uFE0F'}
+            {result.success ? (result.action === 'approve' ? '✅' : '❌') : '⚠️'}
           </div>
           <h1 className="text-xl font-bold text-gray-900 mb-2">
             {result.success
@@ -113,8 +108,8 @@ export function ApprovalPageClient({ data }: { data: any }) {
         <div className="px-8 py-6">
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Record Details</h2>
           <div className="space-y-3">
-            {data.columns.map((col: any) => {
-              const value = data.rowData[col.id];
+            {data.columns.map(function(col: any) {
+              var value = data.rowData[col.id];
               if (value === null || value === undefined || value === '') return null;
               return (
                 <div key={col.id} className="flex items-start">
@@ -126,21 +121,11 @@ export function ApprovalPageClient({ data }: { data: any }) {
           </div>
         </div>
 
-        {data.approvers.length > 1 && (
-          <div className="px-8 py-4 border-t border-gray-200 bg-gray-50">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Confirm Your Identity</label>
-            <select
-              value={approverId}
-              onChange={e => setApproverId(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Select your name...</option>
-              {data.approvers.filter((a: any) => !a.hasActed).map((a: any) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
+        <div className="px-8 py-3 border-t border-gray-100 bg-gray-50">
+          <p className="text-xs text-gray-500">
+            Approving as <span className="font-medium text-gray-700">{data.currentUserName}</span>
+          </p>
+        </div>
 
         <div className="px-8 py-6 border-t border-gray-200">
           {showReason !== null ? (
@@ -152,7 +137,7 @@ export function ApprovalPageClient({ data }: { data: any }) {
                 </label>
                 <textarea
                   value={reason}
-                  onChange={e => setReason(e.target.value)}
+                  onChange={function(e) { setReason(e.target.value); }}
                   placeholder={showReason === 'approve' ? 'Add a note about your approval...' : 'Explain why this is being denied...'}
                   rows={3}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -161,14 +146,14 @@ export function ApprovalPageClient({ data }: { data: any }) {
               </div>
               <div className="flex items-center space-x-3">
                 <button
-                  onClick={() => handleAction(showReason)}
+                  onClick={function() { handleAction(showReason); }}
                   disabled={isSubmitting}
                   className={'px-6 py-2.5 text-sm font-semibold text-white rounded-lg disabled:opacity-50 transition-colors ' + (showReason === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700')}
                 >
                   {isSubmitting ? 'Processing...' : showReason === 'approve' ? 'Confirm Approval' : 'Confirm Denial'}
                 </button>
                 <button
-                  onClick={() => { setShowReason(null); setReason(''); }}
+                  onClick={function() { setShowReason(null); setReason(''); }}
                   className="px-4 py-2.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Back
@@ -178,13 +163,13 @@ export function ApprovalPageClient({ data }: { data: any }) {
           ) : (
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => setShowReason('approve')}
+                onClick={function() { setShowReason('approve'); }}
                 className="flex-1 px-6 py-3 text-sm font-semibold bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
                 Approve
               </button>
               <button
-                onClick={() => setShowReason('deny')}
+                onClick={function() { setShowReason('deny'); }}
                 className="flex-1 px-6 py-3 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 Deny

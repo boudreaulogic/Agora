@@ -1,9 +1,12 @@
+import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { ApprovalPageClient } from './ApprovalPageClient';
 import { AgoraLogo } from '@/components/AgoraLogo';
 
 export default async function ApprovalPage({ params }: { params: { token: string } }) {
+  const session = await auth();
+  if (!session?.user) redirect('/login');
   const request = await db.approvalRequest.findUnique({
     where: { token: params.token },
     include: {
@@ -86,6 +89,8 @@ export default async function ApprovalPage({ params }: { params: { token: string
 
   const approvalData = {
     token: params.token,
+    currentUserId: session.user.id,
+    currentUserName: session.user.name || session.user.email || 'You',
     requestId: request.id,
     tableId: request.tableId,
     workflowName: request.workflow.name,
