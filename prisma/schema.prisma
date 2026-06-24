@@ -775,7 +775,7 @@ model ApprovalRequest {
   currentStage  Int      @default(1)
   stageStatuses Json     @default("{}")  // { "1": "approved", "2": "pending", "3": "waiting" }
   
-  token         String   @unique @default(cuid())
+  token         String   @unique
   
   dueAt         DateTime?
   resolvedAt    DateTime?

@@ -1,17 +1,22 @@
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createNotification } from '@/lib/notifications';
 import { generateExportPdf } from '@/lib/generateExportPdf';
 import { wsBroadcast } from '@/lib/wsBroadcast';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimiter';
 
 // POST /api/approvals/[token]/action — process an approval action
 // Identity is derived from the session; the token authorizes access to this
 // specific request. Caller-supplied userId is never trusted.
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { token: string } }
 ) {
+  var rl = checkRateLimit(request, 'mutation');
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -32,7 +37,7 @@ export async function POST(
   var geoLocation = '';
   try {
     if (ipAddress && ipAddress !== 'unknown' && ipAddress !== '127.0.0.1') {
-      var geoRes = await fetch(`http://ip-api.com/json/${ipAddress}?fields=city,regionName,country`);
+      var geoRes = await fetch(`https://ip-api.com/json/${ipAddress}?fields=city,regionName,country`);
       if (geoRes.ok) {
         var geo = await geoRes.json();
         if (geo.city) geoLocation = `${geo.city}, ${geo.regionName}, ${geo.country}`;

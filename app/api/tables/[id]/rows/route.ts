@@ -140,8 +140,10 @@ export async function POST(
             await db.agoraRow.update({ where: { id: row.id }, data: { isLocked: true, lockedById: authResult.userId } });
             await wsBroadcast(id, { type: 'row-lock', rowId: row.id, isLocked: true });
 
+            var { randomBytes } = await import('crypto');
             var approvalReq = await db.approvalRequest.create({
               data: {
+                token: randomBytes(32).toString('hex'),
                 workflowId: workflow.id,
                 rowId: row.id,
                 tableId: id,
