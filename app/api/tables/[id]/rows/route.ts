@@ -12,13 +12,10 @@ export async function GET(
     var authResult = await authenticateRequest(req, id, 'read');
     if (authResult instanceof NextResponse) return authResult;
 
-    // For session users, check table permission
     if (authResult.source === 'session') {
-      var { getTablePermission } = await import('@/lib/tablePermissions');
-      var permission = await getTablePermission(authResult.userId, id);
-      if (!permission) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
+      var { requireTablePermission } = await import('@/lib/tablePermissions');
+      var denied = await requireTablePermission(authResult.userId, id, 'read');
+      if (denied) return denied;
     }
 
     var rows = await db.agoraRow.findMany({
@@ -42,13 +39,10 @@ export async function POST(
     var authResult = await authenticateRequest(req, id, 'write');
     if (authResult instanceof NextResponse) return authResult;
 
-    // For session users, check table permission
     if (authResult.source === 'session') {
-      var { getTablePermission } = await import('@/lib/tablePermissions');
-      var permission = await getTablePermission(authResult.userId, id);
-      if (!permission || permission === 'viewer') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
+      var { requireTablePermission: requireWrite } = await import('@/lib/tablePermissions');
+      var deniedWrite = await requireWrite(authResult.userId, id, 'write');
+      if (deniedWrite) return deniedWrite;
     }
 
     var body = await req.json();
