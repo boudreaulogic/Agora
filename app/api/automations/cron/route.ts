@@ -1,12 +1,18 @@
+import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { checkScheduledAutomations } from '@/lib/automations/scheduler';
- 
+
 export async function GET(req: NextRequest) {
   try {
-    var url = new URL(req.url);
-    var secret = url.searchParams.get('secret');
- 
-    if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
+    var cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret) {
+      console.error('[Cron] CRON_SECRET env var is not set');
+      return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+    }
+    var provided = new URL(req.url).searchParams.get('secret') || '';
+    var match = provided.length === cronSecret.length &&
+      crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(cronSecret));
+    if (!match) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
  

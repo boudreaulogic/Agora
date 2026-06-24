@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import { createNotification } from '@/lib/notifications';
@@ -5,9 +6,15 @@ import { sendEmail, approvalRequestEmail, APP_URL } from '@/lib/email';
 
 // Called by cron to send reminders for stale approval requests
 export async function POST(request: Request) {
-  // Verify internal call with a secret
-  const authHeader = request.headers.get('x-cron-secret');
-  if (authHeader !== process.env.NEXTAUTH_SECRET) {
+  var cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    console.error('[Cron] CRON_SECRET env var is not set');
+    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+  }
+  var provided = request.headers.get('x-cron-secret') || '';
+  var match = provided.length === cronSecret.length &&
+    crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(cronSecret));
+  if (!match) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
