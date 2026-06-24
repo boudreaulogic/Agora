@@ -1,20 +1,12 @@
 import { db } from '@/lib/db';
-import { NextResponse } from 'next/server';
-import { createNotification } from '@/lib/notifications';
 import { APP_URL } from '@/lib/email';
 
+// GET /api/approvals/[token] — email-link entry point
+// Validates the token exists and is still actionable, then redirects to the
+// in-app approval page. Identity is established there via session auth.
 export async function GET(request: Request, { params }: { params: { token: string } }) {
-  const { searchParams } = new URL(request.url);
-  const action = searchParams.get('action');
-  const userId = searchParams.get('userId');
-
-  if (!action || !userId || !['approve', 'deny'].includes(action)) {
-    return redirectWithMessage('Invalid approval link');
-  }
-
   const approvalRequest = await db.approvalRequest.findUnique({
     where: { token: params.token },
-    include: { workflow: true },
   });
 
   if (!approvalRequest) return redirectWithMessage('Approval request not found');
@@ -22,27 +14,6 @@ export async function GET(request: Request, { params }: { params: { token: strin
     return redirectWithMessage(`This request has already been ${approvalRequest.status}`);
   }
 
-  // Verify approver from stages
-  const stages = (approvalRequest.workflow.stages as any[]) || [];
-  const currentStage = stages.find((s: any) => s.order === approvalRequest.currentStage);
-  const approverUserIds = currentStage?.approverUserIds || [];
-
-  let isApprover = approverUserIds.includes(userId);
-  if (!isApprover && currentStage?.approverGroupIds?.length > 0) {
-    const membership = await db.groupMember.findFirst({
-      where: { userId, groupId: { in: currentStage.approverGroupIds } },
-    });
-    isApprover = !!membership;
-  }
-
-  if (!isApprover) return redirectWithMessage('You are not authorized to approve this request');
-
-  const existingAction = await db.approvalAction.findFirst({
-    where: { requestId: approvalRequest.id, userId },
-  });
-  if (existingAction) return redirectWithMessage(`You have already ${existingAction.action} this request`);
-
-  // For email-based approval, redirect to the in-app approval page
   return Response.redirect(`${APP_URL}/approvals/${params.token}`, 302);
 }
 

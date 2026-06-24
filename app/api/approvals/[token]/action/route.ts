@@ -1,41 +1,49 @@
+import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import { createNotification } from '@/lib/notifications';
 import { generateExportPdf } from '@/lib/generateExportPdf';
 import { wsBroadcast } from '@/lib/wsBroadcast';
 
-// POST /api/approvals/[token]/action — process an approval action (no auth — token IS the auth)
+// POST /api/approvals/[token]/action — process an approval action
+// Identity is derived from the session; the token authorizes access to this
+// specific request. Caller-supplied userId is never trusted.
 export async function POST(
   request: Request,
   { params }: { params: { token: string } }
 ) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const body = await request.json();
-  const { action, userId, reason } = body;
+  const { action, reason } = body;
+  const userId = session.user.id;
+  const actorName = session.user.name || '';
+  const actorEmail = session.user.email || '';
 
   // Capture IP and user agent for audit trail
-  const ipAddress = request.headers.get('cf-connecting-ip') 
+  const ipAddress = request.headers.get('cf-connecting-ip')
     || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     || request.headers.get('x-real-ip')
     || 'unknown';
   const userAgent = request.headers.get('user-agent') || '';
-  
+
   // Resolve GeoIP (best effort)
-  let geoLocation = '';
+  var geoLocation = '';
   try {
     if (ipAddress && ipAddress !== 'unknown' && ipAddress !== '127.0.0.1') {
-      const geoRes = await fetch(`http://ip-api.com/json/${ipAddress}?fields=city,regionName,country`);
+      var geoRes = await fetch(`http://ip-api.com/json/${ipAddress}?fields=city,regionName,country`);
       if (geoRes.ok) {
-        const geo = await geoRes.json();
+        var geo = await geoRes.json();
         if (geo.city) geoLocation = `${geo.city}, ${geo.regionName}, ${geo.country}`;
       }
     }
   } catch {}
 
-  if (!action || !userId || !['approve', 'deny'].includes(action)) {
-    return NextResponse.json({ error: 'Invalid action or missing userId' }, { status: 400 });
+  if (!action || !['approve', 'deny'].includes(action)) {
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   }
 
-  // Find the approval request by token
   const approvalRequest = await db.approvalRequest.findUnique({
     where: { token: params.token },
     include: { workflow: true },
@@ -49,7 +57,7 @@ export async function POST(
     return NextResponse.json({ error: `This request has already been ${approvalRequest.status}` }, { status: 400 });
   }
 
-  // Verify this user is an approver for the current stage
+  // Verify this session user is an approver for the current stage
   const stages = (approvalRequest.workflow.stages as any[]) || [];
   const currentStage = stages.find((s: any) => s.order === approvalRequest.currentStage);
 
@@ -59,24 +67,22 @@ export async function POST(
 
   const approverUserIds = [...(currentStage.approverUserIds || [])];
 
-  // Also check group memberships
   if (currentStage.approverGroupIds?.length > 0) {
-    const groupMembers = await db.groupMember.findMany({
+    var groupMembers = await db.groupMember.findMany({
       where: { groupId: { in: currentStage.approverGroupIds } },
       select: { userId: true },
     });
-    approverUserIds.push(...groupMembers.map(m => m.userId));
+    approverUserIds.push(...groupMembers.map(function(m) { return m.userId; }));
   }
 
-  // Check dynamic approver
   if (currentStage.dynamicApproverColumnId) {
-    const row = await db.agoraRow.findUnique({ where: { id: approvalRequest.rowId } });
-    if (row) {
-      const rowData = row.data as Record<string, any>;
-      const val = rowData[currentStage.dynamicApproverColumnId];
-      if (val) {
-        const dynUser = await db.user.findFirst({
-          where: { OR: [{ id: String(val) }, { email: String(val) }, { name: String(val) }] },
+    var row0 = await db.agoraRow.findUnique({ where: { id: approvalRequest.rowId } });
+    if (row0) {
+      var rowData0 = row0.data as Record<string, any>;
+      var val0 = rowData0[currentStage.dynamicApproverColumnId];
+      if (val0) {
+        var dynUser = await db.user.findFirst({
+          where: { OR: [{ id: String(val0) }, { email: String(val0) }, { name: String(val0) }] },
           select: { id: true },
         });
         if (dynUser) approverUserIds.push(dynUser.id);
@@ -84,21 +90,12 @@ export async function POST(
     }
   }
 
-  const uniqueApproverIds = [...new Set(approverUserIds)];
+  var uniqueApproverIds = [...new Set(approverUserIds)];
   if (!uniqueApproverIds.includes(userId)) {
     return NextResponse.json({ error: 'You are not authorized to approve this request' }, { status: 403 });
   }
 
-  // Check if already acted
-  const existingAction = await db.approvalAction.findFirst({
-    where: { requestId: approvalRequest.id, userId },
-  });
-
-  if (existingAction) {
-    return NextResponse.json({ error: `You have already ${existingAction.action} this request` }, { status: 400 });
-  }
-  
-  // Atomic check-and-create to prevent race condition
+  // Atomic check-and-create to prevent race conditions
   var actionRecord;
   try {
     actionRecord = await db.$transaction(async function(tx) {
@@ -127,35 +124,12 @@ export async function POST(
     throw txErr;
   }
 
-  // Get the user info for the ledger
-  const actor = await db.user.findUnique({
-    where: { id: userId },
-    select: { name: true, email: true },
-  });
-
-  if (!actor) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
-  }
-
-  // Record the action with IP + geo
-  await db.approvalAction.create({
-    data: {
-      requestId: approvalRequest.id,
-      userId,
-      action,
-      reason: reason || null,
-      ipAddress,
-      geoLocation: geoLocation || null,
-      userAgent: userAgent || null,
-    } as any,
-  });
-
   // Get the row for snapshot
-  const row = await db.agoraRow.findUnique({ where: { id: approvalRequest.rowId } });
-  const rowData = (row?.data || {}) as Record<string, any>;
+  var row = await db.agoraRow.findUnique({ where: { id: approvalRequest.rowId } });
+  var rowData = (row?.data || {}) as Record<string, any>;
 
   // Add ledger entry
-  const { addLedgerEntry } = await import('@/lib/approvalLedger');
+  var { addLedgerEntry } = await import('@/lib/approvalLedger');
   await addLedgerEntry({
     tableId: approvalRequest.tableId,
     rowId: approvalRequest.rowId,
@@ -165,8 +139,8 @@ export async function POST(
     stage: approvalRequest.currentStage,
     stageName: currentStage.name,
     actorId: userId,
-    actorName: actor.name || '',
-    actorEmail: actor.email || '',
+    actorName,
+    actorEmail,
     rowSnapshot: rowData,
     reason: reason || undefined,
     workflowName: approvalRequest.workflow.name,
@@ -175,7 +149,6 @@ export async function POST(
 
   // Determine next steps
   if (action === 'deny') {
-    // Deny the whole request
     await db.approvalRequest.update({
       where: { id: approvalRequest.id },
       data: {
@@ -185,23 +158,20 @@ export async function POST(
       },
     });
 
-    // Update trigger column to deny value
     if (approvalRequest.workflow.denyColumnId && approvalRequest.workflow.denyValue && row) {
       rowData[approvalRequest.workflow.denyColumnId] = approvalRequest.workflow.denyValue;
     }
 
-    // Update approval status column
     if (approvalRequest.workflow.approvalColumnId) {
       rowData[approvalRequest.workflow.approvalColumnId] = JSON.stringify({
         status: 'denied',
         currentStage: approvalRequest.currentStage,
         stageStatuses: { ...(approvalRequest.stageStatuses as any), [String(approvalRequest.currentStage)]: 'denied' },
         totalStages: stages.length,
-        stages: stages.map((s: any) => ({ order: s.order, name: s.name })),
+        stages: stages.map(function(s: any) { return { order: s.order, name: s.name }; }),
       });
     }
 
-    // Unlock the row
     await db.agoraRow.update({
       where: { id: approvalRequest.rowId },
       data: { data: rowData, isLocked: false, lockedById: null },
@@ -209,7 +179,6 @@ export async function POST(
 
     wsBroadcast(approvalRequest.tableId, { type: 'row-lock', rowId: approvalRequest.rowId, isLocked: false });
 
-    // Ledger: denied
     await addLedgerEntry({
       tableId: approvalRequest.tableId,
       rowId: approvalRequest.rowId,
@@ -225,19 +194,17 @@ export async function POST(
       workflowName: approvalRequest.workflow.name,
     });
 
-    // Notify requester
-    const table = await db.agoraTable.findUnique({ where: { id: approvalRequest.tableId }, select: { name: true } });
+    var table0 = await db.agoraTable.findUnique({ where: { id: approvalRequest.tableId }, select: { name: true } });
     await createNotification({
       userId: approvalRequest.requestedById,
       type: 'approval_completed',
-      title: `Request denied: ${table?.name || 'Record'}`,
-      message: `${actor.name || actor.email} denied your request${reason ? ': ' + reason : ''}.`,
+      title: `Request denied: ${table0?.name || 'Record'}`,
+      message: `${actorName || actorEmail} denied your request${reason ? ': ' + reason : ''}.`,
       tableId: approvalRequest.tableId,
       rowId: approvalRequest.rowId,
       sendEmailNotification: true,
     });
-	
-	// Fire approval_denied automation trigger
+
     try {
       var { onApprovalDenied } = await import('@/lib/automations/hooks');
       onApprovalDenied(approvalRequest.tableId, approvalRequest.rowId, rowData, {
@@ -254,17 +221,15 @@ export async function POST(
 
   // APPROVE logic
   if (action === 'approve') {
-    // Check if all required approvers have approved (if requireAll)
     if (currentStage.requireAll) {
-      const allActions = await db.approvalAction.findMany({
+      var allActions = await db.approvalAction.findMany({
         where: { requestId: approvalRequest.id },
       });
-      const approvedUserIds = allActions.filter(a => a.action === 'approved').map(a => a.userId);
-      approvedUserIds.push(userId); // Include current
-      const allApproved = uniqueApproverIds.every(id => approvedUserIds.includes(id));
+      var approvedUserIds = allActions.filter(function(a) { return a.action === 'approved'; }).map(function(a) { return a.userId; });
+      approvedUserIds.push(userId);
+      var allApproved = uniqueApproverIds.every(function(id) { return approvedUserIds.includes(id); });
 
       if (!allApproved) {
-        // Stage not fully approved yet — update status to in_progress
         await db.approvalRequest.update({
           where: { id: approvalRequest.id },
           data: { status: 'in_progress' },
@@ -273,20 +238,18 @@ export async function POST(
       }
     }
 
-    // Stage is approved — advance or complete
-    const stageStatuses = { ...(approvalRequest.stageStatuses as any), [String(approvalRequest.currentStage)]: 'approved' };
-    const nextStageNum = approvalRequest.currentStage + 1;
-    const nextStage = stages.find((s: any) => s.order === nextStageNum);
+    var stageStatuses = { ...(approvalRequest.stageStatuses as any), [String(approvalRequest.currentStage)]: 'approved' };
+    var nextStageNum = approvalRequest.currentStage + 1;
+    var nextStage = stages.find(function(s: any) { return s.order === nextStageNum; });
 
     if (nextStage) {
-      // Check if next stage has a condition
-      let skipNext = false;
+      var skipNext = false;
       if (nextStage.condition && nextStage.condition.columnId) {
-        const condVal = rowData[nextStage.condition.columnId];
-        const condTarget = nextStage.condition.value;
-        const op = nextStage.condition.operator;
-        const numVal = parseFloat(condVal);
-        const numTarget = parseFloat(condTarget);
+        var condVal = rowData[nextStage.condition.columnId];
+        var condTarget = nextStage.condition.value;
+        var op = nextStage.condition.operator;
+        var numVal = parseFloat(condVal);
+        var numTarget = parseFloat(condTarget);
 
         if (op === '>' && !(numVal > numTarget)) skipNext = true;
         if (op === '<' && !(numVal < numTarget)) skipNext = true;
@@ -300,10 +263,8 @@ export async function POST(
         stageStatuses[String(nextStageNum)] = 'skipped';
       }
 
-      // If there's another stage after the skipped one, advance there
-      // Otherwise fall through to completion
-      const targetStage = skipNext
-        ? stages.find((s: any) => s.order > nextStageNum)
+      var targetStage = skipNext
+        ? stages.find(function(s: any) { return s.order > nextStageNum; })
         : nextStage;
 
       if (targetStage) {
@@ -318,19 +279,17 @@ export async function POST(
           },
         });
 
-        // Update approval column
         if (approvalRequest.workflow.approvalColumnId) {
           rowData[approvalRequest.workflow.approvalColumnId] = JSON.stringify({
             status: 'in_progress',
             currentStage: targetStage.order,
             stageStatuses,
             totalStages: stages.length,
-            stages: stages.map((s: any) => ({ order: s.order, name: s.name })),
+            stages: stages.map(function(s: any) { return { order: s.order, name: s.name }; }),
           });
           await db.agoraRow.update({ where: { id: approvalRequest.rowId }, data: { data: rowData } });
         }
 
-        // Ledger: advanced
         await addLedgerEntry({
           tableId: approvalRequest.tableId,
           rowId: approvalRequest.rowId,
@@ -346,14 +305,13 @@ export async function POST(
           workflowName: approvalRequest.workflow.name,
         });
 
-        // Notify next stage approvers
-        const table = await db.agoraTable.findUnique({ where: { id: approvalRequest.tableId }, select: { name: true } });
-        const nextApproverIds = [...(targetStage.approverUserIds || [])];
-        for (const appId of nextApproverIds) {
+        var table1 = await db.agoraTable.findUnique({ where: { id: approvalRequest.tableId }, select: { name: true } });
+        var nextApproverIds = [...(targetStage.approverUserIds || [])];
+        for (var appId of nextApproverIds) {
           await createNotification({
             userId: appId,
             type: 'approval_requested',
-            title: `Approval needed: ${table?.name || 'Record'} — ${targetStage.name}`,
+            title: `Approval needed: ${table1?.name || 'Record'} — ${targetStage.name}`,
             message: `A record has advanced to your approval stage.`,
             tableId: approvalRequest.tableId,
             rowId: approvalRequest.rowId,
@@ -378,24 +336,21 @@ export async function POST(
       },
     });
 
-    // Update trigger column to approve value
     if (approvalRequest.workflow.approveColumnId && approvalRequest.workflow.approveValue) {
       rowData[approvalRequest.workflow.approveColumnId] = approvalRequest.workflow.approveValue;
     }
 
-    // Update approval column
     if (approvalRequest.workflow.approvalColumnId) {
       rowData[approvalRequest.workflow.approvalColumnId] = JSON.stringify({
         status: 'approved',
         currentStage: approvalRequest.currentStage,
         stageStatuses,
         totalStages: stages.length,
-        stages: stages.map((s: any) => ({ order: s.order, name: s.name })),
+        stages: stages.map(function(s: any) { return { order: s.order, name: s.name }; }),
       });
     }
 
-    // Lock or unlock based on setting
-    const shouldLock = approvalRequest.workflow.lockOnApprove;
+    var shouldLock = approvalRequest.workflow.lockOnApprove;
     await db.agoraRow.update({
       where: { id: approvalRequest.rowId },
       data: { data: rowData, isLocked: shouldLock },
@@ -403,7 +358,6 @@ export async function POST(
 
     wsBroadcast(approvalRequest.tableId, { type: 'row-lock', rowId: approvalRequest.rowId, isLocked: shouldLock });
 
-    // Ledger: completed
     await addLedgerEntry({
       tableId: approvalRequest.tableId,
       rowId: approvalRequest.rowId,
@@ -419,26 +373,23 @@ export async function POST(
       workflowName: approvalRequest.workflow.name,
     });
 
-    // Notify requester
-    const table = await db.agoraTable.findUnique({ where: { id: approvalRequest.tableId }, select: { name: true } });
+    var table2 = await db.agoraTable.findUnique({ where: { id: approvalRequest.tableId }, select: { name: true } });
     await createNotification({
       userId: approvalRequest.requestedById,
       type: 'approval_completed',
-      title: `Request approved: ${table?.name || 'Record'}`,
+      title: `Request approved: ${table2?.name || 'Record'}`,
       message: `Your request has been fully approved!`,
       tableId: approvalRequest.tableId,
       rowId: approvalRequest.rowId,
       sendEmailNotification: true,
     });
 
-    // Auto-generate and attach PDF if Record Export template exists
     try {
       await generateExportPdf(approvalRequest.tableId, approvalRequest.rowId, userId);
     } catch (e) {
       console.error('[Auto-PDF] Failed to auto-generate PDF on approval:', e);
     }
-	
-	// Fire approval_completed automation trigger
+
     try {
       var { onApprovalCompleted } = await import('@/lib/automations/hooks');
       onApprovalCompleted(approvalRequest.tableId, approvalRequest.rowId, rowData, {
