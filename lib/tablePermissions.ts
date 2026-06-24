@@ -198,6 +198,32 @@ export async function canEditTable(userId: string, tableId: string): Promise<boo
   return perm === 'owner' || perm === 'admin' || perm === 'editor';
 }
 
+/**
+ * requireTablePermission — use this in route handlers instead of inlining the check.
+ *
+ * Returns a 403 NextResponse when the user lacks the required level, or null
+ * when access is granted. Callers early-return the response:
+ *
+ *   const denied = await requireTablePermission(userId, tableId, 'write');
+ *   if (denied) return denied;
+ *
+ * 'read'  → any non-null permission (viewer, editor, admin, owner)
+ * 'write' → editor, admin, or owner (viewer is explicitly blocked)
+ * 'admin' → admin or owner only
+ */
+export async function requireTablePermission(
+  userId: string,
+  tableId: string,
+  level: 'read' | 'write' | 'admin'
+): Promise<import('next/server').NextResponse | null> {
+  const { NextResponse } = await import('next/server');
+  const perm = await getTablePermission(userId, tableId);
+  if (perm === null) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (level === 'write' && perm === 'viewer') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (level === 'admin' && perm !== 'admin' && perm !== 'owner') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  return null;
+}
+
 export async function canAdminTable(userId: string, tableId: string): Promise<boolean> {
   const perm = await getTablePermission(userId, tableId);
   return perm === 'owner' || perm === 'admin';

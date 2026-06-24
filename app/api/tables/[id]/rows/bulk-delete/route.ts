@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
-import { getTablePermission } from '@/lib/tablePermissions';
+import { requireTablePermission } from '@/lib/tablePermissions';
 import { authenticateRequest } from '@/lib/authenticateRequest';
 export async function POST(
   request: Request,
@@ -13,10 +13,8 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid row IDs' }, { status: 400 });
   }
   if (authResult.source === 'session') {
-    var permission = await getTablePermission(authResult.userId, params.id);
-    if (!permission || permission === 'viewer') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    var denied = await requireTablePermission(authResult.userId, params.id, 'write');
+    if (denied) return denied;
   }
 
   await db.agoraRow.deleteMany({
