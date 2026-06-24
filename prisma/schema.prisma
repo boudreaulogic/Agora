@@ -59,7 +59,8 @@ model User {
   mfaMethod           String?           @default("email") @map("mfa_method")
   totpSecret          String?           @map("totp_secret")
   mfaCodes            MfaCode[]         @relation("UserMfaCodes")
-  
+  userSessions        UserSession[]
+
   @@map("users")
 }
 
@@ -79,6 +80,22 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@map("sessions")
+}
+
+// Revocable session record. id is carried inside the signed JWT as `sid`.
+// A revoked or expired row here invalidates the token without changing the secret.
+model UserSession {
+  id        String    @id @default(cuid())
+  userId    String
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+  userAgent String?
+  ipAddress String?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_sessions")
 }
 
 // ============================================================================

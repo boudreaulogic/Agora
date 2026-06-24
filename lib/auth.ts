@@ -1,6 +1,8 @@
 /**
  * NextAuth.js v5 Configuration
- * 8 hour session max, no activity renewal
+ * 8-hour session max with server-side revocable session records (UserSession).
+ * The JWT carries a `sid` claim; every session callback validates it against
+ * the DB. Revoking the row (or disabling the user) ends the session immediately.
  */
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
@@ -8,12 +10,29 @@ import { PrismaAdapter } from '@auth/prisma-adapter';
 import { db } from '@/lib/db';
 import { verifyPassword, loginRateLimiter } from '@/lib/auth/password';
 
+var SESSION_MAX_AGE = 60 * 60 * 8; // 8 hours
+
+var isProd = process.env.NODE_ENV === 'production';
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
   adapter: PrismaAdapter(db),
   session: {
     strategy: 'jwt',
-    maxAge: 60 * 60 * 8, // 8 hour hard limit
+    maxAge: SESSION_MAX_AGE,
+  },
+  cookies: {
+    sessionToken: {
+      // __Host- prefix: forces Secure + Path=/ + no Domain — strictest browser binding
+      // Falls back to plain name over HTTP in dev (browser won't send __Host- without TLS)
+      name: isProd ? '__Host-next-auth.session-token' : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax' as const,
+        path: '/',
+        secure: isProd,
+      },
+    },
   },
   pages: {
     signIn: '/login',
@@ -31,92 +50,58 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           throw new Error('Email and password required');
         }
 
-        const email = credentials.email as string;
-        const password = credentials.password as string;
+        var email = credentials.email as string;
+        var password = credentials.password as string;
 
         // Rate limiting
-        const rateLimitCheck = loginRateLimiter.check(email);
+        var rateLimitCheck = loginRateLimiter.check(email);
         if (!rateLimitCheck.allowed) {
           throw new Error('Too many login attempts. Please try again in 15 minutes.');
         }
 
-        // Find user
-        const user = await db.user.findUnique({
-          where: { email },
-        });
+        var user = await db.user.findUnique({ where: { email } });
 
-        if (!user) {
-          throw new Error('Invalid email or password');
-        }
+        if (!user) throw new Error('Invalid email or password');
 
-        // Check account lock
         if (user.lockedUntil && user.lockedUntil > new Date()) {
           throw new Error('Account is temporarily locked. Please try again later.');
         }
 
-        // Check active status
         if (!user.isActive) {
           throw new Error('Account is inactive. Please contact support.');
         }
 
-        // Verify password
-        const isValid = await verifyPassword(user.passwordHash, password);
-        
-        if (!isValid) {
-          const failedAttempts = user.failedLoginAttempts + 1;
-          const updates: any = { failedLoginAttempts: failedAttempts };
+        var isValid = await verifyPassword(user.passwordHash, password);
 
-          // Lock account after 5 failed attempts
+        if (!isValid) {
+          var failedAttempts = user.failedLoginAttempts + 1;
+          var updates: any = { failedLoginAttempts: failedAttempts };
           if (failedAttempts >= 5) {
             updates.lockedUntil = new Date(Date.now() + 30 * 60 * 1000);
           }
-
-          await db.user.update({
-            where: { id: user.id },
-            data: updates,
-          });
-
+          await db.user.update({ where: { id: user.id }, data: updates });
           await db.auditLog.create({
-            data: {
-              userId: user.id,
-              action: 'LOGIN_FAILED',
-              metadata: { email, reason: 'Invalid password' },
-            },
+            data: { userId: user.id, action: 'LOGIN_FAILED', metadata: { email, reason: 'Invalid password' } },
           });
-
           throw new Error('Invalid email or password');
         }
 
-        // Successful login - reset counters
         loginRateLimiter.reset(email);
 
         await db.user.update({
           where: { id: user.id },
-          data: {
-            failedLoginAttempts: 0,
-            lockedUntil: null,
-            lastLoginAt: new Date(),
-          },
+          data: { failedLoginAttempts: 0, lockedUntil: null, lastLoginAt: new Date() },
         });
 
-        await db.auditLog.create({
-          data: {
-            userId: user.id,
-            action: 'LOGIN_SUCCESS',
-          },
-        });
+        await db.auditLog.create({ data: { userId: user.id, action: 'LOGIN_SUCCESS' } });
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        };
+        return { id: user.id, email: user.email, name: user.name };
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      // Check for MFA verification signal cookie
+      // MFA signal cookie — set by the MFA verify route after OTP confirmation
       if (token.mfaRequired && !token.mfaVerified) {
         try {
           var { cookies } = await import('next/headers');
@@ -128,9 +113,33 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         } catch {}
       }
 
-      // On initial sign-in, set MFA flags
+      // Initial sign-in: create a UserSession row and store its id as `sid`
       if (user) {
         token.id = user.id;
+
+        // Best-effort capture of request context for audit
+        var userAgent = '';
+        var ipAddress = '';
+        try {
+          var { headers } = await import('next/headers');
+          var hdrs = headers();
+          userAgent = hdrs.get('user-agent') || '';
+          ipAddress =
+            hdrs.get('cf-connecting-ip') ||
+            hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+            '';
+        } catch {}
+
+        var userSession = await db.userSession.create({
+          data: {
+            userId: user.id,
+            expiresAt: new Date(Date.now() + SESSION_MAX_AGE * 1000),
+            userAgent: userAgent || null,
+            ipAddress: ipAddress || null,
+          },
+        });
+        token.sid = userSession.id;
+
         var dbUser = await db.user.findUnique({
           where: { id: user.id },
           select: { mfaEnabled: true },
@@ -138,11 +147,42 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.mfaRequired = dbUser?.mfaEnabled || false;
         token.mfaVerified = false;
       }
+
       return token;
     },
+
     async session({ session, token }) {
+      // Validate the server-side session record on every request.
+      // If the row is missing, revoked, expired, or the user is disabled → reject.
+      if (token.sid) {
+        try {
+          var record = await db.userSession.findUnique({
+            where: { id: token.sid as string },
+            select: {
+              revokedAt: true,
+              expiresAt: true,
+              user: { select: { isActive: true } },
+            },
+          });
+
+          if (
+            !record ||
+            record.revokedAt !== null ||
+            record.expiresAt < new Date() ||
+            !record.user.isActive
+          ) {
+            // Return a session object without a user — NextAuth treats this as unauthenticated
+            return { ...session, user: undefined as any };
+          }
+        } catch {
+          // DB error: fail closed (reject the session)
+          return { ...session, user: undefined as any };
+        }
+      }
+
       if (session.user) {
         (session.user as any).id = token.id as string;
+        (session.user as any).sid = token.sid as string;
         (session.user as any).mfaRequired = token.mfaRequired as boolean;
         (session.user as any).mfaVerified = token.mfaVerified as boolean;
       }
