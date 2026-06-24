@@ -111,8 +111,10 @@ export async function PATCH(
             await db.agoraRow.update({ where: { id: params.rowId }, data: { isLocked: true, lockedById: authResult.userId } });
             wsBroadcast(params.id, { type: 'row-lock', rowId: params.rowId, isLocked: true });
 
+            const { randomBytes: randB } = await import('crypto');
             const approvalReq = await db.approvalRequest.create({
               data: {
+                token: randB(32).toString('hex'),
                 workflowId: workflow.id,
                 rowId: params.rowId,
                 tableId: params.id,

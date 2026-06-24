@@ -426,8 +426,10 @@ async function executeTriggerApproval(
 
   await db.agoraRow.update({ where: { id: rowId }, data: { isLocked: true, lockedById: userId } });
 
+  var { randomBytes: randBytes } = await import('crypto');
   var approvalReq = await db.approvalRequest.create({
     data: {
+      token: randBytes(32).toString('hex'),
       workflowId: workflow.id,
       rowId: rowId,
       tableId: tableId,

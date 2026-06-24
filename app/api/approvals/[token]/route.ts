@@ -1,10 +1,14 @@
+import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { APP_URL } from '@/lib/email';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimiter';
 
 // GET /api/approvals/[token] — email-link entry point
 // Validates the token exists and is still actionable, then redirects to the
 // in-app approval page. Identity is established there via session auth.
-export async function GET(request: Request, { params }: { params: { token: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { token: string } }) {
+  var rl = checkRateLimit(request, 'read');
+  if (!rl.allowed) return rateLimitResponse(rl);
   const approvalRequest = await db.approvalRequest.findUnique({
     where: { token: params.token },
   });
