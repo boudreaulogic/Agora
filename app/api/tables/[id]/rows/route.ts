@@ -48,6 +48,33 @@ export async function POST(
     var body = await req.json();
     var data = body.data || body;
 
+    // Mass-assignment guard: only accept keys that are real column IDs of THIS
+    // table, and (for session callers) only columns the user is allowed to edit.
+    // Prevents injecting arbitrary/foreign column IDs or writing to restricted
+    // columns by crafting the request body directly.
+    if (data && typeof data === 'object') {
+      var validColumns = await db.agoraColumn.findMany({
+        where: { tableId: id },
+        select: { id: true },
+      });
+      var validColumnIds = new Set(validColumns.map(function(c) { return c.id; }));
+
+      var colPermMap: Record<string, { canView: boolean; canEdit: boolean }> = {};
+      if (authResult.source === 'session') {
+        var { getColumnPermissions } = await import('@/lib/tablePermissions');
+        colPermMap = await getColumnPermissions(authResult.userId, id);
+      }
+
+      var filtered: Record<string, any> = {};
+      for (var k in data) {
+        if (!validColumnIds.has(k)) continue; // drop unknown / foreign column IDs
+        var rule = colPermMap[k];
+        if (rule && !rule.canEdit) continue;  // drop columns the user can't edit
+        filtered[k] = data[k];
+      }
+      data = filtered;
+    }
+
     var maxRow = await db.agoraRow.findFirst({
       where: { tableId: id },
       orderBy: { position: 'desc' },
