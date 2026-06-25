@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimiter';
@@ -238,6 +239,7 @@ export async function POST(
 
           var approvalReq = await db.approvalRequest.create({
             data: {
+              token: crypto.randomBytes(32).toString('hex'),
               workflowId: workflow.id,
               rowId: row.id,
               tableId: form.tableId,
