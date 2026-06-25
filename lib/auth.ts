@@ -76,12 +76,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!isValid) {
           var failedAttempts = user.failedLoginAttempts + 1;
           var updates: any = { failedLoginAttempts: failedAttempts };
+
+          // Exponential backoff lockout — harder to DoS a specific account than a flat 30-min lock.
+          // After N failures: 2^(N-4) minutes, capped at 30 min.
+          // Attempts 1-4: no lockout. Attempt 5: 2 min. 6: 4 min. 7: 8 min. 8+: 30 min max.
           if (failedAttempts >= 5) {
-            updates.lockedUntil = new Date(Date.now() + 30 * 60 * 1000);
+            var backoffMinutes = Math.min(Math.pow(2, failedAttempts - 4), 30);
+            updates.lockedUntil = new Date(Date.now() + backoffMinutes * 60 * 1000);
           }
+
           await db.user.update({ where: { id: user.id }, data: updates });
           await db.auditLog.create({
-            data: { userId: user.id, action: 'LOGIN_FAILED', metadata: { email, reason: 'Invalid password' } },
+            data: { userId: user.id, action: 'LOGIN_FAILED', metadata: { email, reason: 'Invalid password', attempt: failedAttempts } },
           });
           throw new Error('Invalid email or password');
         }
