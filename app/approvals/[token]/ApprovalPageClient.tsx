@@ -146,7 +146,7 @@ export function ApprovalPageClient({ data }: { data: any }) {
               </div>
               <div className="flex items-center space-x-3">
                 <button
-                  onClick={function() { handleAction(showReason); }}
+                  onClick={function() { if (showReason) handleAction(showReason); }}
                   disabled={isSubmitting}
                   className={'px-6 py-2.5 text-sm font-semibold text-white rounded-lg disabled:opacity-50 transition-colors ' + (showReason === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700')}
                 >

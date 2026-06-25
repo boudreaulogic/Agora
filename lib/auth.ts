@@ -142,7 +142,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         var userSession = await db.userSession.create({
           data: {
-            userId: user.id,
+            userId: user.id as string,
             expiresAt: new Date(Date.now() + SESSION_MAX_AGE * 1000),
             userAgent: userAgent || null,
             ipAddress: ipAddress || null,
