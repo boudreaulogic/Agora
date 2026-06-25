@@ -51,7 +51,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/server ./.next/server
 # Copy Prisma files — generated client, schema/migrations, and the CLI
 # The CLI is needed so the entrypoint can run `prisma migrate deploy` on startup
 # using the project-pinned version instead of any globally installed Prisma.
+# `@prisma/*` is the CLI's full runtime tree (engines, fetch-engine, get-platform,
+# debug, engines-version) — without it the CLI dies with
+# `Cannot find module '@prisma/engines'`. The whole scope is self-contained
+# (every package depends only on other @prisma/* packages) so one COPY suffices.
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 COPY --from=builder /app/prisma ./prisma
@@ -59,7 +64,7 @@ COPY --from=builder /app/prisma ./prisma
 # Create uploads directory
 RUN mkdir -p /app/uploads/templates && chown -R nextjs:nodejs /app/uploads
 
-# Copy entrypoint script (runs as root to fix permissions, then drops to nextjs)
+# Copy entrypoint script.
 # Strip any CR (Windows CRLF) from the shebang so the kernel can find /bin/sh —
 # checkouts on Windows can introduce CRLF and break `exec`.
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
@@ -68,5 +73,11 @@ RUN sed -i 's/\r$//' /app/docker-entrypoint.sh && chmod +x /app/docker-entrypoin
 EXPOSE 3000
 ENV PORT 3000
 
-# Run as root so entrypoint can fix permissions, then it drops to nextjs
+# Run directly as the unprivileged nextjs user. The compose hardening
+# (`cap_drop: ALL` + `no-new-privileges`) strips CAP_SETUID/SETGID/CHOWN, so the
+# old "start as root, chown uploads, then `su` to nextjs" pattern could not drop
+# privileges and crash-looped. The uploads named volume is already initialised
+# nextjs:nodejs from this image, so no runtime chown is needed.
+USER nextjs
+
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

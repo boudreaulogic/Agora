@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 import { getTrustedClientIp } from '@/lib/clientIp';
 
 // IP-based login rate limiting (15 attempts per IP per 15 min window)
@@ -93,53 +94,63 @@ export async function middleware(request: NextRequest) {
   // P0-1: Global authentication gate — private by default
   // ---------------------------------------------------------------------------
   if (!isPublic(pathname)) {
-    // Find session token — primary name first, then fallbacks
-    var sessionToken = request.cookies.get(SESSION_COOKIE)?.value;
-    if (!sessionToken) {
-      for (var i = 0; i < SESSION_COOKIE_FALLBACKS.length; i++) {
-        sessionToken = request.cookies.get(SESSION_COOKIE_FALLBACKS[i])?.value;
-        if (sessionToken) break;
+    // Decode the Auth.js session token. NextAuth v5 stores it as an ENCRYPTED
+    // JWE (A256CBC-HS512, salted with the cookie name), NOT a signed JWS — so it
+    // must be decrypted via getToken(). A plain jose.jwtVerify() (signature
+    // check) always throws on a JWE, which previously redirected every
+    // authenticated request back to /login and produced an infinite
+    // /login ⇄ / redirect loop (ERR_TOO_MANY_REDIRECTS) once a user signed in.
+    //
+    // We try the primary cookie name first, then the transitional fallbacks.
+    // The decryption salt MUST equal the cookie name the token was issued under,
+    // so getToken() is called per-candidate with matching cookieName + salt.
+    var secret = process.env.NEXTAUTH_SECRET || '';
+    var candidateCookies = [SESSION_COOKIE].concat(SESSION_COOKIE_FALLBACKS);
+    var token: any = null;
+    for (var i = 0; i < candidateCookies.length; i++) {
+      var cookieName = candidateCookies[i];
+      if (!request.cookies.get(cookieName)) continue;
+      try {
+        token = await getToken({
+          req: request,
+          secret: secret,
+          cookieName: cookieName,
+          salt: cookieName,
+          secureCookie:
+            cookieName.indexOf('__Host-') === 0 || cookieName.indexOf('__Secure-') === 0,
+        });
+      } catch {
+        token = null;
       }
+      if (token) break;
     }
 
-    if (!sessionToken) {
+    if (!token) {
+      // No session, or a tampered/expired/undecryptable token
       if (pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
       return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // Verify JWT signature and expiry — rejects tampered or expired tokens
-    try {
-      var jose = await import('jose');
-      var secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET || '');
-      var { payload } = await jose.jwtVerify(sessionToken, secret);
+    // MFA enforcement — applies to ALL routes (pages AND API).
+    // Exemptions: /verify-mfa (the verification page itself),
+    //   /api/auth/mfa (the OTP send/verify endpoint),
+    //   /api/auth/nextauth (NextAuth's own handlers).
+    // A password-only session must not reach any data endpoint.
+    var mfaExempt =
+      pathname === '/verify-mfa' ||
+      pathname.startsWith('/api/auth/mfa') ||
+      pathname.startsWith('/api/auth/nextauth');
 
-      // MFA enforcement — applies to ALL routes (pages AND API).
-      // Exemptions: /verify-mfa (the verification page itself),
-      //   /api/auth/mfa (the OTP send/verify endpoint),
-      //   /api/auth/nextauth (NextAuth's own handlers).
-      // A password-only session must not reach any data endpoint.
-      var mfaExempt =
-        pathname === '/verify-mfa' ||
-        pathname.startsWith('/api/auth/mfa') ||
-        pathname.startsWith('/api/auth/nextauth');
-
-      if (payload.mfaRequired === true && payload.mfaVerified !== true && !mfaExempt) {
-        if (pathname.startsWith('/api/')) {
-          return NextResponse.json(
-            { error: 'MFA verification required', code: 'MFA_REQUIRED' },
-            { status: 401 }
-          );
-        }
-        return NextResponse.redirect(new URL('/verify-mfa', request.url));
-      }
-    } catch {
-      // Invalid or expired JWT
+    if (token.mfaRequired === true && token.mfaVerified !== true && !mfaExempt) {
       if (pathname.startsWith('/api/')) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return NextResponse.json(
+          { error: 'MFA verification required', code: 'MFA_REQUIRED' },
+          { status: 401 }
+        );
       }
-      return NextResponse.redirect(new URL('/login', request.url));
+      return NextResponse.redirect(new URL('/verify-mfa', request.url));
     }
   }
 
