@@ -7,7 +7,7 @@ WORKDIR /app
 FROM base AS deps
 RUN apk add --no-cache libc6-compat openssl python3 make g++
 COPY package.json package-lock.json* ./
-RUN npm ci --legacy-peer-deps || npm install
+RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 RUN npm rebuild argon2 --build-from-source
 
 # Development stage
