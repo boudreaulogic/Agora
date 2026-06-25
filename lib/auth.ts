@@ -122,12 +122,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         var ipAddress = '';
         try {
           var { headers } = await import('next/headers');
+          var { getTrustedClientIp } = await import('@/lib/clientIp');
           var hdrs = headers();
           userAgent = hdrs.get('user-agent') || '';
-          ipAddress =
-            hdrs.get('cf-connecting-ip') ||
-            hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-            '';
+          var trusted = getTrustedClientIp(hdrs);
+          ipAddress = trusted === 'unknown' ? '' : trusted;
         } catch {}
 
         var userSession = await db.userSession.create({
