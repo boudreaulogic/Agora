@@ -12,11 +12,26 @@ export async function POST(request: Request) {
   }
 
   var body = await request.json();
-  var { name, description, icon, workspaceId, siteId, listId, listName, columns } = body;
+  var { name, description, icon, workspaceId, connectionId, columns } = body;
 
-  if (!name || !siteId || !listId || !columns || columns.length === 0) {
+  if (!name || !connectionId || !columns || columns.length === 0) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
+
+  // Authorize against the admin-curated catalog and derive the site/list
+  // server-side — a user can only import a list they've been granted, and can't
+  // forge an arbitrary siteId/listId from the client.
+  var { canAccessConnection } = await import('@/lib/sharepoint-access');
+  if (!(await canAccessConnection((session.user as any).id, connectionId))) {
+    return NextResponse.json({ error: 'You do not have access to this SharePoint list' }, { status: 403 });
+  }
+  var connection = await db.sharePointListConnection.findUnique({ where: { id: connectionId } });
+  if (!connection) {
+    return NextResponse.json({ error: 'SharePoint connection not found' }, { status: 404 });
+  }
+  var siteId = connection.siteId;
+  var listId = connection.listId;
+  var listName = connection.listName;
 
   // Generate unique slug
   var baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '');

@@ -13,7 +13,13 @@ export function SharePointSettingsClient() {
   var trs = useState<any>(null); var testResult = trs[0]; var setTestResult = trs[1];
   var lls = useState(false); var loadingLists = lls[0]; var setLoadingLists = lls[1];
   var lis = useState<any[]>([]); var lists = lis[0]; var setLists = lis[1];
-  var sis = useState(''); var siteId = sis[0]; var setSiteId = sis[1];
+  var bus = useState(''); var browseUrl = bus[0]; var setBrowseUrl = bus[1];
+  var bsus = useState(''); var browsedSiteUrl = bsus[0]; var setBrowsedSiteUrl = bsus[1];
+
+  // Catalog of configured connections + the groups available to grant access to.
+  var cns = useState<any[]>([]); var connections = cns[0]; var setConnections = cns[1];
+  var grs = useState<any[]>([]); var groups = grs[0]; var setGroups = grs[1];
+  var adds = useState<Record<string, boolean>>({}); var adding = adds[0]; var setAdding = adds[1];
 
   useEffect(function() {
     fetch('/api/admin/sharepoint')
@@ -21,7 +27,19 @@ export function SharePointSettingsClient() {
       .then(function(data) { if (!data.error) setSettings(function(prev) { return Object.assign({}, prev, data); }); })
       .catch(function() {})
       .finally(function() { setLoading(false); });
+    refreshConnections();
+    fetch('/api/groups')
+      .then(function(r) { return r.json(); })
+      .then(function(data) { setGroups(data.groups || []); })
+      .catch(function() {});
   }, []);
+
+  function refreshConnections() {
+    fetch('/api/admin/sharepoint/connections')
+      .then(function(r) { return r.json(); })
+      .then(function(data) { if (!data.error) setConnections(data.connections || []); })
+      .catch(function() {});
+  }
 
   async function save() {
     setSaving(true); setMessage(''); setMessageType('');
@@ -46,16 +64,63 @@ export function SharePointSettingsClient() {
   }
 
   async function fetchLists() {
-    setLoadingLists(true);
+    setLoadingLists(true); setMessage(''); setMessageType('');
     try {
-      var res = await fetch('/api/admin/sharepoint', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'get_lists' }) });
+      var res = await fetch('/api/admin/sharepoint', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'get_lists', siteUrl: browseUrl.trim() || undefined }) });
       var data = await res.json();
       if (data.error) { setMessage(data.error); setMessageType('error'); return; }
       setLists(data.lists || []);
-      setSiteId(data.siteId || '');
-      setMessage('Found ' + (data.lists || []).length + ' lists'); setMessageType('success');
+      setBrowsedSiteUrl(data.siteUrl || '');
+      setMessage('Found ' + (data.lists || []).length + ' lists on ' + (data.siteUrl || 'the site')); setMessageType('success');
     } catch { setMessage('Failed to fetch lists'); setMessageType('error'); }
     finally { setLoadingLists(false); }
+  }
+
+  async function addToCatalog(list: any) {
+    setAdding(function(p) { var n = Object.assign({}, p); n[list.id] = true; return n; });
+    setMessage(''); setMessageType('');
+    try {
+      var res = await fetch('/api/admin/sharepoint/connections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: list.displayName, description: list.description || '', siteUrl: browsedSiteUrl, listId: list.id, listName: list.displayName }),
+      });
+      var data = await res.json();
+      if (!res.ok) { setMessage(data.error || 'Failed to add list'); setMessageType('error'); return; }
+      setMessage('Added "' + list.displayName + '" to the catalog. Grant group access below.'); setMessageType('success');
+      refreshConnections();
+    } catch { setMessage('Failed to add list'); setMessageType('error'); }
+    finally { setAdding(function(p) { var n = Object.assign({}, p); delete n[list.id]; return n; }); }
+  }
+
+  async function patchConnection(id: string, body: any) {
+    try {
+      var res = await fetch('/api/admin/sharepoint/connections/' + id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      var data = await res.json();
+      if (!res.ok) { setMessage(data.error || 'Failed to update'); setMessageType('error'); return; }
+      refreshConnections();
+    } catch { setMessage('Failed to update connection'); setMessageType('error'); }
+  }
+
+  async function deleteConnection(id: string, name: string) {
+    if (!confirm('Remove "' + name + '" from the catalog? Users will no longer be able to import it. Existing tables are not affected.')) return;
+    try {
+      var res = await fetch('/api/admin/sharepoint/connections/' + id, { method: 'DELETE' });
+      if (!res.ok) { var d = await res.json(); setMessage(d.error || 'Failed to delete'); setMessageType('error'); return; }
+      refreshConnections();
+    } catch { setMessage('Failed to delete connection'); setMessageType('error'); }
+  }
+
+  function toggleGroup(conn: any, groupId: string) {
+    var current = (conn.access || []).map(function(a: any) { return a.groupId; });
+    var next = current.indexOf(groupId) >= 0
+      ? current.filter(function(g: string) { return g !== groupId; })
+      : current.concat([groupId]);
+    patchConnection(conn.id, { groupIds: next });
+  }
+
+  function isCataloged(listId: string): boolean {
+    return connections.some(function(c) { return c.listId === listId; });
   }
 
   if (loading) return (<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>);
@@ -65,7 +130,7 @@ export function SharePointSettingsClient() {
       <div className="max-w-2xl mx-auto py-8 px-6">
         <div className="mb-6">
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">SharePoint Integration</h1>
-          <p className="text-sm text-gray-500 mt-1">Connect Agora to SharePoint via Microsoft Graph API. Form submissions, row updates, and approval completions can automatically sync to SharePoint lists.</p>
+          <p className="text-sm text-gray-500 mt-1">Connect Agora to SharePoint via Microsoft Graph. Register specific lists below, then grant groups access — users only see the lists you allow.</p>
         </div>
 
         {message && (
@@ -78,7 +143,7 @@ export function SharePointSettingsClient() {
           <div className="p-6 space-y-4">
             <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Azure AD App Registration</h2>
-              <p className="text-xs text-gray-400 mt-1">Register an app in Azure Portal → App Registrations. Add Microsoft Graph → Application permission → Sites.ReadWrite.All and grant admin consent.</p>
+              <p className="text-xs text-gray-400 mt-1">Register an app in Entra → App Registrations. Add Microsoft Graph → Application permission <strong>Sites.Selected</strong> and grant admin consent, then grant the app access to each site you want to use.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -101,11 +166,11 @@ export function SharePointSettingsClient() {
               <input type="password" value={settings.sp_client_secret} onChange={function(e) { setSettings(function(p) { return Object.assign({}, p, { sp_client_secret: e.target.value }); }); }}
                 placeholder="h0Q8Q~..."
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-200 font-mono" />
-              <p className="text-[10px] text-gray-400 mt-1">Encrypted at rest. Generate from Azure Portal → Certificates & Secrets.</p>
+              <p className="text-[10px] text-gray-400 mt-1">Encrypted at rest. Generate from Entra → Certificates &amp; Secrets.</p>
             </div>
 
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-              <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3">SharePoint Site</h2>
+              <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3">Default SharePoint Site</h2>
             </div>
 
             <div>
@@ -113,21 +178,15 @@ export function SharePointSettingsClient() {
               <input type="text" value={settings.sp_site_url} onChange={function(e) { setSettings(function(p) { return Object.assign({}, p, { sp_site_url: e.target.value }); }); }}
                 placeholder="https://yourtenant.sharepoint.com/sites/YourSite"
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-200" />
-              <p className="text-[10px] text-gray-400 mt-1">The SharePoint site that contains the lists you want to sync with.</p>
+              <p className="text-[10px] text-gray-400 mt-1">The default site to browse. You can browse any other granted site below.</p>
             </div>
           </div>
 
           <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between rounded-b-xl">
-            <div className="flex items-center space-x-2">
-              <button onClick={testConnection} disabled={testing || !settings.sp_client_id || !settings.sp_tenant_id}
-                className="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50">
-                {testing ? 'Testing...' : 'Test Connection'}
-              </button>
-              <button onClick={fetchLists} disabled={loadingLists || !testResult?.success}
-                className="px-4 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 border border-purple-300 dark:border-purple-700 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 disabled:opacity-50">
-                {loadingLists ? 'Loading...' : 'Browse Lists'}
-              </button>
-            </div>
+            <button onClick={testConnection} disabled={testing || !settings.sp_client_id || !settings.sp_tenant_id}
+              className="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50">
+              {testing ? 'Testing...' : 'Test Connection'}
+            </button>
             <button onClick={save} disabled={saving}
               className="px-6 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
               {saving ? 'Saving...' : 'Save Settings'}
@@ -149,38 +208,120 @@ export function SharePointSettingsClient() {
           </div>
         )}
 
-        {lists.length > 0 && (
-          <div className="mt-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300">SharePoint Lists ({lists.length})</h3>
-              <p className="text-xs text-gray-400 mt-0.5">These lists are available for sync. Configure per-table sync in each table's settings.</p>
+        {/* Browse a site's lists and register them */}
+        <div className="mt-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300">Register Lists</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Browse a site's lists and add the ones you want to make available in Agora.</p>
+          </div>
+          <div className="p-4 space-y-3">
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Site URL to browse (optional — defaults to the site above)</label>
+                <input type="text" value={browseUrl} onChange={function(e) { setBrowseUrl(e.target.value); }}
+                  placeholder={settings.sp_site_url || 'https://yourtenant.sharepoint.com/sites/AnotherSite'}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-200" />
+              </div>
+              <button onClick={fetchLists} disabled={loadingLists}
+                className="px-4 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 border border-purple-300 dark:border-purple-700 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 disabled:opacity-50">
+                {loadingLists ? 'Loading...' : 'Browse Lists'}
+              </button>
             </div>
-            <div className="divide-y divide-gray-100 dark:divide-gray-800">
-              {lists.map(function(list: any) {
-                return (
-                  <div key={list.id} className="px-4 py-3 flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{list.displayName}</p>
-                      {list.description && <p className="text-xs text-gray-400">{list.description}</p>}
+
+            {lists.length > 0 && (
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-100 dark:divide-gray-800">
+                {lists.map(function(list: any) {
+                  var cataloged = isCataloged(list.id);
+                  return (
+                    <div key={list.id} className="px-4 py-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{list.displayName}</p>
+                        {list.description && <p className="text-xs text-gray-400">{list.description}</p>}
+                      </div>
+                      {cataloged ? (
+                        <span className="text-[11px] font-medium text-green-600 dark:text-green-400">✓ In catalog</span>
+                      ) : (
+                        <button onClick={function() { addToCatalog(list); }} disabled={!!adding[list.id]}
+                          className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                          {adding[list.id] ? 'Adding...' : 'Add to catalog'}
+                        </button>
+                      )}
                     </div>
-                    <span className="text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{list.id.slice(0, 8)}...</span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Configured connections + Agora-level access */}
+        <div className="mt-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300">Configured Connections ({connections.length})</h3>
+            <p className="text-xs text-gray-400 mt-0.5">These lists appear in the user import picker. Grant access by group, or make a list visible to everyone.</p>
+          </div>
+          {connections.length === 0 ? (
+            <div className="px-4 py-8 text-center text-sm text-gray-400">No connections yet. Browse a site above and add a list.</div>
+          ) : (
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              {connections.map(function(conn: any) {
+                var grantedIds = (conn.access || []).map(function(a: any) { return a.groupId; });
+                return (
+                  <div key={conn.id} className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{conn.name}</p>
+                        <p className="text-[11px] text-gray-400">List: {conn.listName} · {conn.siteUrl}</p>
+                      </div>
+                      <button onClick={function() { deleteConnection(conn.id, conn.name); }}
+                        className="text-xs text-red-500 hover:text-red-700">Remove</button>
+                    </div>
+
+                    <label className="flex items-center gap-2 mt-3 text-xs text-gray-600 dark:text-gray-300">
+                      <input type="checkbox" checked={!!conn.visibleToAll}
+                        onChange={function(e) { patchConnection(conn.id, { visibleToAll: e.target.checked }); }}
+                        className="w-4 h-4 rounded border-gray-300 text-blue-600" />
+                      Visible to all users
+                    </label>
+
+                    {!conn.visibleToAll && (
+                      <div className="mt-2">
+                        <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1">Groups with access</p>
+                        {groups.length === 0 ? (
+                          <p className="text-[11px] text-gray-400">No groups exist yet. Create groups in Admin → Groups.</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5">
+                            {groups.map(function(g: any) {
+                              var on = grantedIds.indexOf(g.id) >= 0;
+                              return (
+                                <button key={g.id} onClick={function() { toggleGroup(conn, g.id); }}
+                                  className={'px-2.5 py-1 text-[11px] rounded-full border transition-colors ' +
+                                    (on ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400')}>
+                                  {on ? '✓ ' : ''}{g.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-xl">
-          <h3 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-2">How to set up SharePoint sync</h3>
+          <h3 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-2">How to set up SharePoint (least-privilege)</h3>
           <ol className="text-xs text-blue-700 dark:text-blue-400 space-y-1.5">
-            <li>1. Register an app in <strong>Azure Portal → App Registrations</strong></li>
-            <li>2. Add API permission: <strong>Microsoft Graph → Application → Sites.ReadWrite.All</strong></li>
-            <li>3. <strong>Grant admin consent</strong> for the permission</li>
-            <li>4. Create a <strong>Client Secret</strong> under Certificates & Secrets</li>
-            <li>5. Enter your Tenant ID, Client ID, and Secret above</li>
-            <li>6. Enter your SharePoint site URL and click <strong>Test Connection</strong></li>
-            <li>7. Go to any table → <strong>SharePoint Sync</strong> tab to map fields and enable auto-sync</li>
+            <li>1. Register an app in <strong>Entra → App Registrations</strong></li>
+            <li>2. Add API permission <strong>Microsoft Graph → Application → Sites.Selected</strong> and <strong>grant admin consent</strong></li>
+            <li>3. Have your 365 admin grant the app access to each <strong>specific site</strong> (read or write) it should reach</li>
+            <li>4. Create a <strong>Client Secret</strong>, then enter Tenant ID, Client ID, and Secret above</li>
+            <li>5. <strong>Browse Lists</strong> for a granted site and <strong>Add to catalog</strong> the lists you want</li>
+            <li>6. Grant <strong>groups</strong> access to each list (or make it visible to all)</li>
+            <li>7. Users go to <strong>Import from SharePoint</strong> and see only the lists they're allowed to use</li>
           </ol>
         </div>
       </div>
