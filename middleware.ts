@@ -116,13 +116,23 @@ export async function middleware(request: NextRequest) {
       var secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET || '');
       var { payload } = await jose.jwtVerify(sessionToken, secret);
 
-      // MFA enforcement
-      if (
-        payload.mfaRequired === true &&
-        payload.mfaVerified !== true &&
-        pathname !== '/verify-mfa' &&
-        !pathname.startsWith('/api/')
-      ) {
+      // MFA enforcement — applies to ALL routes (pages AND API).
+      // Exemptions: /verify-mfa (the verification page itself),
+      //   /api/auth/mfa (the OTP send/verify endpoint),
+      //   /api/auth/nextauth (NextAuth's own handlers).
+      // A password-only session must not reach any data endpoint.
+      var mfaExempt =
+        pathname === '/verify-mfa' ||
+        pathname.startsWith('/api/auth/mfa') ||
+        pathname.startsWith('/api/auth/nextauth');
+
+      if (payload.mfaRequired === true && payload.mfaVerified !== true && !mfaExempt) {
+        if (pathname.startsWith('/api/')) {
+          return NextResponse.json(
+            { error: 'MFA verification required', code: 'MFA_REQUIRED' },
+            { status: 401 }
+          );
+        }
         return NextResponse.redirect(new URL('/verify-mfa', request.url));
       }
     } catch {
