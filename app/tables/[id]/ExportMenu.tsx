@@ -66,13 +66,21 @@ export function ExportMenu({
     });
 
     // Create CSV content
+    // Formula-injection guard: cells beginning with =, +, -, @, TAB, CR are
+    // prefixed with a TAB inside the quoted value so spreadsheet apps don't
+    // evaluate them as formulas (DDE, data exfiltration, etc.).
+    const FORMULA_CHARS = /^[=+\-@\t\r]/;
     const csvContent = [
       headers.join(','),
       ...data.map((row: any) => row.map((cell: any) => {
-        // Escape cells that contain commas or quotes
-        const cellStr = String(cell);
-        if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
-          return `"${cellStr.replace(/"/g, '""')}"`;
+        var cellStr = String(cell == null ? '' : cell);
+        // Prefix dangerous lead characters inside the quoted field
+        if (FORMULA_CHARS.test(cellStr)) {
+          cellStr = '\t' + cellStr;
+        }
+        // Always quote if contains comma, quote, newline, or we added a prefix
+        if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n') || cellStr.includes('\t')) {
+          return '"' + cellStr.replace(/"/g, '""') + '"';
         }
         return cellStr;
       }).join(','))
