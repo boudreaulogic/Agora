@@ -1159,10 +1159,11 @@ model AutomationRun {
 model MfaCode {
   id        String   @id @default(cuid())
   userId    String   @map("user_id")
-  code      String
+  code      String                        // SHA-256 hex of the 6-digit OTP (never plaintext)
   method    String   @default("email")
   expiresAt DateTime @map("expires_at")
   used      Boolean  @default(false)
+  attempts  Int      @default(0)          // invalidated after 5 wrong guesses
   createdAt DateTime @default(now()) @map("created_at")
   ipAddress String?  @map("ip_address")
   userAgent String?  @map("user_agent")

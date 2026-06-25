@@ -61,7 +61,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         var user = await db.user.findUnique({ where: { email } });
 
-        if (!user) throw new Error('Invalid email or password');
+        if (!user) {
+          // Run a dummy argon2 verify to equalize response time and prevent
+          // user enumeration via timing oracle (argon2 only runs for real users).
+          await verifyPassword('$argon2id$v=19$m=65536,t=3,p=4$dummysaltdummysalt$dummyhashvaluedummyhashvaluedummyhash', password).catch(function() {});
+          throw new Error('Invalid email or password');
+        }
 
         if (user.lockedUntil && user.lockedUntil > new Date()) {
           throw new Error('Account is temporarily locked. Please try again later.');
