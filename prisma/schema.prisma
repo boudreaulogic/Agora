@@ -1089,8 +1089,9 @@ model Automation {
   // scheduled:                   { cron: "0 8 * * 1" }
   // webhook:                     { tableId: "..." }  (optional, for context)
   
-  // Webhook trigger gets a unique URL slug
-  webhookSlug String?  @unique @map("webhookslug")
+  // Webhook trigger gets a unique URL slug + optional HMAC secret
+  webhookSlug   String?  @unique @map("webhookslug")
+  webhookSecret String?  @map("webhooksecret") // HMAC-SHA256 signing secret; null = no signature required
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
