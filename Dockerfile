@@ -60,8 +60,10 @@ COPY --from=builder /app/prisma ./prisma
 RUN mkdir -p /app/uploads/templates && chown -R nextjs:nodejs /app/uploads
 
 # Copy entrypoint script (runs as root to fix permissions, then drops to nextjs)
+# Strip any CR (Windows CRLF) from the shebang so the kernel can find /bin/sh —
+# checkouts on Windows can introduce CRLF and break `exec`.
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
-RUN chmod +x /app/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /app/docker-entrypoint.sh && chmod +x /app/docker-entrypoint.sh
 
 EXPOSE 3000
 ENV PORT 3000
