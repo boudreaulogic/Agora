@@ -1,6 +1,25 @@
 import { db } from '@/lib/db';
 import crypto from 'crypto';
 
+// Server-held key for HMAC-signing ledger entries. Derived from ENCRYPTION_KEY
+// (which lives in env, outside the database) so that an attacker with DB-write
+// access alone — SQL injection, a stolen backup, a compromised DB role —
+// cannot forge or recompute a valid chain. Plain SHA-256 was tamper-EVIDENT
+// (anyone could recompute it); HMAC makes it tamper-RESISTANT without the key.
+function getLedgerKey(): Buffer {
+  var key = process.env.ENCRYPTION_KEY;
+  if (key && /^[0-9a-fA-F]{64}$/.test(key)) {
+    return Buffer.from(
+      crypto.hkdfSync('sha256', Buffer.from(key, 'hex'), '', 'agora-audit-ledger-v1', 32)
+    ) as Buffer;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('ENCRYPTION_KEY is required to sign the audit ledger in production.');
+  }
+  // Dev fallback — derive from NEXTAUTH_SECRET so local development works.
+  return crypto.createHash('sha256').update(process.env.NEXTAUTH_SECRET || 'dev').digest();
+}
+
 function computeHash(data: {
   previousHash: string | null;
   action: string;
@@ -19,7 +38,8 @@ function computeHash(data: {
     st: data.stage || 0,
     r: data.reason || '',
   });
-  return crypto.createHash('sha256').update(payload).digest('hex');
+  // HMAC-SHA256 keyed with the server-held ledger key (not plain SHA-256).
+  return crypto.createHmac('sha256', getLedgerKey()).update(payload).digest('hex');
 }
 
 export async function addLedgerEntry({
