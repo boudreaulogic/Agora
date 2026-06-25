@@ -24,15 +24,34 @@ export async function PATCH(
 
     const { columnId, value } = await request.json();
 
+    // Verify the target column actually belongs to THIS table — prevents
+    // writing to a column ID from another table (mass-assignment / cross-table).
+    const col = await db.agoraColumn.findUnique({
+      where: { id: columnId },
+      select: { type: true, settings: true, tableId: true },
+    });
+    if (!col || col.tableId !== params.id) {
+      return NextResponse.json({ error: 'Invalid column for this table' }, { status: 400 });
+    }
+
+    // Enforce column-level edit permission for session callers.
+    // getColumnPermissions returns {} for owner/admin or when no restrictions
+    // exist; otherwise a columnId mapped to canEdit:false must be blocked.
+    if (authResult.source === 'session') {
+      const { getColumnPermissions } = await import('@/lib/tablePermissions');
+      const colPerms = await getColumnPermissions(authResult.userId, params.id);
+      const rule = colPerms[columnId];
+      if (rule && !rule.canEdit) {
+        return NextResponse.json({ error: 'You do not have permission to edit this column' }, { status: 403 });
+      }
+    }
+
     // Server-side column validation
     if (value !== null && value !== undefined && value !== '') {
-      const col = await db.agoraColumn.findUnique({ where: { id: columnId }, select: { type: true, settings: true } });
-      if (col) {
-        const { validateColumnValue } = await import('@/lib/columnValidation');
-        var validation = validateColumnValue(value, col.type, col.settings);
-        if (!validation.valid) {
-          return NextResponse.json({ error: validation.error || 'Invalid value' }, { status: 400 });
-        }
+      const { validateColumnValue } = await import('@/lib/columnValidation');
+      var validation = validateColumnValue(value, col.type, col.settings);
+      if (!validation.valid) {
+        return NextResponse.json({ error: validation.error || 'Invalid value' }, { status: 400 });
       }
     }
 
