@@ -7,10 +7,6 @@ const nextConfig = {
   // application source to anyone with DevTools open.
   productionBrowserSourceMaps: false,
   experimental: {
-    // Enables instrumentation.ts (register hook) — used to pin outbound
-    // networking to IPv4 at server startup. Stable in Next 15; behind this
-    // flag in 14.2.
-    instrumentationHook: true,
     serverActions: {
       bodySizeLimit: '2mb',
     },
