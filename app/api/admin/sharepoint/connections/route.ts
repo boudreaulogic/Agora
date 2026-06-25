@@ -30,19 +30,37 @@ export async function POST(request: Request) {
   var body = await request.json();
   var name = (body.name || '').trim();
   var siteUrl = (body.siteUrl || '').trim();
+  var siteId = (body.siteId || '').trim();
   var listId = (body.listId || '').trim();
   var listName = (body.listName || '').trim();
 
-  if (!name || !siteUrl || !listId) {
-    return NextResponse.json({ error: 'name, siteUrl, and listId are required' }, { status: 400 });
+  if (!name || !listId || (!siteUrl && !siteId)) {
+    return NextResponse.json({ error: 'name, listId, and either a site URL or a site id are required' }, { status: 400 });
   }
 
-  var siteId = '';
+  var sp = await import('@/lib/sharepoint');
+
+  // Two paths:
+  //  - Sites.Selected: resolve siteId from the site URL (enumeration allowed).
+  //  - Lists.SelectedOperations.Selected (beta): the admin supplies siteId +
+  //    listId directly from PowerShell, because the app can't resolve/enumerate
+  //    a site it only has list-scoped access to.
+  if (!siteId) {
+    try {
+      siteId = await sp.getSiteId(siteUrl);
+    } catch (err: any) {
+      return NextResponse.json({ error: 'Could not resolve SharePoint site: ' + (err.message || 'unknown') }, { status: 400 });
+    }
+  }
+  if (!siteUrl) siteUrl = 'siteId:' + siteId;
+
+  // Validate the app can actually reach this list (and capture its name). This
+  // succeeds under both site-scoped and list-scoped grants.
   try {
-    var { getSiteId } = await import('@/lib/sharepoint');
-    siteId = await getSiteId(siteUrl);
+    var listMeta = await sp.getListById(siteId, listId);
+    if (!listName) listName = (listMeta && listMeta.displayName) || listId;
   } catch (err: any) {
-    return NextResponse.json({ error: 'Could not resolve SharePoint site: ' + (err.message || 'unknown') }, { status: 400 });
+    return NextResponse.json({ error: 'Could not access that list — confirm the app has been granted it. (' + (err.message || 'unknown') + ')' }, { status: 400 });
   }
 
   var groupIds: string[] = Array.isArray(body.groupIds) ? body.groupIds : [];

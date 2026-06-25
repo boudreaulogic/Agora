@@ -189,6 +189,13 @@ export async function getLists(siteId: string): Promise<any[]> {
   });
 }
 
+// Fetch a single list directly by id. Works under a list-scoped grant
+// (Lists.SelectedOperations.Selected) where enumerating the site's lists is not
+// permitted — used to validate a "register by id" connection and read its name.
+export async function getListById(siteId: string, listId: string): Promise<any> {
+  return graphGet('/sites/' + siteId + '/lists/' + listId + '?$select=id,displayName,description,webUrl');
+}
+
 export async function getListColumns(siteId: string, listId: string): Promise<any[]> {
   var data = await graphGet('/sites/' + siteId + '/lists/' + listId + '/columns?$top=200');
   // Filter out system/hidden columns

@@ -21,6 +21,13 @@ export function SharePointSettingsClient() {
   var grs = useState<any[]>([]); var groups = grs[0]; var setGroups = grs[1];
   var adds = useState<Record<string, boolean>>({}); var adding = adds[0]; var setAdding = adds[1];
 
+  // "Register by List ID" (list-scoped / Lists.SelectedOperations.Selected beta)
+  var bidn = useState(''); var byIdName = bidn[0]; var setByIdName = bidn[1];
+  var bidu = useState(''); var byIdSiteUrl = bidu[0]; var setByIdSiteUrl = bidu[1];
+  var bidsi = useState(''); var byIdSiteId = bidsi[0]; var setByIdSiteId = bidsi[1];
+  var bidli = useState(''); var byIdListId = bidli[0]; var setByIdListId = bidli[1];
+  var bidr = useState(false); var registeringById = bidr[0]; var setRegisteringById = bidr[1];
+
   useEffect(function() {
     fetch('/api/admin/sharepoint')
       .then(function(r) { return r.json(); })
@@ -91,6 +98,31 @@ export function SharePointSettingsClient() {
       refreshConnections();
     } catch { setMessage('Failed to add list'); setMessageType('error'); }
     finally { setAdding(function(p) { var n = Object.assign({}, p); delete n[list.id]; return n; }); }
+  }
+
+  async function registerById() {
+    if (!byIdName.trim() || !byIdSiteId.trim() || !byIdListId.trim()) {
+      setMessage('Name, Site ID, and List ID are required.'); setMessageType('error'); return;
+    }
+    setRegisteringById(true); setMessage(''); setMessageType('');
+    try {
+      var res = await fetch('/api/admin/sharepoint/connections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: byIdName.trim(),
+          siteUrl: byIdSiteUrl.trim(),
+          siteId: byIdSiteId.trim(),
+          listId: byIdListId.trim(),
+        }),
+      });
+      var data = await res.json();
+      if (!res.ok) { setMessage(data.error || 'Failed to register list'); setMessageType('error'); return; }
+      setMessage('Registered "' + byIdName.trim() + '". Grant group access below.'); setMessageType('success');
+      setByIdName(''); setByIdSiteUrl(''); setByIdSiteId(''); setByIdListId('');
+      refreshConnections();
+    } catch { setMessage('Failed to register list'); setMessageType('error'); }
+    finally { setRegisteringById(false); }
   }
 
   async function patchConnection(id: string, body: any) {
@@ -251,6 +283,27 @@ export function SharePointSettingsClient() {
                 })}
               </div>
             )}
+
+            <div className="pt-3 mt-1 border-t border-dashed border-gray-200 dark:border-gray-700">
+              <p className="text-xs font-bold text-gray-600 dark:text-gray-300">Register by List ID <span className="font-normal text-gray-400">— for list-scoped grants (Lists.SelectedOperations.Selected, beta)</span></p>
+              <p className="text-[11px] text-gray-400 mt-0.5 mb-2">When the app is granted only specific lists it can't browse a site. Grant the list in PowerShell, then paste the Site ID and List ID it printed.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <input type="text" value={byIdName} onChange={function(e) { setByIdName(e.target.value); }} placeholder="Friendly name (e.g. Facility Requests)"
+                  className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-200" />
+                <input type="text" value={byIdSiteUrl} onChange={function(e) { setByIdSiteUrl(e.target.value); }} placeholder="Site URL (optional, for display)"
+                  className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-200" />
+                <input type="text" value={byIdSiteId} onChange={function(e) { setByIdSiteId(e.target.value); }} placeholder="Site ID (host,guid,guid)"
+                  className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-200 font-mono text-xs" />
+                <input type="text" value={byIdListId} onChange={function(e) { setByIdListId(e.target.value); }} placeholder="List ID (guid)"
+                  className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-200 font-mono text-xs" />
+              </div>
+              <div className="flex justify-end mt-2">
+                <button onClick={registerById} disabled={registeringById}
+                  className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                  {registeringById ? 'Registering...' : 'Register list'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
