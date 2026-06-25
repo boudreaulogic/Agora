@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getTrustedClientIp } from '@/lib/clientIp';
 
 // Simple in-memory rate limiter using sliding window
 // For multi-replica deployments, swap to Redis-backed rate-limiter-flexible
@@ -35,10 +36,8 @@ var TIERS: Record<string, { points: number; windowMs: number }> = {
 };
 
 function getClientIP(req: NextRequest): string {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-    || req.headers.get('x-real-ip')
-    || req.headers.get('cf-connecting-ip')
-    || '127.0.0.1';
+  var ip = getTrustedClientIp(req.headers);
+  return ip === 'unknown' ? '127.0.0.1' : ip;
 }
 
 export function checkRateLimit(req: NextRequest, tier: string): { allowed: boolean; remaining: number; retryAfter?: number } {
