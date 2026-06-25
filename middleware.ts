@@ -50,8 +50,8 @@ export async function middleware(request: NextRequest) {
   // Login rate limiting by IP — prevents credential stuffing
   var pathname = request.nextUrl.pathname;
   if (pathname === '/api/auth/callback/credentials' && request.method === 'POST') {
-    var ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-      || request.headers.get('cf-connecting-ip')
+    var ip = request.headers.get('cf-connecting-ip')
+      || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       || 'unknown';
     var now = Date.now();
     var ipRecord = loginAttemptsByIp.get(ip);

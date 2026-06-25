@@ -35,9 +35,13 @@ var TIERS: Record<string, { points: number; windowMs: number }> = {
 };
 
 function getClientIP(req: NextRequest): string {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+  // CF-Connecting-IP is set by Cloudflare and cannot be spoofed by clients.
+  // x-forwarded-for is attacker-controlled — never use it for security decisions
+  // when behind Cloudflare, as a client can inject arbitrary values to bypass
+  // IP-based rate limits and poison audit logs.
+  return req.headers.get('cf-connecting-ip')
     || req.headers.get('x-real-ip')
-    || req.headers.get('cf-connecting-ip')
+    || req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     || '127.0.0.1';
 }
 
