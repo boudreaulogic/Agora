@@ -166,6 +166,11 @@ export async function POST(req: NextRequest) {
     var webhookSlug = triggerType === 'webhook'
       ? crypto.randomBytes(16).toString('hex')
       : null;
+    // Auto-generate a signing secret for webhook automations.
+    // Callers use this to sign payloads with HMAC-SHA256 so Agora can verify origin.
+    var webhookSecret = triggerType === 'webhook'
+      ? crypto.randomBytes(32).toString('hex')
+      : null;
 
     var automation = await db.automation.create({
       data: {
@@ -177,6 +182,7 @@ export async function POST(req: NextRequest) {
         workspaceId: workspaceId,
         tableId: tableId,
         webhookSlug: webhookSlug,
+        webhookSecret: webhookSecret,
         actions: {
           create: (actions || []).map(function(action: any, index: number) {
             return {
