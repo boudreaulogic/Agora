@@ -64,6 +64,12 @@ COPY --from=builder /app/prisma ./prisma
 # Create uploads directory
 RUN mkdir -p /app/uploads/templates && chown -R nextjs:nodejs /app/uploads
 
+# IPv4 preload — loaded via NODE_OPTIONS=--require before the server starts
+# (see docker-compose.yml). Forces outbound connections onto IPv4 because
+# Docker Desktop's bridge has no routable IPv6. Done as a Node preload rather
+# than Next's instrumentation hook, which doesn't fire in standalone output.
+COPY preload-ipv4.js ./preload-ipv4.js
+
 # Copy entrypoint script.
 # Strip any CR (Windows CRLF) from the shebang so the kernel can find /bin/sh —
 # checkouts on Windows can introduce CRLF and break `exec`.

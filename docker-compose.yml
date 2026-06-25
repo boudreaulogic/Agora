@@ -77,7 +77,12 @@ services:
       # the dead IPv6 path and fails with a bare "fetch failed" instead of
       # falling back to IPv4. This makes outbound connectors (SharePoint, Google,
       # etc.) resolve IPv4 first and connect reliably.
-      NODE_OPTIONS: "--dns-result-order=ipv4first"
+      # --require preloads preload-ipv4.js (baked into the image) before the
+      # Next server starts, forcing outbound connections onto IPv4. The
+      # dns-result-order flag complements it; the preload is what actually
+      # disables Happy-Eyeballs IPv6 racing (the cause of ENETUNREACH on the
+      # SharePoint/Google connectors under Docker Desktop).
+      NODE_OPTIONS: "--dns-result-order=ipv4first --require /app/preload-ipv4.js"
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3000}
     volumes:
       - uploads-data:/app/uploads
