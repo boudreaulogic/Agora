@@ -7,6 +7,19 @@ import { decrypt } from '@/lib/encryption';
 
 var TOKEN_CACHE: { token: string; expires: number } | null = null;
 
+// Format an error for display. A bare `fetch()` rejection surfaces as
+// "fetch failed" with the real reason hidden on `err.cause` (e.g. ENETUNREACH,
+// UND_ERR_CONNECT_TIMEOUT, a TLS cert code). Pull that up so the admin panel
+// shows something actionable instead of a useless "fetch failed".
+function describeError(err: any): string {
+  var base = (err && err.message) || 'Unknown error';
+  var cause = err && err.cause;
+  if (cause && (cause.code || cause.message)) {
+    return base + ' [' + (cause.code || cause.message) + ']';
+  }
+  return base;
+}
+
 // ============================================================================
 // AUTH — Get access token via client credentials flow
 // ============================================================================
@@ -436,6 +449,6 @@ export async function testConnection(): Promise<{ success: boolean; siteName?: s
       siteName: siteData.displayName || siteData.name || 'Connected',
     };
   } catch (err: any) {
-    return { success: false, error: err.message || 'Connection failed' };
+    return { success: false, error: describeError(err) };
   }
 }
