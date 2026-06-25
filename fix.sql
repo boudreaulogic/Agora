@@ -1,0 +1,1 @@
+INSERT INTO agora_columns (id, "tableId", name, type, position, settings, required, showinnewrow, "createdAt", "updatedAt") VALUES ('att_equip_001', 'cmospkwzg00o4iww3w10nyc6t', '📎 Attachments', 'attachment', 9, '{"isSystem": true}', false, false, NOW(), NOW());

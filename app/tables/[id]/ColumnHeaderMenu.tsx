@@ -277,7 +277,7 @@ export function ColumnHeaderMenu({
             </div>
           )}
 
-          {!readOnly && (
+          {!readOnly && column.type !== 'approval_status' && column.type !== 'attachment' && (
             <>
               <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
 

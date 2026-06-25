@@ -81,6 +81,29 @@ export async function PATCH(
       });
     }
   }
+  
+  // Block editing system columns
+  if (column.type === 'approval_status') {
+    // Only allow width and position changes on approval columns
+    var allowed: any = {};
+    if (width !== undefined) allowed.width = width;
+    if (order !== undefined) allowed.order = order;
+    if (Object.keys(allowed).length === 0) {
+      return NextResponse.json({ error: 'The Approval Status column cannot be modified' }, { status: 403 });
+    }
+    var updated = await db.agoraColumn.update({ where: { id: params.columnId }, data: allowed });
+    return NextResponse.json(updated);
+  }
+  if (column.type === 'attachment') {
+    var allowed2: any = {};
+    if (width !== undefined) allowed2.width = width;
+    if (order !== undefined) allowed2.order = order;
+    if (Object.keys(allowed2).length === 0) {
+      return NextResponse.json({ error: 'The system Attachments column cannot be modified' }, { status: 403 });
+    }
+    var updated2 = await db.agoraColumn.update({ where: { id: params.columnId }, data: allowed2 });
+    return NextResponse.json(updated2);
+  }
 
   // Build update object with only provided fields
   const updateData: any = {};
@@ -170,8 +193,13 @@ export async function DELETE(
   }
 
   // Prevent deletion of system columns
-  if (column.type === 'attachment' && (column.settings as any)?.isSystem) {
-    return NextResponse.json({ error: 'Cannot delete the system Attachments column' }, { status: 403 });
+  if (column.type === 'attachment') {
+    return NextResponse.json({ error: 'Cannot delete the Attachments column' }, { status: 403 });
+  }
+
+  // Prevent deletion of approval column
+  if (column.type === 'approval_status') {
+    return NextResponse.json({ error: 'Cannot delete the Approval Status column. Delete the approval workflow to remove it.' }, { status: 403 });
   }
 
   // Prevent deletion of booking system columns

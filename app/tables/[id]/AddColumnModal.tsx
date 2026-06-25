@@ -50,6 +50,10 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
   const [columnName, setColumnName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [isRequired, setIsRequired] = useState(false);
+  const [showInNewRow, setShowInNewRow] = useState(true);
+  const [defaultValue, setDefaultValue] = useState('');
+  const [columnDescription, setColumnDescription] = useState('');
+  const [agoraOnly, setAgoraOnly] = useState(false);
 
   // For select/multi-select types
   const [options, setOptions] = useState<Array<{ value: string; label: string; color: string }>>([
@@ -85,6 +89,13 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
 
   useEffect(() => {
     if (isOpen) {
+      setColumnName(''); setSelectedType('text'); setIsRequired(false); setShowInNewRow(true);
+      setDefaultValue(''); setColumnDescription(''); setAgoraOnly(false);
+      setOptions([{ value: 'option1', label: 'Option 1', color: '#3B82F6' }]);
+      setFormula(''); setFormulaFormat('number');
+      setLinkedTableId(''); setLinkedDisplayColumnId('');
+      setLookupLinkedColumnId(''); setLookupFieldId('');
+      setRollupLinkedColumnId(''); setRollupFieldId(''); setRollupFunction('');
       fetchAvailableTables();
       fetchLinkedRecordColumns();
       fetch(`/api/tables/${tableId}/columns`).then(r => r.json()).then(cols => setTableColumnsList(cols)).catch(console.error);
@@ -202,6 +213,8 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
       const settings: any = {};
       if (selectedType === 'select' || selectedType === 'multi_select') settings.options = options;
       if (selectedType === 'formula') settings.format = formulaFormat;
+      if (defaultValue) settings.defaultValue = defaultValue;
+      if (columnDescription) settings.description = columnDescription;
       if (selectedType === 'lookup') {
         const linkedCol = linkedRecordColumns.find((c: any) => c.id === lookupLinkedColumnId);
         const fieldCol = linkedTableColumns.find((c: any) => c.id === lookupFieldId);
@@ -222,7 +235,7 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: columnName, type: selectedType, settings, required: isRequired,
+          name: columnName, type: selectedType, settings, required: isRequired, showInNewRow: showInNewRow,
           formula: selectedType === 'formula' ? formula : undefined,
           linkedTableId: selectedType === 'linked_record' ? linkedTableId : undefined,
           linkedDisplayColumnId: selectedType === 'linked_record' ? linkedDisplayColumnId : undefined,
@@ -280,12 +293,46 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               </div>
 
+              {/* Column Description */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <input type="text" value={columnDescription} onChange={(e) => setColumnDescription(e.target.value)} placeholder="Help text shown to users (e.g. 'Enter your work email')" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                <p className="text-xs text-gray-400 mt-1">Shown as a tooltip on column headers and in forms</p>
+              </div>
+
               {/* Required Field Toggle */}
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              {!['formula', 'lookup', 'rollup', 'approval_status'].includes(selectedType) && (
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div><h4 className="text-sm font-medium text-gray-900">Required Field</h4><p className="text-xs text-gray-500 mt-0.5">Must have a value when creating rows</p></div>
+                    <button type="button" onClick={() => setIsRequired(!isRequired)} className={`relative w-11 h-6 rounded-full transition-colors ${isRequired ? 'bg-red-500' : 'bg-gray-300'}`}>
+                      <div className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform" style={{ transform: isRequired ? 'translateX(22px)' : 'translateX(2px)' }} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Show in New Row Toggle */}
+              {!['formula', 'lookup', 'rollup', 'approval_status'].includes(selectedType) && (
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div><h4 className="text-sm font-medium text-gray-900">Show in New Row Panel</h4><p className="text-xs text-gray-500 mt-0.5">When disabled, this field won't appear when users click "+ New"</p></div>
+                    <button type="button" onClick={() => setShowInNewRow(!showInNewRow)} className={`relative w-11 h-6 rounded-full transition-colors ${showInNewRow ? 'bg-blue-500' : 'bg-gray-300'}`}>
+                      <div className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform" style={{ transform: showInNewRow ? 'translateX(22px)' : 'translateX(2px)' }} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Agora Only Toggle */}
+              <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="flex items-center justify-between">
-                  <div><h4 className="text-sm font-medium text-gray-900">Required Field</h4><p className="text-xs text-gray-500 mt-0.5">Must have a value when creating rows</p></div>
-                  <button type="button" onClick={() => setIsRequired(!isRequired)} className={`relative w-11 h-6 rounded-full transition-colors ${isRequired ? 'bg-red-500' : 'bg-gray-300'}`}>
-                    <div className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform" style={{ transform: isRequired ? 'translateX(22px)' : 'translateX(2px)' }} />
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900">Agora Only</h4>
+                    <p className="text-xs text-gray-500 mt-0.5">When enabled, this column will NOT be pushed to SharePoint. Use for internal tracking, automation triggers, or temporary data.</p>
+                  </div>
+                  <button type="button" onClick={() => setAgoraOnly(!agoraOnly)} className={`relative w-11 h-6 rounded-full transition-colors ${agoraOnly ? 'bg-blue-500' : 'bg-gray-300'}`}>
+                    <div className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform" style={{ transform: agoraOnly ? 'translateX(22px)' : 'translateX(2px)' }} />
                   </button>
                 </div>
               </div>
@@ -295,7 +342,7 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
                 <label className="block text-sm font-medium text-gray-700 mb-3">Column Type</label>
                 <div className="grid grid-cols-2 gap-3">
                   {COLUMN_TYPES.map((type) => (
-                    <button key={type.value} type="button" onClick={() => setSelectedType(type.value)}
+                    <button key={type.value} type="button" onClick={() => { setSelectedType(type.value); setDefaultValue(''); }}
                       className={`flex items-start p-3 border-2 rounded-lg text-left transition-all ${selectedType === type.value ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
                       <span className="text-2xl mr-3">{type.icon}</span>
                       <div className="flex-1 min-w-0"><div className="font-medium text-sm text-gray-900">{type.label}</div><div className="text-xs text-gray-500 mt-0.5">{type.description}</div></div>
@@ -303,6 +350,32 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
                   ))}
                 </div>
               </div>
+
+              {/* Default Value — after type selection so options are available */}
+              {!['formula', 'lookup', 'rollup', 'linked_record'].includes(selectedType) && (
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Default Value</label>
+                  <p className="text-xs text-gray-400 mb-2">Automatically applied when new rows are created</p>
+                  {selectedType === 'checkbox' ? (
+                    <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" checked={defaultValue === 'true'} onChange={(e) => setDefaultValue(e.target.checked ? 'true' : '')} className="w-5 h-5 rounded border-gray-300 text-blue-600" /><span className="text-sm text-gray-700">Checked by default</span></label>
+                  ) : selectedType === 'select' ? (
+                    <select value={defaultValue || ''} onChange={(e) => setDefaultValue(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                      <option value="">No default</option>{options.map((opt) => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
+                    </select>
+                  ) : ['number', 'currency', 'percent'].includes(selectedType) ? (
+                    <input type="number" value={defaultValue || ''} onChange={(e) => setDefaultValue(e.target.value)} placeholder="Enter default number..." className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  ) : selectedType === 'date' || selectedType === 'datetime' ? (
+                    <div className="space-y-2">
+                      <select value={defaultValue === '__today' ? '__today' : ''} onChange={(e) => setDefaultValue(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">No default</option>
+                        <option value="__today">Today's date</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <input type="text" value={defaultValue || ''} onChange={(e) => setDefaultValue(e.target.value)} placeholder="Enter default value..." className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  )}
+                </div>
+              )}
 
               {/* Lookup Column Configuration */}
               {selectedType === 'lookup' && (
@@ -486,7 +559,14 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
                   <div className="space-y-2">
                     {options.map((option, index) => (
                       <div key={index} className="flex items-center space-x-2">
-                        <input type="color" value={option.color} onChange={(e) => updateOption(index, 'color', e.target.value)} className="w-10 h-10 rounded cursor-pointer" />
+                        <div className="relative">
+                          <button type="button" onClick={(e) => { var el = e.currentTarget.nextElementSibling; if (el) (el as HTMLElement).style.display = (el as HTMLElement).style.display === 'none' ? 'flex' : 'none'; }} className="w-10 h-10 rounded-lg border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors" style={{ backgroundColor: option.color }} />
+                          <div style={{ display: 'none' }} className="absolute left-0 top-12 z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-2 flex flex-wrap gap-1.5 w-[168px]">
+                            {['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#06B6D4','#84CC16','#F97316','#6366F1','#14B8A6','#A855F7'].map((c) => (
+                              <button key={c} type="button" onClick={(e) => { updateOption(index, 'color', c); var panel = (e.currentTarget.parentElement as HTMLElement); if (panel) panel.style.display = 'none'; }} className={'w-8 h-8 rounded-md cursor-pointer transition-all hover:scale-110 ' + (option.color === c ? 'ring-2 ring-offset-2 ring-gray-800' : 'hover:ring-2 hover:ring-offset-1 hover:ring-gray-300')} style={{ backgroundColor: c }} />
+                            ))}
+                          </div>
+                        </div>
                         <input type="text" value={option.label} onChange={(e) => updateOption(index, 'label', e.target.value)} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg" placeholder="Option name" />
                         {options.length > 1 && (
                           <button type="button" onClick={() => removeOption(index)} className="text-red-600 hover:text-red-800">

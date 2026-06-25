@@ -109,6 +109,23 @@ export async function AppSidebar({ currentTableId }: { currentTableId?: string }
       return { ...conn, tabs: tabsWithTables };
     })
   );
+  
+  // Fetch published dashboards the user can see
+  var publishedDashboards = await db.dashboard.findMany({
+    where: {
+      status: 'published',
+      OR: [
+        { createdById: userId },
+        { visibility: 'workspace' },
+        { visibility: 'public' },
+        { permissions: { some: { userId: userId } } },
+        { permissions: { some: { groupId: { in: groupIds } } } },
+        { permissions: { some: { roleId: { in: roleIds } } } },
+      ],
+    },
+    select: { id: true, name: true, slug: true, icon: true, workspaceId: true },
+    orderBy: { sortOrder: 'asc' },
+  });
 
   // Exclude sheet-backed tables from myTables
   const sheetTableIds = new Set(sheetConnections.flatMap(c => c.tabs.map(t => t.tableId)));
@@ -126,6 +143,7 @@ export async function AppSidebar({ currentTableId }: { currentTableId?: string }
       sharedTables={sharedTables}
       workspaces={workspaces}
       sheetConnections={sheetConnectionsWithTables}
+      dashboards={publishedDashboards}
       currentTableId={currentTableId}
       isAdmin={isAdmin}
       userName={session.user.name || null}

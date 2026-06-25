@@ -6,7 +6,7 @@ import { NotificationBell } from './NotificationBell';
 import { ConnectGoogleSheetModal } from './ConnectGoogleSheetModal';
 import { AgoraLogo } from './AgoraLogo';
 
-export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConnections, currentTableId, isAdmin, userName, userEmail, signOutAction }: { tables: any[]; sharedTables: any[]; workspaces: any[]; sheetConnections?: any[]; currentTableId?: string; isAdmin: boolean; userName: string | null; userEmail: string; signOutAction: () => Promise<void> }) {
+export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConnections, dashboards, currentTableId, isAdmin, userName, userEmail, signOutAction }: { tables: any[]; sharedTables: any[]; workspaces: any[]; sheetConnections?: any[]; dashboards?: any[]; currentTableId?: string; isAdmin: boolean; userName: string | null; userEmail: string; signOutAction: () => Promise<void> }) {
   var [isCollapsed, setIsCollapsed] = useState(false);
   var [expandedWorkspaces, setExpandedWorkspaces] = useState<Set<string>>(new Set(workspaces.map(function(w: any) { return w.id; })));
   var [showNewWorkspace, setShowNewWorkspace] = useState(false);
@@ -29,6 +29,12 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
   // Delete confirmation state
   var [deletingWorkspace, setDeletingWorkspace] = useState<any>(null);
   var [isDeleting, setIsDeleting] = useState(false);
+  
+  // Sheet connection context menu state
+  var [sheetContextMenu, setSheetContextMenu] = useState<{ conn: any; x: number; y: number } | null>(null);
+  var sheetContextMenuRef = useRef<HTMLDivElement>(null);
+  var [deletingSheet, setDeletingSheet] = useState<any>(null);
+  var [isDeletingSheet, setIsDeletingSheet] = useState(false);
 
   // Table context menu state
   var [tableContextMenu, setTableContextMenu] = useState<{ table: any; x: number; y: number } | null>(null);
@@ -54,6 +60,33 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
   var [dragOverStandalone, setDragOverStandalone] = useState(false);
   var [isMovingTable, setIsMovingTable] = useState(false);
 
+  // ================================================================
+  // Collapsible section state — persisted to localStorage so user's
+  // expand/collapse choices survive page reloads.
+  // ================================================================
+  var [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+
+  useEffect(function() {
+    try {
+      var saved = localStorage.getItem('agora.sidebar.collapsedSections');
+      if (saved) {
+        var parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) setCollapsedSections(new Set(parsed));
+      }
+    } catch (e) { /* ignore */ }
+  }, []);
+
+  function toggleSection(key: string) {
+    setCollapsedSections(function(prev) {
+      var next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      try { localStorage.setItem('agora.sidebar.collapsedSections', JSON.stringify(Array.from(next))); } catch (e) { /* ignore */ }
+      return next;
+    });
+  }
+
+  function isSectionOpen(key: string): boolean { return !collapsedSections.has(key); }
+
   // Close context menu when clicking outside
   useEffect(function() {
     function handleClickOutside(e: MouseEvent) {
@@ -66,6 +99,19 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
       return function() { document.removeEventListener('mousedown', handleClickOutside); };
     }
   }, [contextMenu]);
+  
+  // Close sheet context menu when clicking outside
+  useEffect(function() {
+    function handleClickOutside(e: MouseEvent) {
+      if (sheetContextMenuRef.current && !sheetContextMenuRef.current.contains(e.target as Node)) {
+        setSheetContextMenu(null);
+      }
+    }
+    if (sheetContextMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return function() { document.removeEventListener('mousedown', handleClickOutside); };
+    }
+  }, [sheetContextMenu]);
 
   // Close table context menu when clicking outside
   useEffect(function() {
@@ -83,6 +129,17 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
   // ================================================================
   // Table CRUD
   // ================================================================
+  function handleDeleteSheet() {
+    if (!deletingSheet || isDeletingSheet) return;
+    setIsDeletingSheet(true);
+    fetch('/api/google-sheets/connections/' + deletingSheet.id, { method: 'DELETE' })
+      .then(function(res) {
+        if (res.ok) { setDeletingSheet(null); window.location.reload(); }
+        else { res.json().then(function(data) { alert(data.error || 'Failed to delete sheet connection'); }); }
+      })
+      .finally(function() { setIsDeletingSheet(false); });
+  }
+  
   function handleDeleteTable() {
     if (!deletingTable || isDeletingTable) return;
     setIsDeletingTable(true);
@@ -372,10 +429,41 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
     {!isCollapsed && (<nav className="flex-1 px-2 py-2 overflow-y-auto">
 
       {/* ================================================================ */}
+      {/* PUBLISHED DASHBOARDS — top of list                               */}
+      {/* ================================================================ */}
+      {(dashboards || []).length > 0 && (<div className="mb-3">
+        <button onClick={function() { toggleSection('dashboards'); }}
+          className="w-full flex items-center justify-between px-2 mb-1 hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors py-0.5">
+          <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Dashboards</h2>
+          <svg className={'w-2.5 h-2.5 text-gray-400 transition-transform ' + (isSectionOpen('dashboards') ? 'rotate-90' : '')} fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+          </svg>
+        </button>
+        {isSectionOpen('dashboards') && (
+          <div className="space-y-0.5">
+            {(dashboards || []).map(function(d: any) { return (
+              <a key={d.id} href={'/insights/' + d.id}
+                className="flex items-center px-2 py-1.5 text-xs rounded text-gray-600 hover:bg-blue-50 transition-colors">
+                <span className="mr-1.5">{d.icon || '📊'}</span>
+                <span className="flex-1 truncate">{d.name}</span>
+              </a>
+            ); })}
+          </div>
+        )}
+      </div>)}
+
+      {/* ================================================================ */}
       {/* WORKSPACES                                                       */}
       {/* ================================================================ */}
       {workspaces.length > 0 && (<div className="mb-3">
-        <div className="flex items-center justify-between px-2 mb-1"><h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Workspaces</h2></div>
+        <button onClick={function() { toggleSection('workspaces'); }}
+          className="w-full flex items-center justify-between px-2 mb-1 hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors py-0.5">
+          <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Workspaces</h2>
+          <svg className={'w-2.5 h-2.5 text-gray-400 transition-transform ' + (isSectionOpen('workspaces') ? 'rotate-90' : '')} fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+          </svg>
+        </button>
+        {isSectionOpen('workspaces') && (
         <div className="space-y-0.5">{workspaces.map(function(workspace: any) {
           var isDropTarget = dragOverWorkspaceId === workspace.id;
           return (<div key={workspace.id}>
@@ -414,18 +502,33 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
             </div>)}
           </div>);
         })}</div>
+        )}
       </div>)}
 
       {/* ================================================================ */}
       {/* GOOGLE SHEET CONNECTIONS                                          */}
       {/* ================================================================ */}
-      {(sheetConnections || []).length > 0 && (<div className="mb-3">
+      {isAdmin && (sheetConnections || []).length > 0 && (<div className="mb-3">
+        <button onClick={function() { toggleSection('sheets'); }}
+          className="w-full flex items-center justify-between px-2 mb-1 hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors py-0.5">
+          <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Google Sheets</h2>
+          <svg className={'w-2.5 h-2.5 text-gray-400 transition-transform ' + (isSectionOpen('sheets') ? 'rotate-90' : '')} fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+          </svg>
+        </button>
+        {isSectionOpen('sheets') && (
         <div className="space-y-0.5">{(sheetConnections || []).map(function(conn: any) { return (<div key={conn.id}>
-          <button onClick={function() { toggleSheet(conn.id); }} className="flex items-center w-full px-2 py-1.5 text-xs rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-            <svg className={'w-2.5 h-2.5 mr-1.5 text-gray-400 transition-transform flex-shrink-0 ' + (expandedSheets.has(conn.id) ? 'rotate-90' : '')} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" /></svg>
-            <svg className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" viewBox="0 0 24 24" fill="#0F9D58"><path d="M19.5 3h-15A1.5 1.5 0 003 4.5v15A1.5 1.5 0 004.5 21h15a1.5 1.5 0 001.5-1.5v-15A1.5 1.5 0 0019.5 3zm-9.75 15h-3v-3h3v3zm0-4.5h-3v-3h3v3zm0-4.5h-3V6h3v3zm4.5 9h-3v-3h3v3zm0-4.5h-3v-3h3v3zm0-4.5h-3V6h3v3zm4.5 9h-3v-3h3v3zm0-4.5h-3v-3h3v3zm0-4.5h-3V6h3v3z"/></svg>
-            <span className="flex-1 text-left font-medium text-gray-700 dark:text-gray-300 truncate">{conn.spreadsheetName}</span>
-          </button>
+          <div className="flex items-center group">
+            <button onClick={function() { toggleSheet(conn.id); }} className="flex items-center flex-1 min-w-0 px-2 py-1.5 text-xs rounded-l hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+              <svg className={'w-2.5 h-2.5 mr-1.5 text-gray-400 transition-transform flex-shrink-0 ' + (expandedSheets.has(conn.id) ? 'rotate-90' : '')} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" /></svg>
+              <svg className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" viewBox="0 0 24 24" fill="#0F9D58"><path d="M19.5 3h-15A1.5 1.5 0 003 4.5v15A1.5 1.5 0 004.5 21h15a1.5 1.5 0 001.5-1.5v-15A1.5 1.5 0 0019.5 3zm-9.75 15h-3v-3h3v3zm0-4.5h-3v-3h3v3zm0-4.5h-3V6h3v3zm4.5 9h-3v-3h3v3zm0-4.5h-3v-3h3v3zm0-4.5h-3V6h3v3zm4.5 9h-3v-3h3v3zm0-4.5h-3v-3h3v3zm0-4.5h-3V6h3v3z"/></svg>
+              <span className="flex-1 text-left font-medium text-gray-700 dark:text-gray-300 truncate">{conn.spreadsheetName}</span>
+            </button>
+            <button onClick={function(e) { e.preventDefault(); e.stopPropagation(); var rect = (e.target as HTMLElement).getBoundingClientRect(); setSheetContextMenu({ conn: conn, x: rect.right, y: rect.top }); }}
+              className="p-1 rounded-r opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all flex-shrink-0" title="Sheet options">
+              <svg className="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>
+            </button>
+          </div>
           {expandedSheets.has(conn.id) && (<div className="ml-3 pl-2 border-l border-gray-200 dark:border-gray-700 space-y-0.5 mt-0.5">
             {(conn.tabs || []).map(function(tab: any) {
               var tableId = tab.table?.id || tab.tableId;
@@ -434,6 +537,27 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
             })}
           </div>)}
         </div>); })}</div>
+        )}
+      </div>)}
+
+      {/* ================================================================ */}
+      {/* SHAREPOINT TABLES                                                 */}
+      {/* ================================================================ */}
+      {tables.filter(function(t: any) { return t.isSharePointBacked; }).length > 0 && (<div className="mb-3">
+        <button onClick={function() { toggleSection('sharepoint'); }}
+          className="w-full flex items-center justify-between px-2 mb-1 hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors py-0.5">
+          <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">SharePoint</h2>
+          <svg className={'w-2.5 h-2.5 text-gray-400 transition-transform ' + (isSectionOpen('sharepoint') ? 'rotate-90' : '')} fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+          </svg>
+        </button>
+        {isSectionOpen('sharepoint') && (
+          <div className="space-y-0.5">
+            {tables.filter(function(t: any) { return t.isSharePointBacked; }).map(function(table: any) {
+              return renderTableItem(table, false, 'bg-sky-50 text-sky-700 font-medium');
+            })}
+          </div>
+        )}
       </div>)}
 
       {/* ================================================================ */}
@@ -446,38 +570,60 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
         onDrop={handleStandaloneDrop}
       >
         <div className="flex items-center justify-between px-2 mb-1">
-          <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{workspaces.length > 0 ? 'My Tables' : 'Tables'}</h2>
-          <Link href="/tables/new" className="text-blue-600 hover:text-blue-800" title="New table"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg></Link>
+          <button onClick={function() { toggleSection('myTables'); }}
+            className="flex-1 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors py-0.5 pr-1">
+            <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{workspaces.length > 0 ? 'My Tables' : 'Tables'}</h2>
+            <svg className={'w-2.5 h-2.5 text-gray-400 transition-transform ' + (isSectionOpen('myTables') ? 'rotate-90' : '')} fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+            </svg>
+          </button>
         </div>
 
-        {dragOverStandalone && draggingTableId && (
-          <div className="mx-2 my-1 px-2 py-1.5 text-[10px] text-blue-600 bg-blue-50 border border-dashed border-blue-300 rounded text-center">
-            Drop to remove from workspace
+        {isSectionOpen('myTables') && (<>
+          {dragOverStandalone && draggingTableId && (
+            <div className="mx-2 my-1 px-2 py-1.5 text-[10px] text-blue-600 bg-blue-50 border border-dashed border-blue-300 rounded text-center">
+              Drop to remove from workspace
+            </div>
+          )}
+
+         <div className="space-y-0.5">
+            {tables.filter(function(t: any) { return !t.isSharePointBacked; }).map(function(table) {
+              return renderTableItem(table, false, 'bg-blue-50 text-blue-700 font-medium');
+            })}
           </div>
-        )}
-
-        <div className="space-y-0.5">
-          {tables.map(function(table) {
-            return renderTableItem(table, false, 'bg-blue-50 text-blue-700 font-medium');
-          })}
-        </div>
+        </>)}
       </div>
 
       {/* Shared tables */}
       {sharedTables.length > 0 && (<div className="mb-3">
-        <div className="px-2 mb-1"><h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Shared with Me</h2></div>
-        <div className="space-y-0.5">{sharedTables.map(function(table: any) { return (<Link key={table.id} href={'/tables/' + table.id} className={'flex items-center px-2 py-1.5 text-xs rounded transition-colors ' + (currentTableId === table.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100')}><span className="truncate">{table.name}</span></Link>); })}</div>
+        <button onClick={function() { toggleSection('shared'); }}
+          className="w-full flex items-center justify-between px-2 mb-1 hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors py-0.5">
+          <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Shared with Me</h2>
+          <svg className={'w-2.5 h-2.5 text-gray-400 transition-transform ' + (isSectionOpen('shared') ? 'rotate-90' : '')} fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+          </svg>
+        </button>
+        {isSectionOpen('shared') && (
+          <div className="space-y-0.5">{sharedTables.map(function(table: any) { return (<Link key={table.id} href={'/tables/' + table.id} className={'flex items-center px-2 py-1.5 text-xs rounded transition-colors ' + (currentTableId === table.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100')}><span className="truncate">{table.name}</span></Link>); })}</div>
+        )}
       </div>)}
 
       {/* Bottom actions — Create */}
       <div className="border-t border-gray-200 pt-2 mt-2 space-y-0.5">
         <Link href="/tables/new" className="flex items-center px-2 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded">+ Create Table</Link>
-		<Link href="/tables/sharepoint-import" className="flex items-center px-2 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded">+ Import from SharePoint</Link>
+        {!showNewWorkspace ? (<button onClick={function() { setShowNewWorkspace(true); }} className="flex items-center w-full px-2 py-1.5 text-xs text-purple-600 hover:bg-purple-50 rounded">+ Create Workspace</button>) : (<div className="px-2 py-1.5 space-y-1.5">
+          <input type="text" value={newWorkspaceName} onChange={function(e) { setNewWorkspaceName(e.target.value); }} onKeyDown={function(e) { if (e.key === 'Enter') handleCreateWorkspace(); if (e.key === 'Escape') { setShowNewWorkspace(false); setNewWorkspaceName(''); } }} placeholder="Workspace name..." autoFocus className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 bg-white text-gray-900" />
+          <div className="flex space-x-1.5">
+            <button onClick={handleCreateWorkspace} disabled={!newWorkspaceName.trim() || isCreating} className="flex-1 px-2 py-1 text-[10px] bg-purple-600 text-white rounded disabled:opacity-50">{isCreating ? '...' : 'Create'}</button>
+            <button onClick={function() { setShowNewWorkspace(false); setNewWorkspaceName(''); }} className="px-2 py-1 text-[10px] text-gray-500">Cancel</button>
+          </div>
+        </div>)}
+		<Link href="/tables/sharepoint-import" className="flex items-center px-2 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded">+ Connect SharePoint List</Link>
         <button onClick={function() { setShowConnectSheet(true); }} className="flex items-center w-full px-2 py-1.5 text-xs text-green-600 hover:bg-green-50 rounded">
-          <svg className="w-3 h-3 mr-1.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.5 3h-15A1.5 1.5 0 003 4.5v15A1.5 1.5 0 004.5 21h15a1.5 1.5 0 001.5-1.5v-15A1.5 1.5 0 0019.5 3zm-9.75 15h-3v-3h3v3zm0-4.5h-3v-3h3v3zm0-4.5h-3V6h3v3zm4.5 9h-3v-3h3v3zm0-4.5h-3v-3h3v3zm0-4.5h-3V6h3v3zm4.5 9h-3v-3h3v3zm0-4.5h-3v-3h3v3zm0-4.5h-3V6h3v3z"/></svg>
           + Connect Google Sheet
         </button>
-        {!showNewWorkspace ? (<button onClick={function() { setShowNewWorkspace(true); }} className="flex items-center w-full px-2 py-1.5 text-xs text-purple-600 hover:bg-purple-50 rounded">+ Create Workspace</button>) : (<div className="px-2 py-1.5 space-y-1.5">
+        {showNewWorkspace ? null : null}
+        {false && (<div className="px-2 py-1.5 space-y-1.5">
           <input type="text" value={newWorkspaceName} onChange={function(e) { setNewWorkspaceName(e.target.value); }} onKeyDown={function(e) { if (e.key === 'Enter') handleCreateWorkspace(); if (e.key === 'Escape') { setShowNewWorkspace(false); setNewWorkspaceName(''); } }} placeholder="Workspace name..." autoFocus className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 bg-white text-gray-900" />
           <div className="flex space-x-1.5">
             <button onClick={handleCreateWorkspace} disabled={!newWorkspaceName.trim() || isCreating} className="flex-1 px-2 py-1 text-[10px] bg-purple-600 text-white rounded disabled:opacity-50">{isCreating ? '...' : 'Create'}</button>
@@ -490,6 +636,9 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
       <div className="border-t border-gray-200 pt-2 mt-2 space-y-0.5">
         <a href="/automations" className="flex items-center w-full px-2 py-1.5 text-xs text-yellow-600 hover:bg-yellow-50 rounded">
           <span className="mr-1.5">⚡</span> Automations
+        </a>
+        <a href="/insights" className="flex items-center w-full px-2 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded">
+          <span className="mr-1.5">📊</span> Insights
         </a>
         <Link href="/marketplace" className="flex items-center w-full px-2 py-1.5 text-xs text-orange-600 hover:bg-orange-50 rounded">
           <span className="mr-1.5">📦</span> Marketplace
@@ -761,6 +910,55 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
           <button onClick={function() { setDeletingTable(null); }} className="px-3 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">Cancel</button>
           <button onClick={handleDeleteTable} disabled={isDeletingTable}
             className="px-4 py-1.5 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors">{isDeletingTable ? 'Deleting...' : 'Delete Table'}</button>
+        </div>
+      </div>
+    </div>)}
+	
+	{/* Sheet Connection Context Menu */}
+    {sheetContextMenu && (<div ref={sheetContextMenuRef}
+      className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg py-1 z-50 min-w-[160px]"
+      style={{ left: sheetContextMenu.x, top: sheetContextMenu.y }}>
+      <a href={sheetContextMenu.conn.spreadsheetUrl || ('https://docs.google.com/spreadsheets/d/' + sheetContextMenu.conn.spreadsheetId)} target="_blank" rel="noopener noreferrer"
+        className="flex items-center w-full px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+        <svg className="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+        Open in Google Sheets
+      </a>
+      {workspaces.length > 0 && (<>
+        <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
+        <div className="px-3 py-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Move to...</div>
+        {workspaces.map(function(ws: any) { return (
+          <button key={ws.id} onClick={function() { setSheetContextMenu(null); }}
+            className="flex items-center w-full px-3 py-1.5 text-xs text-purple-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+            <span className="mr-2">{ws.icon || '📁'}</span><span className="truncate">{ws.name}</span>
+          </button>
+        ); })}
+      </>)}
+      <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
+      <button onClick={function() { setDeletingSheet(sheetContextMenu!.conn); setSheetContextMenu(null); }}
+        className="flex items-center w-full px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+        <svg className="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+        Delete Connection
+      </button>
+    </div>)}
+
+    {/* Delete Sheet Connection Confirmation */}
+    {deletingSheet && (<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={function() { setDeletingSheet(null); }}>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-sm mx-4 p-5" onClick={function(e) { e.stopPropagation(); }}>
+        <div className="flex items-center space-x-3 mb-3">
+          <div className="w-9 h-9 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Delete Sheet Connection</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">"{deletingSheet.spreadsheetName}"</p>
+          </div>
+        </div>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">This will disconnect the Google Sheet and delete all tab mappings. The tables created from this sheet will <span className="font-semibold">not</span> be deleted — they'll become standalone tables.</p>
+        <p className="text-xs text-red-600 dark:text-red-400 mb-4">The Google Sheet itself will not be affected.</p>
+        <div className="flex justify-end space-x-2">
+          <button onClick={function() { setDeletingSheet(null); }} className="px-3 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">Cancel</button>
+          <button onClick={handleDeleteSheet} disabled={isDeletingSheet}
+            className="px-4 py-1.5 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors">{isDeletingSheet ? 'Deleting...' : 'Delete Connection'}</button>
         </div>
       </div>
     </div>)}

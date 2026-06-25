@@ -362,7 +362,12 @@ export function TableWithSelection({
       if (!filter || Object.keys(filter).length === 0) return;
 
       rows = rows.filter((row: any) => {
-        const cellValue = row.data[columnId];
+        var cellValue: any;
+        if (columnId === '__sys_created_at') cellValue = row.createdAt ? new Date(row.createdAt).toLocaleString() : '';
+        else if (columnId === '__sys_updated_at') cellValue = row.updatedAt ? new Date(row.updatedAt).toLocaleString() : '';
+        else if (columnId === '__sys_created_by') cellValue = row.createdBy?.name || row.createdBy?.email || row.createdById || '';
+        else if (columnId === '__sys_row_id') cellValue = row.id;
+        else cellValue = row.data[columnId];
 
         if (filter.type === 'select') {
           if (!cellValue) return false;
@@ -409,8 +414,13 @@ export function TableWithSelection({
     if (!sortConfig) return filteredRows;
 
     return [...filteredRows].sort((a, b) => {
-      const aValue = a.data[sortConfig.columnId];
-      const bValue = b.data[sortConfig.columnId];
+      var aValue: any, bValue: any;
+      if (sortConfig.columnId === '__sys_created_at') { aValue = a.createdAt; bValue = b.createdAt; }
+      else if (sortConfig.columnId === '__sys_updated_at') { aValue = a.updatedAt; bValue = b.updatedAt; }
+      else if (sortConfig.columnId === '__sys_created_by') { aValue = a.createdBy?.name || a.createdBy?.email || ''; bValue = b.createdBy?.name || b.createdBy?.email || ''; }
+      else if (sortConfig.columnId === '__sys_row_id') { aValue = a.id; bValue = b.id; }
+      else if (sortConfig.columnId === '__sys_row_number') { aValue = a.position; bValue = b.position; }
+      else { aValue = a.data[sortConfig.columnId]; bValue = b.data[sortConfig.columnId]; }
 
       if (!aValue && !bValue) return 0;
       if (!aValue) return 1;
@@ -574,9 +584,32 @@ export function TableWithSelection({
                         className="px-6 py-1.5 text-left border-r border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800/80"
                         style={{ width: `${column.width || 200}px`, minWidth: `${column.width || 200}px` }}
                       >
-                        <div className="flex items-center space-x-1">
-                          <span className="text-[10px] text-gray-400">{column.id === '__sys_row_number' ? '🔢' : column.id === '__sys_created_at' ? '🕐' : column.id === '__sys_updated_at' ? '🕐' : column.id === '__sys_created_by' ? '👤' : '🆔'}</span>
-                          <span className="truncate text-xs font-medium text-gray-500 dark:text-gray-400">{column.name}</span>
+                        <div className="flex items-center justify-between group/header">
+                          <div className="flex items-center flex-1 min-w-0">
+                            <span className="text-[10px] text-gray-400 mr-1">{column.id === '__sys_row_number' ? '🔢' : column.id === '__sys_created_at' ? '🕐' : column.id === '__sys_updated_at' ? '🕐' : column.id === '__sys_created_by' ? '👤' : '🆔'}</span>
+                            <span className="truncate text-xs font-medium text-gray-500 dark:text-gray-400">{column.name}</span>
+                            <span className="text-[8px] bg-gray-100 dark:bg-gray-700 text-gray-400 px-1 rounded ml-1 flex-shrink-0">SYS</span>
+                            {sortConfig?.columnId === column.id && (
+                              <span className="text-blue-600 dark:text-blue-400 ml-1 flex-shrink-0 text-xs">
+                                {sortConfig?.direction === 'asc' ? '↑' : '↓'}
+                              </span>
+                            )}
+                            {filters[column.id] && Object.keys(filters[column.id]).length > 0 && (
+                              <span className="ml-1 w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
+                            )}
+                          </div>
+                          <ColumnHeaderMenu
+                            column={column}
+                            tableId={table.id}
+                            rows={table.rows}
+                            activeFilters={filters}
+                            sortConfig={sortConfig}
+                            onFilterChange={handleFilterChange}
+                            onSort={handleSort}
+                            onEdit={() => {}}
+                            showPermissions={false}
+                            readOnly={true}
+                          />
                         </div>
                       </th>
                     );
@@ -603,6 +636,27 @@ export function TableWithSelection({
                         <div className="flex items-center justify-between group/header">
                           <div className="flex items-center flex-1 min-w-0">
                             <span className="truncate text-xs font-medium text-gray-600 dark:text-gray-300" title={column.settings?.description || ''}>{column.name}</span>
+							{column.type === 'approval_status' && (
+                              <span className="text-[8px] bg-gray-100 dark:bg-gray-700 text-gray-400 px-1 rounded ml-1 flex-shrink-0" title="System — managed by approval workflow">SYS</span>
+                            )}
+                            {column.type === 'attachment' && (
+                              <span className="text-[8px] bg-gray-100 dark:bg-gray-700 text-gray-400 px-1 rounded ml-1 flex-shrink-0" title="System — attachments column">SYS</span>
+                            )}
+                            {(table as any).isSharePointBacked && (column.sharePointConfig as any)?.spColumnName && !(column.sharePointConfig as any)?.agoraOnly && (
+                              <span className="text-[8px] bg-blue-100 text-blue-600 px-1 rounded ml-1 flex-shrink-0" title={'SharePoint: ' + (column.sharePointConfig as any).spColumnName}>SP</span>
+                            )}
+                            {(table as any).isSharePointBacked && (column.sharePointConfig as any)?.agoraOnly && (
+                              <span className="text-[8px] bg-purple-100 text-purple-600 px-1 rounded ml-1 flex-shrink-0" title="Agora Only — not pushed to SharePoint">AO</span>
+                            )}
+                            {(table as any).isSharePointBacked && !(column.sharePointConfig as any)?.spColumnName && (
+                              <span className="text-[8px] bg-gray-100 text-gray-500 px-1 rounded ml-1 flex-shrink-0" title="Agora Only — no SharePoint mapping">AO</span>
+                            )}
+							{(table as any).isSheetBacked && !(column.sharePointConfig as any)?.agoraOnly && (
+                              <span className="text-[8px] bg-green-100 text-green-600 px-1 rounded ml-1 flex-shrink-0" title="Google Sheets — will be pushed">GS</span>
+                            )}
+                            {(table as any).isSheetBacked && (column.sharePointConfig as any)?.agoraOnly && (
+                              <span className="text-[8px] bg-purple-100 text-purple-600 px-1 rounded ml-1 flex-shrink-0" title="Agora Only — not pushed to Google Sheets">AO</span>
+                            )}
                             {column.settings?.description && <span className="text-[9px] text-gray-400 ml-1" title={column.settings.description}>ⓘ</span>}
                             {column.type === 'formula' && <span className="text-xs text-gray-400 ml-1">ƒ</span>}
                             {column.type === 'lookup' && <span className="text-xs text-gray-400 ml-1">👀</span>}
@@ -728,6 +782,9 @@ export function TableWithSelection({
                         {(table as any).isSharePointBacked && (
                           <span className={'w-2 h-2 rounded-full flex-shrink-0 ' + ((row as any).spItemId ? 'bg-green-400' : 'bg-yellow-400')} title={(row as any).spItemId ? 'Synced to SharePoint' : 'Not yet synced to SharePoint'} />
                         )}
+						{(table as any).isSheetBacked && (
+                          <span className={'w-2 h-2 rounded-full flex-shrink-0 ' + ((row as any).gsSyncedAt ? 'bg-green-400' : 'bg-yellow-400')} title={(row as any).gsSyncedAt ? 'Synced to Google Sheets' : 'Not yet synced to Google Sheets'} />
+                        )}
                       </div>
                     </td>
 
@@ -785,6 +842,23 @@ export function TableWithSelection({
                                 </span>
                               </div>
                             )}
+                          </td>
+                        );
+                      }
+					  
+					  // Handle attachment columns — match system column styling
+                      if (column.type === 'attachment') {
+                        const cellData = (row.data as any)[column.id];
+                        let attachmentCount = 0;
+                        try { var parsed = cellData ? JSON.parse(cellData) : []; attachmentCount = Array.isArray(parsed) ? parsed.length : 0; } catch { attachmentCount = 0; }
+                        return (
+                          <td
+                            key={column.id}
+                            className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-800/30 cursor-pointer hover:bg-blue-50/50"
+                            style={{ maxWidth: `${column.width || 200}px` }}
+                            onDoubleClick={() => setExpandedRow(row)}
+                          >
+                            <span className="text-xs">{attachmentCount > 0 ? '📎 ' + attachmentCount + ' file' + (attachmentCount !== 1 ? 's' : '') : '📎 No files'}</span>
                           </td>
                         );
                       }

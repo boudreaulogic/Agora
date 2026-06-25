@@ -99,6 +99,43 @@ async function graphPost(path: string, body: any): Promise<any> {
   return res.json();
 }
 
+async function graphPostHyperlink(path: string, body: any): Promise<any> {
+  var token = await getAccessToken();
+  var res = await fetch('https://graph.microsoft.com/v1.0' + path, {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + token,
+      'Content-Type': 'application/json',
+      'Prefer': 'apiversion=2.1',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    var errText = await res.text();
+    throw new Error('Graph API POST (hyperlink) ' + path + ' failed: ' + res.status + ' — ' + errText);
+  }
+  return res.json();
+}
+
+async function graphPatchHyperlink(path: string, body: any): Promise<any> {
+  var token = await getAccessToken();
+  var res = await fetch('https://graph.microsoft.com/v1.0' + path, {
+    method: 'PATCH',
+    headers: {
+      Authorization: 'Bearer ' + token,
+      'Content-Type': 'application/json',
+      'Prefer': 'apiversion=2.1',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    var errText = await res.text();
+    throw new Error('Graph API PATCH (hyperlink) ' + path + ' failed: ' + res.status + ' — ' + errText);
+  }
+  if (res.status === 204) return {};
+  return res.json();
+}
+
 async function graphPatch(path: string, body: any): Promise<any> {
   var token = await getAccessToken();
   var res = await fetch('https://graph.microsoft.com/v1.0' + path, {
@@ -165,6 +202,10 @@ export async function createListItem(siteId: string, listId: string, fields: Rec
 
 export async function updateListItem(siteId: string, listId: string, itemId: string, fields: Record<string, any>): Promise<any> {
   return graphPatch('/sites/' + siteId + '/lists/' + listId + '/items/' + itemId + '/fields', fields);
+}
+
+export async function updateListItemHyperlink(siteId: string, listId: string, itemId: string, fields: Record<string, any>): Promise<any> {
+  return graphPatchHyperlink('/sites/' + siteId + '/lists/' + listId + '/items/' + itemId + '/fields', fields);
 }
 
 // ============================================================================
@@ -236,6 +277,7 @@ export async function syncRowToSharePoint(
       var spColName = entries[i][1];
       var agoraCol = agoraColumns.find(function(c) { return c.id === agoraColId; });
       var agoraValue = rowData[agoraColId];
+
       var mapped = mapAgoraValueToSharePoint(agoraValue, agoraCol?.type || 'text', '');
       if (mapped !== null && mapped !== undefined) {
         spFields[spColName] = mapped;
@@ -255,6 +297,7 @@ export async function syncRowToSharePoint(
           return String(item.fields?.[syncConfig.uniqueKeySpColumn!]) === String(keyValue);
         });
         if (existing) {
+          console.log('[SP Push DEBUG] Updating item ' + existing.id + ':', JSON.stringify(spFields, null, 2));
           await updateListItem(syncConfig.siteId, syncConfig.listId, existing.id, spFields);
           return { success: true, itemId: existing.id };
         }
@@ -262,11 +305,115 @@ export async function syncRowToSharePoint(
     }
 
     // Create new item
-    var created = await createListItem(syncConfig.siteId, syncConfig.listId, spFields);
-    return { success: true, itemId: created.id };
+    console.log('[SP Push DEBUG] Posting to list ' + syncConfig.listId + ':', JSON.stringify(spFields, null, 2));
+    try {
+      var created = await createListItem(syncConfig.siteId, syncConfig.listId, spFields);
+      return { success: true, itemId: created.id };
+    } catch (postErr: any) {
+      // Bulk POST failed — isolate the bad field(s) by trying each one individually.
+      // We create an item with just Title first, then PATCH each remaining field one at a time.
+      console.log('[SP Push DEBUG] Bulk POST failed, attempting field-by-field diagnosis...');
+      var titleOnly: Record<string, any> = {};
+      if (spFields.Title) titleOnly.Title = spFields.Title;
+      else titleOnly.Title = '_diagnostic_' + Date.now();
+      try {
+        var probeItem = await createListItem(syncConfig.siteId, syncConfig.listId, titleOnly);
+        var badFields: string[] = [];
+        var goodFields: string[] = [];
+        var keys = Object.keys(spFields);
+        for (var k = 0; k < keys.length; k++) {
+          var fieldName = keys[k];
+          if (fieldName === 'Title') continue;
+          var singleField: Record<string, any> = {};
+          singleField[fieldName] = spFields[fieldName];
+          try {
+            await updateListItem(syncConfig.siteId, syncConfig.listId, probeItem.id, singleField);
+            goodFields.push(fieldName);
+          } catch (fieldErr: any) {
+            badFields.push(fieldName + ' (value: ' + JSON.stringify(spFields[fieldName]) + ')');
+            console.log('[SP Push DEBUG]   FAILED field: ' + fieldName + ' -> ' + (fieldErr.message || '').substring(0, 200));
+          }
+        }
+        console.log('[SP Push DEBUG] Good fields: ' + goodFields.join(', '));
+        console.log('[SP Push DEBUG] BAD fields:  ' + badFields.join(' | '));
+        console.log('[SP Push DEBUG] Diagnostic item created with ID ' + probeItem.id + ' — you may want to delete it from SP after reviewing logs.');
+        return { success: true, itemId: probeItem.id };
+      } catch (probeErr: any) {
+        console.error('[SP Push DEBUG] Even title-only POST failed:', probeErr.message);
+        throw postErr; // re-throw the original error
+      }
+    }
   } catch (err: any) {
     console.error('[SharePoint Sync Error]', err);
     return { success: false, error: err.message || 'Unknown error' };
+  }
+}
+
+export async function ensureListColumn(
+  siteId: string,
+  listId: string,
+  columnName: string,
+  columnType?: string
+): Promise<void> {
+  try {
+    var existing = await graphGet('/sites/' + siteId + '/lists/' + listId + '/columns');
+    var found = (existing.value || []).find(function(c: any) { return c.name === 'SupportDocs' || c.displayName === 'Supporting Documents' || c.displayName === 'SupportDocs'; });
+    if (found) return;
+
+    var body: any = {
+      description: 'Auto-created by Agora — links to uploaded documents',
+      enforceUniqueValues: false,
+      hidden: false,
+      indexed: false,
+      name: 'SupportDocs',
+      displayName: 'Supporting Documents',
+      hyperlinkOrPicture: { isPicture: false },
+    };
+
+    await graphPostHyperlink('/sites/' + siteId + '/lists/' + listId + '/columns', body);
+    console.log('[SP] Auto-created column: ' + columnName + ' (' + columnType + ')');
+  } catch (err: any) {
+    console.error('[SP] Failed to create column SupportDocs:', err.message);
+  }
+}
+
+// ============================================================================
+// ATTACHMENTS — Upload file attachments to SP list items
+// ============================================================================
+export async function uploadAttachmentToListItem(
+  siteId: string,
+  listId: string,
+  itemId: string,
+  filename: string,
+  fileBuffer: Buffer
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    var token = await getAccessToken();
+    var safeName = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+    // Upload to the site's default drive in a folder named after the list
+    // Path: /Agora Attachments/{listId}/{itemId}/{filename}
+    var folderPath = 'Agora Attachments/' + listId + '/' + itemId;
+    var uploadPath = '/sites/' + siteId + '/drive/root:/' + folderPath + '/' + safeName + ':/content';
+
+    var res = await fetch('https://graph.microsoft.com/v1.0' + uploadPath, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/octet-stream',
+      },
+      body: new Uint8Array(fileBuffer),
+    });
+
+    if (!res.ok) {
+      var errText = await res.text();
+      return { success: false, error: 'Attachment upload failed: ' + res.status + ' — ' + errText };
+    }
+
+    console.log('[SP Push] Uploaded to drive: ' + folderPath + '/' + safeName);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Attachment upload failed' };
   }
 }
 

@@ -223,6 +223,26 @@ export function EditColumnModal({
   }
 
   if (!isOpen) return null;
+  
+  if (column.type === 'approval_status' || column.type === 'attachment') {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="flex items-center space-x-2 mb-4">
+            <span className="text-2xl">{column.type === 'approval_status' ? '✅' : '📎'}</span>
+            <h2 className="text-lg font-bold text-gray-900">{column.name}</h2>
+            <span className="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-semibold">SYSTEM</span>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            {column.type === 'approval_status'
+              ? 'This column is managed by the approval workflow and cannot be edited or deleted. To remove it, delete the approval workflow from the table menu.'
+              : 'This is the system attachments column and cannot be edited or deleted.'}
+          </p>
+          <button onClick={onClose} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 w-full">Close</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -276,8 +296,8 @@ export function EditColumnModal({
             </div>
           )}
 
-          {/* Agora Only Toggle — only for SP-backed columns */}
-          {(column.sharePointConfig as any)?.spColumnName && (
+          {/* Agora Only Toggle */}
+          {(
             <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-center justify-between">
                 <div>
