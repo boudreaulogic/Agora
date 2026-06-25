@@ -117,32 +117,6 @@ export async function POST(
       excludeUserId: authResult.userId,
     }).catch(function() {});
 
-    // Google Sheets write-back
-    if (table?.isSheetBacked) {
-      try {
-        var tabMapping = await db.sheetTabMapping.findUnique({ where: { tableId: id } });
-        if (tabMapping) {
-          var connection = await db.googleSheetConnection.findUnique({ where: { id: tabMapping.connectionId } });
-          if (connection && connection.isActive) {
-            var { appendSheetRow } = await import('@/lib/googleSheets');
-            var columnMapping = tabMapping.columnMapping as Record<string, { columnId: string; sheetIndex: number }>;
-            var maxIndex = Math.max.apply(null, Object.values(columnMapping).map(function(m) { return m.sheetIndex; }).concat([0]));
-            var rowValues: any[] = new Array(maxIndex + 1).fill('');
-            for (var headerName in columnMapping) {
-              var mapping = columnMapping[headerName];
-              var value = data[mapping.columnId];
-              if (value !== undefined && value !== null) {
-                rowValues[mapping.sheetIndex] = String(value);
-              }
-            }
-            await appendSheetRow(connection.spreadsheetId, tabMapping.sheetTabName, rowValues);
-          }
-        }
-      } catch (sheetErr) {
-        console.error('Google Sheets write-back error (append):', sheetErr);
-      }
-    }
-
     // Check for approval workflow trigger on newly created row with default values
     try {
       var workflow = await db.approvalWorkflow.findUnique({ where: { tableId: id } });

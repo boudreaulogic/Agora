@@ -36,6 +36,8 @@ export function ConnectGoogleSheetModal({
   // Import progress
   const [importProgress, setImportProgress] = useState('');
   const [importedTables, setImportedTables] = useState<any[]>([]);
+  const [existingConnectionId, setExistingConnectionId] = useState<string | null>(null);
+  const [alreadyImportedTabs, setAlreadyImportedTabs] = useState<string[]>([]);
 
   // Fetch service email on open
   useEffect(() => {
@@ -98,7 +100,14 @@ export function ConnectGoogleSheetModal({
       }
 
       setSheetName(data.title);
-      setTabs(data.tabs.map((t: any) => ({ ...t, selected: true })));
+      // Mark tabs with no columns as not selectable
+      var tabsWithInfo = data.tabs.map(function(t: any) {
+        return { ...t, selected: t.columnCount > 0, isEmpty: t.columnCount === 0 || t.rowCount <= 1 };
+      });
+      setTabs(tabsWithInfo);
+      // Check if already connected and which tabs are already imported
+      setExistingConnectionId(data.existingConnectionId || null);
+      setAlreadyImportedTabs(data.alreadyImportedTabs || []);
       setStep('tabs');
     } catch {
       setError('Failed to connect. Make sure the sheet is shared with the service account.');
@@ -108,7 +117,7 @@ export function ConnectGoogleSheetModal({
   }
 
   async function handleImport() {
-    const selectedTabs = tabs.filter(t => t.selected);
+    const selectedTabs = tabs.filter(function(t: any) { return t.selected && !t.isEmpty && !alreadyImportedTabs.includes(t.title); });
     if (selectedTabs.length === 0) {
       setError('Select at least one tab to import');
       return;
@@ -125,6 +134,7 @@ export function ConnectGoogleSheetModal({
         body: JSON.stringify({
           url: sheetUrl.trim(),
           sheetName,
+          existingConnectionId: existingConnectionId || undefined,
           tabs: selectedTabs.map(t => ({
             sheetId: t.sheetId,
             title: t.title,
@@ -279,24 +289,38 @@ export function ConnectGoogleSheetModal({
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    {tabs.map((tab, i) => (
-                      <label key={i} className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
-                        tab.selected ? 'border-green-300 bg-green-50' : 'border-gray-200 hover:bg-gray-50'
-                      }`}>
-                        <div className="flex items-center space-x-3">
-                          <input type="checkbox" checked={tab.selected} onChange={() => toggleTab(i)}
-                            className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">{tab.title}</p>
-                            <p className="text-[10px] text-gray-400">{tab.rowCount} rows × {tab.columnCount} cols</p>
+                    {tabs.map((tab, i) => {
+                      var isAlreadyImported = alreadyImportedTabs.includes(tab.title);
+                      var isEmpty = (tab as any).isEmpty;
+                      var isDisabled = isAlreadyImported || isEmpty;
+                      return (
+                        <label key={i} className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
+                          isDisabled ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed' :
+                          tab.selected ? 'border-green-300 bg-green-50 cursor-pointer' : 'border-gray-200 hover:bg-gray-50 cursor-pointer'
+                        }`}>
+                          <div className="flex items-center space-x-3">
+                            <input type="checkbox" checked={tab.selected && !isDisabled} onChange={function() { if (!isDisabled) toggleTab(i); }}
+                              disabled={isDisabled}
+                              className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{tab.title}</p>
+                              <p className="text-[10px] text-gray-400">{tab.rowCount} rows × {tab.columnCount} cols</p>
+                              {isEmpty && <p className="text-[10px] text-amber-600 font-medium">⚠ No columns found — add headers to this tab first</p>}
+                              {isAlreadyImported && <p className="text-[10px] text-blue-600 font-medium">✓ Already imported</p>}
+                            </div>
                           </div>
-                        </div>
-                        {tab.selected && <span className="text-green-500 text-sm">✓</span>}
-                      </label>
-                    ))}
+                          {tab.selected && !isDisabled && <span className="text-green-500 text-sm">✓</span>}
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
 
+                {existingConnectionId && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-xs text-blue-800 font-medium">This sheet is already connected. New tabs will be added to the existing connection.</p>
+                  </div>
+                )}
                 <p className="text-[10px] text-gray-400">Each selected tab will become a separate table in Agora. Column types will be auto-detected from your data.</p>
 
                 {error && (

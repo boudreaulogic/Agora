@@ -155,6 +155,23 @@ export async function POST(
   });
   const newPosition = (maxRow?.position ?? -1) + 1;
 
+  // Apply column defaults for fields not included in form submission
+  const tableColumns = await db.agoraColumn.findMany({
+    where: { tableId: form.tableId },
+    select: { id: true, type: true, settings: true },
+  });
+  for (var di = 0; di < tableColumns.length; di++) {
+    var col = tableColumns[di];
+    var colSettings = col.settings as any;
+    if (colSettings?.defaultValue && (data[col.id] === undefined || data[col.id] === null || data[col.id] === '')) {
+      var defVal = colSettings.defaultValue;
+      if (defVal === '__today') {
+        defVal = col.type === 'datetime' ? new Date().toISOString().slice(0, 16) : new Date().toISOString().split('T')[0];
+      }
+      data[col.id] = defVal;
+    }
+  }
+
   const row = await db.agoraRow.create({
     data: {
       tableId: form.tableId,
@@ -200,6 +217,87 @@ export async function POST(
     onFormSubmit(form.tableId, form.id, row.id, data);
   } catch (autoErr) {
     console.error('Automation trigger error (form_submit):', autoErr);
+  }
+  
+  // Check for approval workflow trigger on form submission
+  try {
+    var workflow = await db.approvalWorkflow.findUnique({ where: { tableId: form.tableId } });
+    if (workflow && workflow.isActive && workflow.triggerColumnId) {
+      var triggerVal = data[workflow.triggerColumnId];
+      if (triggerVal !== undefined && String(triggerVal) === String(workflow.triggerValue)) {
+        var existingApproval = await db.approvalRequest.findFirst({
+          where: { workflowId: workflow.id, rowId: row.id, status: { in: ['pending', 'in_progress'] } },
+        });
+        if (!existingApproval) {
+          var wfStages = (workflow.stages as any[]) || [];
+          var wfFirstStage = wfStages.find(function(s: any) { return s.order === 1; }) || wfStages[0];
+          var wfInitialStatuses: Record<string, string> = {};
+          wfStages.forEach(function(s: any) { wfInitialStatuses[String(s.order)] = s.order === 1 ? 'pending' : 'waiting'; });
+
+          await db.agoraRow.update({ where: { id: row.id }, data: { isLocked: true } });
+
+          var approvalReq = await db.approvalRequest.create({
+            data: {
+              workflowId: workflow.id,
+              rowId: row.id,
+              tableId: form.tableId,
+              requestedById: form.createdById,
+              currentStage: 1,
+              stageStatuses: wfInitialStatuses,
+              status: 'pending',
+              dueAt: workflow.reminderEnabled ? new Date(Date.now() + (workflow.reminderHours || 24) * 3600000) : null,
+            },
+          });
+
+          if (workflow.approvalColumnId) {
+            data[workflow.approvalColumnId] = JSON.stringify({
+              status: 'pending',
+              currentStage: 1,
+              stageStatuses: wfInitialStatuses,
+              totalStages: wfStages.length,
+              stages: wfStages.map(function(s: any) { return { order: s.order, name: s.name }; }),
+            });
+            await db.agoraRow.update({ where: { id: row.id }, data: { data: data } });
+          }
+
+          try {
+            var { addLedgerEntry } = await import('@/lib/approvalLedger');
+            await addLedgerEntry({
+              tableId: form.tableId, rowId: row.id, workflowId: workflow.id, requestId: approvalReq.id,
+              action: 'submitted', stage: 1, stageName: wfFirstStage?.name || 'Stage 1',
+              actorId: 'form_submission', actorName: 'Form: ' + form.name, actorEmail: '',
+              rowSnapshot: data, workflowName: workflow.name,
+              requiredApprovers: wfFirstStage?.approverUserIds || [],
+            });
+          } catch {}
+
+          if (wfFirstStage) {
+            var approverIds: string[] = (wfFirstStage.approverUserIds || []).slice();
+            var groupIds = wfFirstStage.approverGroupIds || [];
+            if (groupIds.length > 0) {
+              var members = await db.groupMember.findMany({ where: { groupId: { in: groupIds } }, select: { userId: true } });
+              approverIds.push.apply(approverIds, members.map(function(m: any) { return m.userId; }));
+            }
+            var uniqueApprovers = Array.from(new Set(approverIds));
+            var { createNotification } = await import('@/lib/notifications');
+            var tableName = form.table?.name || 'Record';
+            for (var ai = 0; ai < uniqueApprovers.length; ai++) {
+              await createNotification({
+                userId: uniqueApprovers[ai],
+                type: 'approval_requested',
+                title: 'Approval needed: ' + tableName + ' — ' + wfFirstStage.name,
+                message: 'A form submission on "' + form.name + '" requires your approval.',
+                tableId: form.tableId, rowId: row.id,
+                metadata: { requestId: approvalReq.id, workflowId: workflow.id, token: approvalReq.token, stage: wfFirstStage.name },
+                sendEmailNotification: true,
+              });
+            }
+          }
+        }
+      }
+    }
+  } catch (approvalErr) {
+    console.error('Approval trigger on form submit error:', approvalErr);
   }
 
   return NextResponse.json({

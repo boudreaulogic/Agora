@@ -8,7 +8,8 @@ export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { url, sheetName, tabs } = await request.json();
+  const body = await request.json();
+  const { url, sheetName, tabs, existingConnectionId } = body;
 
   if (!url || !tabs?.length) {
     return NextResponse.json({ error: 'URL and at least one tab required' }, { status: 400 });
@@ -20,15 +21,23 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Create the connection record
-    const connection = await db.googleSheetConnection.create({
-      data: {
-        spreadsheetId,
-        spreadsheetName: sheetName || 'Google Sheet',
-        spreadsheetUrl: url,
-        createdById: session.user.id,
-      },
-    });
+    // Use existing connection or create new one
+    var connection: any;
+    if (existingConnectionId) {
+      connection = await db.googleSheetConnection.findUnique({ where: { id: existingConnectionId } });
+      if (!connection) {
+        return NextResponse.json({ error: 'Existing connection not found' }, { status: 404 });
+      }
+    } else {
+      connection = await db.googleSheetConnection.create({
+        data: {
+          spreadsheetId,
+          spreadsheetName: sheetName || 'Google Sheet',
+          spreadsheetUrl: url,
+          createdById: session.user.id,
+        },
+      });
+    }
 
     const importedTables = [];
 
@@ -189,6 +198,14 @@ export async function POST(request: Request) {
         columnCount: columns.length,
         rowCount: position,
       });
+    }
+
+    // If nothing was imported, return error and clean up connection if we just created it
+    if (importedTables.length === 0) {
+      if (!existingConnectionId) {
+        await db.googleSheetConnection.delete({ where: { id: connection.id } });
+      }
+      return NextResponse.json({ error: 'No tabs could be imported. Make sure your sheets have headers in the first row with data below them.' }, { status: 400 });
     }
 
     // Update connection sync status

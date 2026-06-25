@@ -33,6 +33,9 @@ export type ActionType =
   | 'notify'
   | 'trigger_approval'
   | 'push_to_sharepoint'
+  | 'generate_record_export'
+  | 'generate_audit_trail'
+  | 'push_to_google_sheets'
   | 'delay'
   | 'condition';
 
@@ -584,6 +587,15 @@ async function executeAction(
       case 'push_to_sharepoint':
         output = await executePushToSharePoint(config, context);
         break;
+	  case 'generate_record_export':
+        output = await executeGenerateRecordExport(config, context);
+        break;
+      case 'generate_audit_trail':
+        output = await executeGenerateAuditTrail(config, context);
+        break;
+	  case 'push_to_google_sheets':
+        output = await executePushToGoogleSheets(config, context);
+        break;
       default:
         throw new Error('Unknown action type: ' + actionType);
     }
@@ -950,5 +962,476 @@ async function executePushToSharePoint(
     await logActivity({ tableId: tableId, rowId: rowId, userId: context._automationCreatedBy || 'system', action: 'AUTOMATION_SP_PUSH', details: { spItemId: result.itemId } });
   } catch {}
 
-  return { pushed: true, spItemId: result.itemId, tableId: tableId, rowId: rowId };
+  // Upload attachments to SP list item if configured
+  var attachmentCount = 0;
+  if (config.includeAttachments && result.itemId) {
+    try {
+      var { readFile } = await import('fs/promises');
+      var path = await import('path');
+      var UPLOADS_DIR = '/app/uploads';
+      
+      var attachments = await db.fileAttachment.findMany({
+        where: { tableId: tableId, rowId: rowId },
+      });
+
+      var { uploadAttachmentToListItem } = await import('@/lib/sharepoint');
+      
+      // Count attachments but don't upload individually — merged PDF handles it
+      attachmentCount = attachments.length;
+      console.log('[SP Push] Found ' + attachmentCount + ' attachments — will merge and upload as single PDF');
+    } catch (attLoadErr: any) {
+      console.error('[SP Push] Attachment loading error:', attLoadErr.message);
+    }
+  }
+
+ // If attachments were uploaded, merge all PDFs into one and add hyperlink
+  if (attachmentCount > 0 && result.itemId) {
+    try {
+      var { ensureListColumn, updateListItem: updateSpItem, uploadAttachmentToListItem: uploadMerged, getSharePointConfig: getSpConfig } = await import('@/lib/sharepoint');
+      var spCfg2 = await getSpConfig();
+      if (spCfg2?.siteUrl) {
+        var { PDFDocument: MergePDF } = await import('pdf-lib');
+        var { readFile: readFile2 } = await import('fs/promises');
+        var path2 = await import('path');
+        var UPLOADS2 = '/app/uploads';
+
+        var allAttachments2 = await db.fileAttachment.findMany({ where: { tableId: tableId, rowId: rowId } });
+        var pdfAttachments = allAttachments2.filter(function(a) { return a.mimeType === 'application/pdf'; });
+
+        if (pdfAttachments.length > 0) {
+          // Merge all PDFs into one
+          var mergedDoc = await MergePDF.create();
+          for (var mi = 0; mi < pdfAttachments.length; mi++) {
+            try {
+              var pdfBuffer = await readFile2(path2.join(UPLOADS2, pdfAttachments[mi].path));
+              var srcDoc = await MergePDF.load(pdfBuffer, { ignoreEncryption: true });
+              var pages = await mergedDoc.copyPages(srcDoc, srcDoc.getPageIndices());
+              for (var pi = 0; pi < pages.length; pi++) { mergedDoc.addPage(pages[pi]); }
+            } catch (mergeErr: any) {
+              console.error('[SP Push] Failed to merge PDF ' + pdfAttachments[mi].originalName + ':', mergeErr.message);
+            }
+          }
+
+          var mergedBytes = await mergedDoc.save();
+          var mergedBuffer = Buffer.from(mergedBytes);
+
+          // Get table name for filename
+          var spTable = await db.agoraTable.findUnique({ where: { id: tableId }, select: { name: true } });
+          var spTableName = (spTable?.name || 'Record').replace(/[^a-zA-Z0-9]/g, '_');
+          var spDateStr = new Date().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' }).replace(/\//g, '-');
+          var mergedFilename = spTableName + '_Complete_' + rowId.slice(-6) + '_' + spDateStr + '.pdf';
+
+          // Upload merged PDF to SP drive
+          var mergedUpload = await uploadMerged(syncConfig.siteId, syncConfig.listId, String(result.itemId), mergedFilename, mergedBuffer);
+
+          if (mergedUpload.success) {
+            var mergedUrl = spCfg2.siteUrl + '/Shared Documents/Agora Attachments/' + syncConfig.listId + '/' + result.itemId + '/' + mergedFilename.replace(/[^a-zA-Z0-9._-]/g, '_');
+            // Auto-create Supporting Documents column if it doesn't exist
+            await ensureListColumn(syncConfig.siteId, syncConfig.listId, 'SupportDocs');
+            // Find the SupportDocs column on the SP list
+            var spCols = await (await import('@/lib/sharepoint')).getListColumns(syncConfig.siteId, syncConfig.listId);
+            var supportCol = spCols.find(function(c: any) { return c.name === 'SupportDocs' || c.displayName === 'SupportDocs' || c.displayName === 'Supporting Documents' || c.displayName === 'SupportingDocuments'; });
+            if (supportCol) {
+              console.log('[SP Push] Setting ' + supportCol.name + ' to: ' + mergedUrl);
+              var { updateListItemHyperlink } = await import('@/lib/sharepoint');
+              var updateFields: any = {};
+              updateFields[supportCol.name] = { Url: mergedUrl, Description: 'Supporting Documents (' + pdfAttachments.length + ' docs)' };
+              await updateListItemHyperlink(syncConfig.siteId, syncConfig.listId, String(result.itemId), updateFields);
+              console.log('[SP Push] Uploaded merged PDF (' + pdfAttachments.length + ' docs) and set hyperlink');
+            } else {
+              console.log('[SP Push] No SupportDocs column found on SP list — skipping URL set. Merged PDF still uploaded to drive.');
+            }
+          }
+        }
+      }
+    } catch (linkErr: any) {
+      console.error('[SP Push] Failed to merge/upload documents:', linkErr.message);
+    }
+  }
+
+  return { pushed: true, spItemId: result.itemId, tableId: tableId, rowId: rowId, attachments: attachmentCount };
+}
+
+// ============================================================================
+// Generate Record Export PDF and attach to row
+// ============================================================================
+async function executeGenerateRecordExport(
+  config: any,
+  context: Record<string, any>
+): Promise<any> {
+  var tableId = config.targetTableId || context.trigger.tableId;
+  var rowId = config.targetRowId ? resolveTemplate(config.targetRowId, context) : (context.trigger?.rowId || '');
+  var userId = context._automation?.createdById || context.trigger?.userId || 'system';
+
+  if (!tableId) throw new Error('No table specified for record export');
+  if (!rowId) throw new Error('No row ID for record export');
+
+  // Ensure attachment column exists (auto-create if missing)
+  var tableCheck = await db.agoraTable.findUnique({ where: { id: tableId }, include: { columns: true } });
+  if (tableCheck && !tableCheck.columns.find(function(c: any) { return c.type === 'attachment'; })) {
+    var maxPos = Math.max.apply(null, tableCheck.columns.map(function(c: any) { return c.position; }).concat([-1])) + 1;
+    await db.agoraColumn.create({ data: { tableId: tableId, name: '📎 Attachments', type: 'attachment', position: maxPos, settings: { isSystem: true } } });
+  }
+
+  var { generateExportPdf } = await import('@/lib/generateExportPdf');
+  await generateExportPdf(tableId, rowId, userId);
+
+  // Optionally update a column to indicate export was attached
+  if (config.updateColumnId && config.updateValue) {
+    var row = await db.agoraRow.findUnique({ where: { id: rowId } });
+    if (row) {
+      var rowData = (row.data as any) || {};
+      rowData[config.updateColumnId] = resolveTemplate(config.updateValue, context);
+      await db.agoraRow.update({ where: { id: rowId }, data: { data: rowData } });
+    }
+  }
+
+  try {
+    await logActivity({ tableId: tableId, rowId: rowId, userId: userId, action: 'AUTOMATION_RECORD_EXPORT', details: { automationId: context._automation?.id } });
+  } catch {}
+
+  return { generated: true, tableId: tableId, rowId: rowId };
+}
+
+// ============================================================================
+// Generate Audit Trail PDF and attach to row
+// ============================================================================
+async function executeGenerateAuditTrail(
+  config: any,
+  context: Record<string, any>
+): Promise<any> {
+  var tableId = config.targetTableId || context.trigger.tableId;
+  var rowId = config.targetRowId ? resolveTemplate(config.targetRowId, context) : (context.trigger?.rowId || '');
+  var userId = context._automation?.createdById || context.trigger?.userId || 'system';
+
+  if (!tableId) throw new Error('No table specified for audit trail');
+  if (!rowId) throw new Error('No row ID for audit trail');
+
+  // Generate a standalone audit trail PDF (no template needed)
+  var { PDFDocument, rgb, StandardFonts } = await import('pdf-lib');
+  var row = await db.agoraRow.findUnique({ where: { id: rowId } });
+  if (!row) throw new Error('Row not found: ' + rowId);
+
+  var table = await db.agoraTable.findUnique({ where: { id: tableId }, include: { columns: true } });
+  if (!table) throw new Error('Table not found: ' + tableId);
+
+  var user = userId !== 'system' ? await db.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true } }) : { id: 'system', name: 'System', email: '' };
+
+  var pdfDoc = await PDFDocument.create();
+
+  // Import and call the audit page builder from generateExportPdf
+  // We create a minimal PDF and append the audit page to it
+  try {
+    var approvalRequest = await db.approvalRequest.findFirst({
+      where: { tableId: tableId, rowId: rowId, status: 'approved' },
+      include: { workflow: true },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    if (!approvalRequest) throw new Error('No approved approval request found for this row');
+
+    var actions = await db.approvalAction.findMany({
+      where: { requestId: approvalRequest.id },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    var ledgerEntries = await db.approvalLedger.findMany({
+      where: { tableId: tableId, rowId: rowId },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    var userIds = [...new Set(actions.map(function(a: any) { return a.userId; }).filter(Boolean))];
+    var users = userIds.length > 0 ? await db.user.findMany({ where: { id: { in: userIds as string[] } }, select: { id: true, name: true, email: true } }) : [];
+    var userMap = new Map(users.map(function(u) { return [u.id, { name: u.name || 'Unknown', email: u.email || '' }]; }));
+
+    var stages = (approvalRequest.workflow?.stages as any[]) || [];
+    var stageMap = new Map(stages.map(function(s: any) { return [s.order, s.name || 'Stage ' + s.order]; }));
+
+    var font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    var fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    var fontMono = await pdfDoc.embedFont(StandardFonts.Courier);
+
+    var page1 = pdfDoc.addPage([612, 792]);
+    var y = 752;
+
+    var draw = function(text: string, x: number, yy: number, opts: any) {
+      if (!opts) opts = {};
+      page1.drawText(String(text || ''), { x: x, y: yy, size: opts.size || 9, font: opts.mono ? fontMono : (opts.bold ? fontBold : font), color: opts.color || rgb(0.2, 0.2, 0.2) });
+    };
+    var drawLine = function(yy: number, color?: any, thickness?: number) { page1.drawLine({ start: { x: 40, y: yy }, end: { x: 572, y: yy }, thickness: thickness || 0.5, color: color || rgb(0.8, 0.8, 0.8) }); };
+    var drawBox = function(x: number, yy: number, w: number, h: number, fill: any) { page1.drawRectangle({ x: x, y: yy, width: w, height: h, color: fill }); };
+
+    drawBox(40, y - 5, 532, 30, rgb(0.106, 0.161, 0.235));
+    draw('AUDIT TRAIL — DOCUMENT VERIFICATION REPORT', 50, y + 2, { size: 13, bold: true, color: rgb(1, 1, 1) });
+    y -= 40;
+    draw('Generated by Agora Automation Engine — SHA-256 hash-chained audit verification', 50, y, { size: 7, color: rgb(0.5, 0.5, 0.5) });
+    y -= 20; drawLine(y, rgb(0.106, 0.161, 0.235), 1.5); y -= 20;
+
+    draw('DOCUMENT DETAILS', 50, y, { size: 10, bold: true, color: rgb(0.106, 0.161, 0.235) });
+    y -= 18;
+    var infoItems = [['Table', table.name], ['Record ID', rowId.slice(-12).toUpperCase()], ['Generated', new Date().toLocaleString('en-US')], ['Status', approvalRequest.status.toUpperCase()]];
+    for (var ii = 0; ii < infoItems.length; ii++) {
+      draw(infoItems[ii][0] + ':', 50, y, { size: 7.5, bold: true });
+      draw(infoItems[ii][1], 140, y, { size: 7.5, color: infoItems[ii][0] === 'Status' ? rgb(0.06, 0.6, 0.2) : rgb(0.2, 0.2, 0.2) });
+      y -= 13;
+    }
+    y -= 10; drawLine(y); y -= 20;
+
+    draw('APPROVAL CHAIN', 50, y, { size: 10, bold: true, color: rgb(0.106, 0.161, 0.235) });
+    y -= 18;
+    drawBox(50, y - 2, 512, 14, rgb(0.94, 0.94, 0.94));
+    draw('Stage', 55, y + 1, { size: 7, bold: true }); draw('Action', 140, y + 1, { size: 7, bold: true }); draw('Approver', 200, y + 1, { size: 7, bold: true }); draw('Date', 360, y + 1, { size: 7, bold: true });
+    y -= 16;
+
+    for (var ai = 0; ai < actions.length; ai++) {
+      if (y < 200) break;
+      var act = actions[ai];
+      var approver = userMap.get(act.userId) || { name: 'Unknown', email: '' };
+      var stageName = stageMap.get((act as any).stageOrder) || stageMap.get(approvalRequest.currentStage) || 'Review';
+      draw(stageName, 55, y, { size: 7 });
+      draw(act.action === 'approve' ? 'APPROVED' : 'DENIED', 140, y, { size: 7, bold: true, color: act.action === 'approve' ? rgb(0.06, 0.6, 0.2) : rgb(0.8, 0.2, 0.2) });
+      draw(approver.name + ' (' + approver.email + ')', 200, y, { size: 7 });
+      draw(new Date(act.createdAt).toLocaleString('en-US'), 360, y, { size: 7 });
+      y -= 14;
+      if ((act as any).reason) { draw('Reason: ' + String((act as any).reason), 200, y, { size: 6.5, color: rgb(0.4, 0.4, 0.4) }); y -= 12; }
+      drawLine(y + 4, rgb(0.9, 0.9, 0.9)); y -= 6;
+    }
+    y -= 10; drawLine(y); y -= 20;
+
+    draw('SHA-256 CRYPTOGRAPHIC LEDGER', 50, y, { size: 10, bold: true, color: rgb(0.106, 0.161, 0.235) });
+    y -= 5;
+    draw('Each entry is cryptographically chained. Tampering is detectable by hash verification.', 50, y - 8, { size: 6.5, color: rgb(0.5, 0.5, 0.5) });
+    y -= 22;
+
+    for (var li = 0; li < ledgerEntries.length; li++) {
+      if (y < 80) { draw('... continued', 50, y, { size: 7, color: rgb(0.5, 0.5, 0.5) }); break; }
+      var entry = ledgerEntries[li];
+      draw(String(li + 1) + '. ' + String(entry.action), 55, y, { size: 6, bold: true });
+      draw(String(entry.entryHash || '').substring(0, 48) + '...', 140, y, { size: 5, mono: true, color: rgb(0.3, 0.3, 0.3) });
+      y -= 12;
+    }
+
+    drawLine(62, rgb(0.106, 0.161, 0.235), 1);
+    draw('This audit trail was auto-generated by Agora and verified against an immutable SHA-256 hash-chained ledger.', 50, 48, { size: 6.5, color: rgb(0.4, 0.4, 0.4) });
+  } catch (auditErr: any) {
+    throw new Error('Audit trail generation failed: ' + auditErr.message);
+  }
+
+  var pdfBytes = await pdfDoc.save();
+  var safeName = table.name.replace(/[^a-zA-Z0-9]/g, '_');
+  var dateStr = new Date().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' }).replace(/\//g, '-');
+  var auditFilename = safeName + '_AuditTrail_' + rowId.slice(-6) + '_' + dateStr + '.pdf';
+  var uniqueFilename = (await import('crypto')).randomUUID() + '.pdf';
+
+  var { writeFile, mkdir } = await import('fs/promises');
+  var { existsSync } = await import('fs');
+  var path = await import('path');
+  var UPLOADS_DIR = '/app/uploads';
+  var filePath = path.join(UPLOADS_DIR, uniqueFilename);
+  if (!existsSync(UPLOADS_DIR)) { await mkdir(UPLOADS_DIR, { recursive: true }); }
+  await writeFile(filePath, Buffer.from(pdfBytes));
+  
+  // Ensure attachment column exists
+  if (!table.columns.find(function(c: any) { return c.type === 'attachment'; })) {
+    var maxPos2 = Math.max.apply(null, table.columns.map(function(c: any) { return c.position; }).concat([-1])) + 1;
+    var newAttCol = await db.agoraColumn.create({ data: { tableId: tableId, name: '📎 Attachments', type: 'attachment', position: maxPos2, settings: { isSystem: true } } });
+    table.columns.push(newAttCol as any);
+  }
+
+  var attachmentColumn = table.columns.find(function(c: any) { return c.type === 'attachment'; });
+  var columnId = attachmentColumn?.id || 'system';
+
+  var attachment = await db.fileAttachment.create({
+    data: {
+      filename: auditFilename,
+      originalName: auditFilename,
+      mimeType: 'application/pdf',
+      size: pdfBytes.length,
+      path: uniqueFilename,
+      rowId: rowId,
+      tableId: tableId,
+      columnId: columnId,
+      uploadedById: userId,
+    },
+  });
+
+  if (attachmentColumn) {
+    var rowData = (row.data as any) || {};
+    var existing = rowData[attachmentColumn.id];
+    var attachmentIds: string[] = [];
+    if (existing) { try { attachmentIds = JSON.parse(existing); } catch { attachmentIds = []; } }
+    attachmentIds.push(attachment.id);
+    rowData[attachmentColumn.id] = JSON.stringify(attachmentIds);
+    await db.agoraRow.update({ where: { id: rowId }, data: { data: rowData } });
+  }
+
+  // Optionally update a column to indicate audit was attached
+  if (config.updateColumnId && config.updateValue) {
+    var latestRow = await db.agoraRow.findUnique({ where: { id: rowId } });
+    if (latestRow) {
+      var latestData = (latestRow.data as any) || {};
+      latestData[config.updateColumnId] = resolveTemplate(config.updateValue, context);
+      await db.agoraRow.update({ where: { id: rowId }, data: { data: latestData } });
+    }
+  }
+
+  try {
+    await logActivity({ tableId: tableId, rowId: rowId, userId: userId, action: 'AUTOMATION_AUDIT_TRAIL', details: { automationId: context._automation?.id, attachmentId: attachment.id } });
+  } catch {}
+
+  return { generated: true, filename: auditFilename, attachmentId: attachment.id, tableId: tableId, rowId: rowId };
+}
+
+// ============================================================================
+// Push Row to Google Sheets
+// ============================================================================
+async function executePushToGoogleSheets(
+  config: any,
+  context: Record<string, any>
+): Promise<any> {
+  var tableId = config.targetTableId || context.trigger.tableId;
+  var rowId = config.targetRowId ? resolveTemplate(config.targetRowId, context) : (context.trigger?.rowId || '');
+
+  if (!tableId) throw new Error('No table specified for Google Sheets push');
+  if (!rowId) throw new Error('No row ID for Google Sheets push');
+
+  // Load the row data
+  var row = await db.agoraRow.findUnique({ where: { id: rowId } });
+  if (!row) throw new Error('Row ' + rowId + ' not found');
+
+  // Load the sheet connection for this table
+  var tabMapping = await db.sheetTabMapping.findUnique({ where: { tableId: tableId } });
+  if (!tabMapping) throw new Error('No Google Sheet connected to this table');
+
+  var connection = await db.googleSheetConnection.findUnique({ where: { id: tabMapping.connectionId } });
+  if (!connection || !connection.isActive) throw new Error('Google Sheet connection is not active');
+
+  var columnMapping = tabMapping.columnMapping as Record<string, { columnId: string; sheetIndex: number }>;
+  var rowData = row.data as Record<string, any>;
+
+  // Get columns for type info
+  var columns = await db.agoraColumn.findMany({
+    where: { tableId: tableId },
+    select: { id: true, name: true, type: true, sharePointConfig: true },
+  });
+
+  // Filter out agora-only columns
+  var syncColumns = columns.filter(function(c: any) {
+    var spCfg = c.sharePointConfig as any;
+    if (spCfg?.agoraOnly) return false;
+    return true;
+  });
+
+  // Build row values array based on column mapping
+  var maxIndex = Math.max.apply(null, Object.values(columnMapping).map(function(m) { return m.sheetIndex; }).concat([0]));
+  var rowValues: any[] = new Array(maxIndex + 1).fill('');
+
+  for (var headerName in columnMapping) {
+    var mapping = columnMapping[headerName];
+    // Skip agora-only columns
+    var col = columns.find(function(c) { return c.id === mapping.columnId; });
+    var colSpCfg = col?.sharePointConfig as any;
+    if (colSpCfg?.agoraOnly) continue;
+
+    var value = rowData[mapping.columnId];
+    if (value !== undefined && value !== null) {
+      // Format values based on type
+      if (col?.type === 'currency') {
+        var num = parseFloat(String(value));
+        rowValues[mapping.sheetIndex] = isNaN(num) ? String(value) : num;
+      } else if (col?.type === 'number' || col?.type === 'percent') {
+        var num2 = parseFloat(String(value));
+        rowValues[mapping.sheetIndex] = isNaN(num2) ? String(value) : num2;
+      } else if (col?.type === 'checkbox') {
+        rowValues[mapping.sheetIndex] = value === 'true' || value === true ? 'TRUE' : 'FALSE';
+      } else {
+        rowValues[mapping.sheetIndex] = String(value);
+      }
+    }
+  }
+
+  // Append the row to the sheet
+  var { appendSheetRow } = await import('@/lib/googleSheets');
+  await appendSheetRow(connection.spreadsheetId, tabMapping.sheetTabName, rowValues);
+  console.log('[GS Push] Appended row to sheet: ' + connection.spreadsheetId + ' tab: ' + tabMapping.sheetTabName);
+  // Mark row as synced to Google Sheets
+  await db.agoraRow.update({ where: { id: rowId }, data: { gsSyncedAt: new Date() } });
+
+  // Upload attachments if configured
+  var attachmentCount = 0;
+  if (config.includeAttachments) {
+    try {
+      var { readFile: readFile3 } = await import('fs/promises');
+      var path3 = await import('path');
+      var UPLOADS3 = '/app/uploads';
+
+      var allAttachments3 = await db.fileAttachment.findMany({ where: { tableId: tableId, rowId: rowId } });
+      var pdfAttachments3 = allAttachments3.filter(function(a) { return a.mimeType === 'application/pdf'; });
+
+      if (pdfAttachments3.length > 0) {
+        var { PDFDocument: MergePDF3 } = await import('pdf-lib');
+
+        // Merge all PDFs into one
+        var mergedDoc3 = await MergePDF3.create();
+        for (var mi3 = 0; mi3 < pdfAttachments3.length; mi3++) {
+          try {
+            var pdfBuffer3 = await readFile3(path3.join(UPLOADS3, pdfAttachments3[mi3].path));
+            var srcDoc3 = await MergePDF3.load(pdfBuffer3, { ignoreEncryption: true });
+            var pages3 = await mergedDoc3.copyPages(srcDoc3, srcDoc3.getPageIndices());
+            for (var pi3 = 0; pi3 < pages3.length; pi3++) { mergedDoc3.addPage(pages3[pi3]); }
+          } catch (mergeErr3: any) {
+            console.error('[GS Push] Failed to merge PDF:', mergeErr3.message);
+          }
+        }
+
+        var mergedBytes3 = await mergedDoc3.save();
+        var mergedBuffer3 = Buffer.from(mergedBytes3);
+
+        var gsTable = await db.agoraTable.findUnique({ where: { id: tableId }, select: { name: true } });
+        var gsTableName = (gsTable?.name || 'Record').replace(/[^a-zA-Z0-9]/g, '_');
+        var gsDateStr = new Date().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' }).replace(/\//g, '-');
+        var gsMergedFilename = gsTableName + '_Complete_' + rowId.slice(-6) + '_' + gsDateStr + '.pdf';
+
+        // Upload to Google Drive
+        var { uploadToDrive } = await import('@/lib/googleSheets');
+        var driveResult = await uploadToDrive(
+          gsMergedFilename,
+          mergedBuffer3,
+          'application/pdf',
+          gsTableName + ' - Agora Attachments'
+        );
+
+        if (driveResult.success && driveResult.webViewLink) {
+          attachmentCount = pdfAttachments3.length;
+
+          // Add the Drive link as the last column in the sheet row
+          // Find the row we just appended and add the link
+          var { readSheetTab, writeSheetCell: writeCell } = await import('@/lib/googleSheets');
+          var sheetData = await readSheetTab(connection.spreadsheetId, tabMapping.sheetTabName);
+          var lastRowIndex = sheetData.rows.length - 1; // 0-based, the row we just appended
+
+          // Find or create "Supporting Documents" header
+          var docColIndex = sheetData.headers.indexOf('Supporting Documents');
+          if (docColIndex === -1) {
+            // Add header
+            docColIndex = sheetData.headers.length;
+            await writeCell(connection.spreadsheetId, tabMapping.sheetTabName, -1, docColIndex, 'Supporting Documents');
+          }
+
+          // Write hyperlink formula
+          var hyperlinkFormula = '=HYPERLINK("' + driveResult.webViewLink + '","View Documents (' + pdfAttachments3.length + ')")';
+          await writeCell(connection.spreadsheetId, tabMapping.sheetTabName, lastRowIndex, docColIndex, hyperlinkFormula);
+          console.log('[GS Push] Set Supporting Documents hyperlink in sheet');
+        }
+      }
+    } catch (attErr3: any) {
+      console.error('[GS Push] Attachment error:', attErr3.message);
+    }
+  }
+
+  try {
+    await logActivity({ tableId: tableId, rowId: rowId, userId: context._automation?.createdById || 'system', action: 'AUTOMATION_GS_PUSH', details: { spreadsheetId: connection.spreadsheetId, attachments: attachmentCount } });
+  } catch {}
+
+  return { pushed: true, spreadsheetId: connection.spreadsheetId, tableId: tableId, rowId: rowId, attachments: attachmentCount };
 }

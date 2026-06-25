@@ -480,6 +480,7 @@ model AgoraRow {
   isLocked    Boolean  @default(false)
   lockedById  String?
   spItemId    String?  @map("spitemid")
+  gsSyncedAt  DateTime? @map("gssyncedat")
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1172,4 +1173,181 @@ model MfaCode {
   @@index([userId])
   @@index([expiresAt])
   @@map("mfa_codes")
+}
+
+// ============================================================================
+// AGORA INSIGHTS
+// ============================================================================
+
+model Oikos {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  
+  workspaceId String?  @map("workspace_id")
+  createdById String   @map("created_by_id")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  tables        OikosTable[]
+  relationships OikosRelationship[]
+  measures      OikosMeasure[]
+  dashboards    Dashboard[]
+  
+  @@map("oikos")
+}
+
+model OikosTable {
+  id        String   @id @default(cuid())
+  oikosId   String   @map("oikos_id")
+  oikos     Oikos    @relation(fields: [oikosId], references: [id], onDelete: Cascade)
+  tableId   String   @map("table_id")
+  alias     String?
+  positionX Float?   @default(0) @map("position_x")
+  positionY Float?   @default(0) @map("position_y")
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  @@unique([oikosId, tableId])
+  @@map("oikos_tables")
+}
+
+model OikosRelationship {
+  id           String   @id @default(cuid())
+  oikosId      String   @map("oikos_id")
+  oikos        Oikos    @relation(fields: [oikosId], references: [id], onDelete: Cascade)
+  fromTableId  String   @map("from_table_id")
+  fromColumnId String   @map("from_column_id")
+  toTableId    String   @map("to_table_id")
+  toColumnId   String   @map("to_column_id")
+  joinType     String   @default("inner") @map("join_type")
+  createdAt    DateTime @default(now()) @map("created_at")
+  
+  @@map("oikos_relationships")
+}
+
+model OikosMeasure {
+  id          String   @id @default(cuid())
+  oikosId     String   @map("oikos_id")
+  oikos       Oikos    @relation(fields: [oikosId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  expression  String
+  format      String?  @default("number")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@map("oikos_measures")
+}
+
+model Dashboard {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  icon        String?  @default("📊")
+  
+  oikosId     String?  @map("oikos_id")
+  oikos       Oikos?   @relation(fields: [oikosId], references: [id], onDelete: SetNull)
+  workspaceId String?  @map("workspace_id")
+  
+  visibility  String   @default("private")
+  status      String   @default("draft")
+  sortOrder   Int      @default(0) @map("sort_order")
+  
+  createdById String   @map("created_by_id")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  widgets     Widget[]
+  permissions DashboardPermission[]
+  filters     DashboardFilter[]
+  parameters  DashboardParameter[]
+  
+  @@map("dashboards")
+}
+
+model DashboardPermission {
+  id          String   @id @default(cuid())
+  dashboardId String   @map("dashboard_id")
+  dashboard   Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+  userId      String?  @map("user_id")
+  roleId      String?  @map("role_id")
+  groupId     String?  @map("group_id")
+  permission  String   @default("viewer")
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  @@unique([dashboardId, userId])
+  @@unique([dashboardId, roleId])
+  @@unique([dashboardId, groupId])
+  @@map("dashboard_permissions")
+}
+
+model DashboardFilter {
+  id           String   @id @default(cuid())
+  dashboardId  String   @map("dashboard_id")
+  dashboard    Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+  name         String
+  tableId      String   @map("table_id")
+  columnId     String   @map("column_id")
+  operator     String   @default("eq")
+  defaultValue String?  @map("default_value")
+  parameterKey String?  @map("parameter_key")
+  sortOrder    Int      @default(0) @map("sort_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  
+  @@map("dashboard_filters")
+}
+
+model DashboardParameter {
+  id           String   @id @default(cuid())
+  dashboardId  String   @map("dashboard_id")
+  dashboard    Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+  key          String
+  label        String
+  type         String   @default("select")
+  config       Json     @default("{}")
+  defaultValue String?  @map("default_value")
+  sortOrder    Int      @default(0) @map("sort_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  
+  @@unique([dashboardId, key])
+  @@map("dashboard_parameters")
+}
+
+model Widget {
+  id          String   @id @default(cuid())
+  dashboardId String   @map("dashboard_id")
+  dashboard   Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+  name        String
+  type        String   @default("bar")
+  dataConfig  Json     @default("{}") @map("data_config")
+  vizConfig   Json     @default("{}") @map("viz_config")
+  layoutX     Int      @default(0) @map("layout_x")
+  layoutY     Int      @default(0) @map("layout_y")
+  layoutW     Int      @default(6) @map("layout_w")
+  layoutH     Int      @default(4) @map("layout_h")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  filters     WidgetFilter[]
+  
+  @@map("widgets")
+}
+
+model WidgetFilter {
+  id           String   @id @default(cuid())
+  widgetId     String   @map("widget_id")
+  widget       Widget   @relation(fields: [widgetId], references: [id], onDelete: Cascade)
+  tableId      String   @map("table_id")
+  columnId     String   @map("column_id")
+  operator     String   @default("eq")
+  value        String?
+  parameterKey String?  @map("parameter_key")
+  createdAt    DateTime @default(now()) @map("created_at")
+  
+  @@map("widget_filters")
 }

@@ -218,34 +218,6 @@ export async function PATCH(
         console.error('Approval trigger error:', err);
       }
     }
-    // Google Sheets write-back
-    const tableInfo = await db.agoraTable.findUnique({ where: { id: params.id }, select: { isSheetBacked: true } });
-    if (tableInfo?.isSheetBacked) {
-      try {
-        const tabMapping = await db.sheetTabMapping.findUnique({ where: { tableId: params.id } });
-        if (tabMapping) {
-          const connection = await db.googleSheetConnection.findUnique({ where: { id: tabMapping.connectionId } });
-          if (connection && connection.isActive) {
-            const { writeSheetCell } = await import('@/lib/googleSheets');
-            const columnMapping = tabMapping.columnMapping as Record<string, { columnId: string; sheetIndex: number }>;
-            const mappingEntry = Object.values(columnMapping).find(m => m.columnId === columnId);
-            if (mappingEntry) {
-              const allRows = await db.agoraRow.findMany({
-                where: { tableId: params.id },
-                orderBy: { position: 'asc' },
-                select: { id: true },
-              });
-              const rowIndex = allRows.findIndex(r => r.id === params.rowId);
-              if (rowIndex >= 0) {
-                await writeSheetCell(connection.spreadsheetId, tabMapping.sheetTabName, rowIndex, mappingEntry.sheetIndex, value ?? '');
-              }
-            }
-          }
-        }
-      } catch (sheetErr) {
-        console.error('Google Sheets write-back error (cell):', sheetErr);
-      }
-    }
 
     // Fire automation triggers (fire-and-forget)
     try {
@@ -304,23 +276,6 @@ export async function DELETE(
       action: 'ROW_DELETED',
       details: { deletedData: rowData, source: authResult.source },
     });
-
-    // Google Sheets write-back: delete row from sheet
-    const delTableInfo = await db.agoraTable.findUnique({ where: { id: params.id }, select: { isSheetBacked: true } });
-    if (delTableInfo?.isSheetBacked) {
-      try {
-        const tabMapping = await db.sheetTabMapping.findUnique({ where: { tableId: params.id } });
-        if (tabMapping) {
-          const connection = await db.googleSheetConnection.findUnique({ where: { id: tabMapping.connectionId } });
-          if (connection && connection.isActive) {
-            const { deleteSheetRow } = await import('@/lib/googleSheets');
-            await deleteSheetRow(connection.spreadsheetId, tabMapping.sheetTabId, row.position);
-          }
-        }
-      } catch (sheetErr) {
-        console.error('Google Sheets write-back error (delete):', sheetErr);
-      }
-    }
 
     // Fire automation triggers (fire-and-forget)
     try {

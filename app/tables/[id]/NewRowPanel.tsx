@@ -156,6 +156,8 @@ export function NewRowPanel({
 
     switch (column.type) {
       case 'text':
+        return <input type="text" value={value} onChange={e => updateField(column.id, e.target.value)} onBlur={() => handleFieldBlur(column.id)} className={inputClass} placeholder={`Enter ${column.name.toLowerCase()}...`} />;
+
       case 'phone':
         return <input type="text" value={value} onChange={e => updateField(column.id, e.target.value)} onBlur={() => handleFieldBlur(column.id)} className={inputClass} placeholder="(555) 123-4567" />;
 

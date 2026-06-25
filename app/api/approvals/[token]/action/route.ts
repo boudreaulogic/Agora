@@ -395,6 +395,15 @@ export async function POST(
       console.error('[Auto-PDF] Failed to auto-generate PDF on approval:', e);
     }
 
+    // Fire row_updated + column_match triggers so automations like "Push to SP on Approved" fire
+    try {
+      var { onRowUpdated } = await import('@/lib/automations/hooks');
+      var previousData = Object.assign({}, rowData);
+      if (approvalRequest.workflow.approveColumnId) { previousData[approvalRequest.workflow.approveColumnId] = undefined; }
+      onRowUpdated(approvalRequest.tableId, approvalRequest.rowId, rowData, previousData, userId);
+    } catch (autoErr2) { console.error('[Approval] Row updated trigger error:', autoErr2); }
+
+    // Fire approval_completed automation trigger
     try {
       var { onApprovalCompleted } = await import('@/lib/automations/hooks');
       onApprovalCompleted(approvalRequest.tableId, approvalRequest.rowId, rowData, {

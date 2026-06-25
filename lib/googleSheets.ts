@@ -26,7 +26,7 @@ export async function getGoogleSheetsClient() {
     const credentials = JSON.parse(serviceKey);
     const auth = new google.auth.GoogleAuth({
       credentials,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive'],
     });
 
     const sheets = google.sheets({ version: 'v4', auth });
@@ -238,4 +238,132 @@ function columnIndexToLetter(index: number): string {
     temp = Math.floor(temp / 26) - 1;
   }
   return letter;
+}
+
+/**
+ * Get an authenticated Google Drive client.
+ */
+export async function getGoogleDriveClient() {
+  var serviceKey: string | null = null;
+  var keySetting = await db.systemSetting.findUnique({ where: { key: 'google_sheets_key' } });
+  if (keySetting?.value) {
+    serviceKey = keySetting.encrypted ? decrypt(keySetting.value) : keySetting.value;
+  }
+  if (!serviceKey && process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
+    serviceKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  }
+  if (!serviceKey) return null;
+
+  try {
+    var credentials = JSON.parse(serviceKey);
+    var auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/drive'],
+    });
+    var drive = google.drive({ version: 'v3', auth });
+    return drive;
+  } catch (error) {
+    console.error('Failed to create Google Drive client:', error);
+    return null;
+  }
+}
+
+/**
+ * Upload a file to Google Drive in a specific folder.
+ * Creates the folder path if it doesn't exist.
+ * Returns the file's webViewLink.
+ */
+export async function uploadToDrive(
+  filename: string,
+  fileBuffer: Buffer,
+  mimeType: string,
+  folderName: string,
+  parentFolderId?: string
+): Promise<{ success: boolean; fileId?: string; webViewLink?: string; error?: string }> {
+  try {
+    var drive = await getGoogleDriveClient();
+    if (!drive) return { success: false, error: 'Google Drive not configured' };
+
+    // Find or create the folder
+    var folderId = await findOrCreateFolder(drive, folderName, parentFolderId);
+
+    // Upload the file
+    var { Readable } = await import('stream');
+    var stream = new Readable();
+    stream.push(fileBuffer);
+    stream.push(null);
+
+    var fileRes = await drive.files.create({
+      requestBody: {
+        name: filename,
+        parents: [folderId],
+      },
+      media: {
+        mimeType: mimeType,
+        body: stream,
+      },
+      fields: 'id,webViewLink',
+    });
+
+    console.log('[Google Drive] Uploaded: ' + filename + ' to folder: ' + folderName);
+    return {
+      success: true,
+      fileId: fileRes.data.id || undefined,
+      webViewLink: fileRes.data.webViewLink || undefined,
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Drive upload failed' };
+  }
+}
+
+/**
+ * Find or create a folder in Google Drive.
+ */
+async function findOrCreateFolder(drive: any, folderName: string, parentId?: string): Promise<string> {
+  // Search for existing folder
+  var query = "mimeType='application/vnd.google-apps.folder' and name='" + folderName.replace(/'/g, "\\'") + "' and trashed=false";
+  if (parentId) {
+    query += " and '" + parentId + "' in parents";
+  }
+
+  var searchRes = await drive.files.list({
+    q: query,
+    fields: 'files(id,name)',
+    spaces: 'drive',
+  });
+
+  if (searchRes.data.files && searchRes.data.files.length > 0) {
+    return searchRes.data.files[0].id;
+  }
+
+  // Create folder
+  var folderMeta: any = {
+    name: folderName,
+    mimeType: 'application/vnd.google-apps.folder',
+  };
+  if (parentId) {
+    folderMeta.parents = [parentId];
+  }
+
+  var createRes = await drive.files.create({
+    requestBody: folderMeta,
+    fields: 'id',
+  });
+
+  console.log('[Google Drive] Created folder: ' + folderName);
+  return createRes.data.id;
+}
+
+/**
+ * Find or create a nested folder path like "Agora Attachments/TableName/RowId"
+ */
+export async function findOrCreateFolderPath(folderPath: string[]): Promise<string> {
+  var drive = await getGoogleDriveClient();
+  if (!drive) throw new Error('Google Drive not configured');
+
+  var currentParentId: string | undefined = undefined;
+  for (var i = 0; i < folderPath.length; i++) {
+    currentParentId = await findOrCreateFolder(drive, folderPath[i], currentParentId);
+  }
+  return currentParentId!;
 }

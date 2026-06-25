@@ -91,6 +91,9 @@ var ACTION_TYPES = [
   { value: 'notify', label: 'Notify', icon: '🔔' },
   { value: 'trigger_approval', label: 'Trigger Approval', icon: '✅' },
   { value: 'push_to_sharepoint', label: 'Push to SharePoint', icon: '📤' },
+  { value: 'generate_record_export', label: 'Generate Record Export', icon: '📄' },
+  { value: 'generate_audit_trail', label: 'Generate Audit Trail', icon: '🔏' },
+  { value: 'push_to_google_sheets', label: 'Push to Google Sheets', icon: '📗' },
   { value: 'delay', label: 'Delay', icon: '⏳' },
   { value: 'condition', label: 'IF / Condition', icon: '🔀' },
 ];
@@ -565,8 +568,64 @@ export default function AutomationsManager() {
         <span style={{ fontSize:'11px', color:'#166534' }}>🔓 Unlocks the row, allowing it to be edited again.</span>
       </div>)}
 	  
-	  {action.actionType==='push_to_sharepoint' && (<div style={{ padding:'10px', background:'#e0f2fe', borderRadius:'6px', border:'1px solid #7dd3fc' }}>
-        <span style={{ fontSize:'11px', color:'#0c4a6e' }}>📤 Pushes the current row data to the linked SharePoint list. The table must have SharePoint sync configured in the admin panel. Columns marked as "Agora Only" will be excluded from the push.</span>
+	  {action.actionType==='push_to_sharepoint' && (<div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+        <div style={{ padding:'10px', background:'#e0f2fe', borderRadius:'6px', border:'1px solid #7dd3fc' }}>
+          <span style={{ fontSize:'11px', color:'#0c4a6e' }}>Pushes the current row data to the linked SharePoint list. The table must have SharePoint sync configured in the admin panel. Columns marked as "Agora Only" will be excluded from the push.</span>
+        </div>
+        <label style={{ display:'flex', alignItems:'center', gap:'8px', fontSize:'12px', color:'#374151', cursor:'pointer' }}>
+          <input type="checkbox" checked={config.includeAttachments||false} onChange={function(e) { setConfig('includeAttachments',e.target.checked); }} />
+          Include row attachments (PDFs, images, etc.) - uploads to SharePoint list item
+        </label>
+        {config.includeAttachments && (
+          <div style={{ padding:'10px', background:'#fef3c7', borderRadius:'6px', border:'1px solid #fbbf24' }}>
+            <div style={{ fontSize:'11px', fontWeight:600, color:'#92400e', marginBottom:'4px' }}>One-time SharePoint setup required</div>
+            <div style={{ fontSize:'11px', color:'#92400e', lineHeight:'1.5' }}>
+              Before this can attach files, you (or your SP admin) must add a <strong>Hyperlink</strong> column to the target SharePoint list with the name <code style={{ background:'#fff7ed', padding:'1px 5px', borderRadius:'3px', border:'1px solid #fed7aa', fontFamily:'monospace' }}>SupportDocs</code> (no space, capital S and D).
+              <br /><br />
+              Agora tries to create this column automatically, but some SharePoint tenants block API-driven column creation. If you see <code style={{ background:'#fff7ed', padding:'1px 4px', borderRadius:'3px', fontFamily:'monospace' }}>accessDenied</code> in your logs, that's why - create it manually one time in your SharePoint list settings and Agora will populate it on every push.
+              <br /><br />
+              Files will still be uploaded to the SharePoint document library at <code style={{ background:'#fff7ed', padding:'1px 4px', borderRadius:'3px', fontFamily:'monospace' }}>Shared Documents/Agora Attachments/</code> either way - the SupportDocs column just adds a clickable link on the list item.
+            </div>
+          </div>
+        )}
+      </div>)}
+	  
+	  {action.actionType==='generate_record_export' && (<div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+        <div style={{ padding:'10px', background:'#fef3c7', borderRadius:'6px', border:'1px solid #fde68a' }}>
+          <span style={{ fontSize:'11px', color:'#92400e' }}>📄 Generates a Record Export PDF using the table's template and attaches it to the row. The table must have a Record Export template configured.</span>
+        </div>
+        <div><label style={labelStyle}>After attaching, update column (optional)</label>
+          <select value={config.updateColumnId||''} onChange={function(e) { setConfig('updateColumnId',e.target.value); }} style={selectStyle}>
+            <option value="">— None —</option>
+            {targetColumns.map(function(c) { return <option key={c.id} value={c.id}>{c.name}</option>; })}
+          </select>
+        </div>
+        {config.updateColumnId && (<div><label style={labelStyle}>Set value to</label>
+          <input type="text" value={config.updateValue||''} onChange={function(e) { setConfig('updateValue',e.target.value); }} style={inputStyle} placeholder="e.g. true or Exported" />
+        </div>)}
+      </div>)}
+      {action.actionType==='generate_audit_trail' && (<div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+        <div style={{ padding:'10px', background:'#ede9fe', borderRadius:'6px', border:'1px solid #c4b5fd' }}>
+          <span style={{ fontSize:'11px', color:'#5b21b6' }}>🔏 Generates a standalone Audit Trail PDF with the approval chain and SHA-256 ledger, then attaches it to the row. Requires an approved approval request on this row.</span>
+        </div>
+        <div><label style={labelStyle}>After attaching, update column (optional)</label>
+          <select value={config.updateColumnId||''} onChange={function(e) { setConfig('updateColumnId',e.target.value); }} style={selectStyle}>
+            <option value="">— None —</option>
+            {targetColumns.map(function(c) { return <option key={c.id} value={c.id}>{c.name}</option>; })}
+          </select>
+        </div>
+        {config.updateColumnId && (<div><label style={labelStyle}>Set value to</label>
+          <input type="text" value={config.updateValue||''} onChange={function(e) { setConfig('updateValue',e.target.value); }} style={inputStyle} placeholder="e.g. true or Audit Attached" />
+        </div>)}
+      </div>)}
+      {action.actionType==='push_to_google_sheets' && (<div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+        <div style={{ padding:'10px', background:'#d1fae5', borderRadius:'6px', border:'1px solid #6ee7b7' }}>
+          <span style={{ fontSize:'11px', color:'#065f46' }}>📗 Pushes the current row data to the connected Google Sheet. The table must have a Google Sheet connection configured. Columns marked as "Agora Only" will be excluded.</span>
+        </div>
+        <label style={{ display:'flex', alignItems:'center', gap:'8px', fontSize:'12px', color:'#374151', cursor:'pointer' }}>
+          <input type="checkbox" checked={config.includeAttachments||false} onChange={function(e) { setConfig('includeAttachments',e.target.checked); }} />
+          📎 Include attachments — merges PDFs, uploads to Google Drive, adds hyperlink in sheet
+        </label>
       </div>)}
  
       {action.actionType==='delay' && (<div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>

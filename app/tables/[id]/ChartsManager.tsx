@@ -497,6 +497,37 @@ function ChartEditor({ chart, tableId, columns, rows, onUpdate }: {
                 </select>
               </div>
             )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Show</label>
+                <select value={config.limit === undefined ? '0' : String(config.limit)}
+                  onChange={function(e) { updateConfig('limit', parseInt(e.target.value, 10)); }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900">
+                  <option value="0">All</option>
+                  <option value="5">Top 5</option>
+                  <option value="10">Top 10</option>
+                  <option value="25">Top 25</option>
+                  <option value="50">Top 50</option>
+                  <option value="100">Top 100</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sort</label>
+                <select value={(config.sortBy || 'value') + ':' + (config.sortDir || 'desc')}
+                  onChange={function(e) {
+                    var parts = e.target.value.split(':');
+                    updateConfig('sortBy', parts[0]);
+                    updateConfig('sortDir', parts[1]);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900">
+                  <option value="value:desc">Value (high to low)</option>
+                  <option value="value:asc">Value (low to high)</option>
+                  <option value="label:asc">Label (A to Z)</option>
+                  <option value="label:desc">Label (Z to A)</option>
+                </select>
+              </div>
+            </div>
           </>
         )}
 
@@ -1025,7 +1056,22 @@ function ChartPreview({ chart, columns, rows, tableId, fullSize = false }: {
       if (opt?.color) color = opt.color;
     }
     return { label: group.label, value: Math.round(value * 100) / 100, color: color };
-  }).sort(function(a, b) { return b.value - a.value; });
+  });
+
+  // Sort per config (default: value high-to-low for backward compatibility).
+  var sortBy = config.sortBy || 'value';
+  var sortDir = config.sortDir || 'desc';
+  data.sort(function(a, b) {
+    if (sortBy === 'label') {
+      return sortDir === 'asc' ? a.label.localeCompare(b.label) : b.label.localeCompare(a.label);
+    }
+    return sortDir === 'asc' ? a.value - b.value : b.value - a.value;
+  });
+
+  // Top-N limit (0 or undefined = show all).
+  if (config.limit && config.limit > 0 && data.length > config.limit) {
+    data = data.slice(0, config.limit);
+  }
 
   if (data.length === 0) {
     return <div className="text-center text-gray-400 text-sm">No data to display</div>;
@@ -1071,22 +1117,25 @@ function ChartPreview({ chart, columns, rows, tableId, fullSize = false }: {
               })}
             </div>
           )}
-          <div className={fullSize ? 'flex items-end justify-center space-x-3 h-64 pl-14' : 'flex items-end justify-center space-x-1 h-28'}>
-            {data.map(function(d, i) {
-              var height = maxValue > 0 ? (d.value / maxValue) * 100 : 0;
-              return (
-                <div key={i} className="flex flex-col items-center" style={{ width: fullSize ? Math.max(40, 300 / data.length) + 'px' : '20px' }}>
-                  {config.showValues !== false && fullSize && (
-                    <span className="text-[10px] text-gray-600 mb-1 font-medium">{formatValue(d.value, yColType)}</span>
-                  )}
-                  <div className="w-full rounded-t cursor-pointer hover:opacity-80 transition-all duration-700 ease-out"
-                    style={{ height: animate ? Math.max(2, height) + '%' : '0%', backgroundColor: d.color, minHeight: '4px' }}
-                    onMouseMove={function(e) { showTooltip(e, d.label, d.value); }}
-                    onMouseLeave={hideTooltip} />
-                  {fullSize && <span className="text-[10px] text-gray-500 mt-2 text-center truncate w-full" title={d.label}>{d.label}</span>}
-                </div>
-              );
-            })}
+          <div className={fullSize ? 'overflow-x-auto pl-14' : 'overflow-x-auto'}>
+            <div className={fullSize ? 'flex items-end justify-center space-x-3 h-64' : 'flex items-end justify-center space-x-1 h-28'}
+              style={{ minWidth: fullSize ? Math.max(0, data.length * 52) + 'px' : Math.max(0, data.length * 24) + 'px' }}>
+              {data.map(function(d, i) {
+                var height = maxValue > 0 ? (d.value / maxValue) * 100 : 0;
+                return (
+                  <div key={i} className="flex flex-col items-center flex-shrink-0" style={{ width: fullSize ? '44px' : '20px' }}>
+                    {config.showValues !== false && fullSize && (
+                      <span className="text-[10px] text-gray-600 mb-1 font-medium">{formatValue(d.value, yColType)}</span>
+                    )}
+                    <div className="w-full rounded-t cursor-pointer hover:opacity-80 transition-all duration-700 ease-out"
+                      style={{ height: animate ? Math.max(2, height) + '%' : '0%', backgroundColor: d.color, minHeight: '4px' }}
+                      onMouseMove={function(e) { showTooltip(e, d.label, d.value); }}
+                      onMouseLeave={hideTooltip} />
+                    {fullSize && <span className="text-[10px] text-gray-500 mt-2 text-center truncate w-full" title={d.label}>{d.label}</span>}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -1099,14 +1148,14 @@ function ChartPreview({ chart, columns, rows, tableId, fullSize = false }: {
       <div ref={containerRef} className={fullSize ? 'w-full relative' : 'w-full h-full flex flex-col justify-center relative'}>
         {TooltipEl}
         {fullSize && <h3 className="text-base font-semibold text-gray-900 mb-1 text-center">{chart.name}</h3>}
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-y-auto" style={{ maxHeight: fullSize ? '360px' : '120px' }}>
           {data.map(function(d, i) {
             var width = maxValue > 0 ? (d.value / maxValue) * 100 : 0;
             return (
               <div key={i} className="flex items-center space-x-2"
                 onMouseMove={function(e) { showTooltip(e, d.label, d.value); }} onMouseLeave={hideTooltip}>
                 {fullSize && <span className="text-xs text-gray-600 w-24 truncate text-right flex-shrink-0" title={d.label}>{d.label}</span>}
-                <div className="flex-1 bg-gray-100 rounded-full" style={{ height: fullSize ? '28px' : '12px' }}>
+                <div className="flex-1 bg-gray-100 rounded-full flex-shrink-0" style={{ height: fullSize ? '28px' : '12px' }}>
                   <div className="h-full rounded-full flex items-center justify-end pr-2 transition-all duration-700 ease-out cursor-pointer hover:opacity-80"
                     style={{ width: animate ? Math.max(2, width) + '%' : '0%', backgroundColor: d.color }}>
                     {config.showValues !== false && fullSize && width > 15 && (

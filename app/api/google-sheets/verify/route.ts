@@ -19,10 +19,20 @@ export async function POST(request: Request) {
 
   try {
     const metadata = await getSheetMetadata(spreadsheetId);
+
+    // Check if this sheet is already connected
+    const { db } = await import('@/lib/db');
+    var existingConnection = await db.googleSheetConnection.findFirst({
+      where: { spreadsheetId: spreadsheetId },
+      include: { tabs: { select: { sheetTabName: true } } },
+    });
+
     return NextResponse.json({
       spreadsheetId,
       title: metadata.title,
       tabs: metadata.tabs,
+      existingConnectionId: existingConnection?.id || null,
+      alreadyImportedTabs: existingConnection ? existingConnection.tabs.map(function(t: any) { return t.sheetTabName; }) : [],
     });
   } catch (error: any) {
     const message = error?.message || '';

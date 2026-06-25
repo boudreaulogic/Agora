@@ -16,9 +16,12 @@ interface AddOn {
   longDescription: string;
   icon: string;
   category: string;
-  type: 'feature' | 'solution' | 'connector';
+  type: 'feature' | 'solution' | 'connector' | 'data_source';
   featureKey?: string;
   customInstall?: boolean;
+  // For data_source items: where the Install button navigates to.
+  // These create their own table during setup instead of installing onto an existing one.
+  setupUrl?: string;
   status: 'available' | 'coming_soon';
   tags: string[];
 }
@@ -175,16 +178,28 @@ var ADDONS: AddOn[] = [
     status: 'coming_soon',
     tags: ['database', 'MySQL', 'sync', 'import'],
   },
-  {
+{
     id: 'mongodb_connector',
     name: 'MongoDB Connector',
     description: 'Connect to MongoDB collections.',
     longDescription: 'Map MongoDB document collections to Agora tables.',
-    icon: '🍃',
+    icon: 'ðŸƒ',
     category: 'connectors',
     type: 'connector',
     status: 'coming_soon',
     tags: ['database', 'MongoDB', 'NoSQL', 'sync'],
+  },
+  {
+    id: 'college_scorecard',
+    name: 'College Scorecard',
+    description: 'Import school data from the U.S. Department of Education.',
+    longDescription: 'Create a new table populated with data on every U.S. college and university from the Department of Education College Scorecard. Includes enrollment, tuition, admission rates, completion rates, demographics, and earnings. Filter by state, ownership type, or tribal college designation. Re-syncs upsert by Scorecard ID so re-running updates rows in place.',
+    icon: '🎓',
+    category: 'connectors',
+    type: 'data_source',
+    setupUrl: '/connectors/college-scorecard',
+    status: 'available',
+    tags: ['education', 'colleges', 'tribal', 'government data', 'creates table'],
   },
 ];
 
@@ -375,6 +390,18 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
               onClick={function() { if (!isComingSoon) { setSelectedAddOn(addon); setSelectedTableId(''); setInstallResult(null); setBookingStartName('Start Date/Time'); setBookingEndName('End Date/Time'); setBookingResourceName('Resource'); setBookingResources(''); } }}
               className={'relative border rounded-xl p-5 transition-all ' + (isComingSoon ? 'border-gray-200 bg-gray-50 opacity-60 cursor-default' : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md cursor-pointer')}>
               {isComingSoon && (<span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-wider bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">Coming Soon</span>)}
+              {!isComingSoon && (
+                <span className={'absolute top-3 right-3 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ' +
+                  (addon.type === 'data_source' ? 'bg-amber-100 text-amber-700' :
+                   addon.type === 'feature' ? 'bg-blue-100 text-blue-700' :
+                   addon.type === 'solution' ? 'bg-purple-100 text-purple-700' :
+                   'bg-green-100 text-green-700')}>
+                  {addon.type === 'data_source' ? 'Creates Table' :
+                   addon.type === 'feature' ? 'Add-on' :
+                   addon.type === 'solution' ? 'Solution' :
+                   'Connector'}
+                </span>
+              )}
               <div className="flex items-start space-x-3">
                 <span className="text-2xl">{addon.icon}</span>
                 <div className="flex-1 min-w-0">
@@ -403,10 +430,14 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
                   <div>
                     <h2 className="text-lg font-bold text-gray-900">{selectedAddOn.name}</h2>
                     <span className={'text-[10px] font-medium px-2 py-0.5 rounded-full ' +
-                      (selectedAddOn.type === 'feature' ? 'bg-blue-100 text-blue-700' :
+                      (selectedAddOn.type === 'data_source' ? 'bg-amber-100 text-amber-700' :
+                       selectedAddOn.type === 'feature' ? 'bg-blue-100 text-blue-700' :
                        selectedAddOn.type === 'solution' ? 'bg-purple-100 text-purple-700' :
                        'bg-green-100 text-green-700')}>
-                      {selectedAddOn.type === 'feature' ? 'Table Feature' : selectedAddOn.type === 'solution' ? 'Solution' : 'Connector'}
+                      {selectedAddOn.type === 'data_source' ? 'Creates Table' :
+                       selectedAddOn.type === 'feature' ? 'Table Feature' :
+                       selectedAddOn.type === 'solution' ? 'Solution' :
+                       'Connector'}
                     </span>
                   </div>
                 </div>
@@ -492,11 +523,26 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
                 </div>
               )}
 
+              {/* Data source — navigates to its own setup page */}
+              {selectedAddOn.type === 'data_source' && selectedAddOn.status === 'available' && selectedAddOn.setupUrl && (
+                <div className="border-t border-gray-200 pt-4 space-y-3">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <p className="text-xs text-amber-800">
+                      <span className="font-bold">Heads up:</span> this creates a new table in a workspace you choose. It doesn't install onto an existing table.
+                    </p>
+                  </div>
+                  <a href={selectedAddOn.setupUrl}
+                     className="block w-full px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors text-center">
+                    Open Setup →
+                  </a>
+                </div>
+              )}
+
               {/* Coming soon */}
               {selectedAddOn.status === 'coming_soon' && (
                 <div className="border-t border-gray-200 pt-4">
                   <div className="bg-gray-50 rounded-lg p-4 text-center">
-                    <p className="text-sm text-gray-500">This {selectedAddOn.type} is coming soon.</p>
+                    <p className="text-sm text-gray-500">This {selectedAddOn.type === 'data_source' ? 'data source' : selectedAddOn.type} is coming soon.</p>
                     <p className="text-xs text-gray-400 mt-1">It will be available in a future update.</p>
                   </div>
                 </div>

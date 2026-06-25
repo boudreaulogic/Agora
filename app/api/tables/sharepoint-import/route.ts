@@ -105,6 +105,20 @@ export async function POST(request: Request) {
     fieldMapping[col.id] = spCol.name;
   }
 
+  // Add the system Attachments column at the end. This matches the default
+  // column set in the "Create Table" flow (app/tables/new/page.tsx) so SP-backed
+  // tables behave consistently with native Agora tables. Files attach locally in
+  // Agora — they do NOT push to SharePoint automatically.
+  await db.agoraColumn.create({
+    data: {
+      tableId: table.id,
+      name: 'Attachments',
+      type: 'attachment',
+      position: columns.length,
+      settings: { isSystem: true },
+    },
+  });
+
   // Save the field mapping as sync config in SystemSetting (reuse existing pattern)
   var { encrypt } = await import('@/lib/encryption');
   var syncConfig = {

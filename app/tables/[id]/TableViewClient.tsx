@@ -678,11 +678,13 @@ export function TableViewClient({
                       </div>
                       {columnOrder.filter((c: any) => !c.isSystem).map((column: any) => {
                         const isHidden = hiddenColumns.has(column.id);
+                        const isSystemColumn = column.type === 'approval_status' || column.type === 'attachment';
                         return (
                           <div key={column.id} className="flex items-center justify-between px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer" onClick={() => toggleColumn(column.id)}>
                             <div className="flex items-center space-x-2">
                               <span className="text-sm text-gray-500">{getColumnTypeIcon(column.type)}</span>
                               <span className={`text-sm ${isHidden ? 'text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}>{column.name}</span>
+                              {isSystemColumn && <span className="text-[8px] bg-gray-100 dark:bg-gray-700 text-gray-400 px-1 rounded">SYS</span>}
                             </div>
                             <div className={`relative w-8 h-4 rounded-full transition-colors ${isHidden ? 'bg-gray-200 dark:bg-gray-600' : 'bg-blue-600'}`}>
                               <div className={`absolute top-0 w-4 h-4 bg-white rounded-full shadow transition-transform ${isHidden ? 'translate-x-0' : 'translate-x-4'}`} />
@@ -725,21 +727,6 @@ export function TableViewClient({
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                 <span>New</span>
               </button>
-            )}
-			
-			
-            {table.isSheetBacked && canEdit && (
-              <button
-                onClick={handleSync}
-                disabled={isSyncing}
-                className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center space-x-1.5"
-              >
-                <svg className={'w-3.5 h-3.5 ' + (isSyncing ? 'animate-spin' : '')} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                <span>{isSyncing ? 'Syncing...' : 'Sync'}</span>
-              </button>
-            )}
-            {syncMessage && (
-              <span className="text-[10px] text-green-600 ml-2">{syncMessage}</span>
             )}
           </div>
         </div>
