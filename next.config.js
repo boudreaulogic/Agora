@@ -3,6 +3,9 @@ const nextConfig = {
   reactStrictMode: false,
   output: 'standalone',
   poweredByHeader: false,
+  // Never ship source maps to browsers in production — they expose the full
+  // application source to anyone with DevTools open.
+  productionBrowserSourceMaps: false,
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',
