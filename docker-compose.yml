@@ -96,6 +96,15 @@ services:
       - ALL
     cap_add:
       - NET_BIND_SERVICE
+    # Disable IPv6 in the container's network namespace. Docker Desktop's bridge
+    # has no routable IPv6, but Microsoft/Google endpoints return AAAA records
+    # first and Node's fetch (undici) does its own IPv4/IPv6 racing that ignores
+    # net.setDefaultAutoSelectFamily — so it hits the dead IPv6 path and fails
+    # with ENETUNREACH. Removing the IPv6 stack leaves only IPv4 to connect on.
+    # (net.* sysctls are namespaced and allowed by Docker without extra caps.)
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
+      - net.ipv6.conf.default.disable_ipv6=1
     logging:
       driver: "json-file"
       options:
