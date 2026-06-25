@@ -58,17 +58,60 @@ export async function safeFetch(inputUrl: string, opts?: { timeoutMs?: number; m
     throw new Error('Could not resolve hostname: ' + parsed.hostname);
   }
 
-  // Fetch with timeout
+  // Fetch with timeout — redirects are handled manually to re-validate the
+  // destination IP after each hop (prevents DNS rebinding / open-redirect SSRF).
   var controller = new AbortController();
   var timeout = setTimeout(function() { controller.abort(); }, opts?.timeoutMs || 10000);
+  var MAX_REDIRECTS = 5;
+  var currentUrl = parsed.toString();
+  var response: Response;
+
   try {
-    return await fetch(parsed.toString(), {
-      method: opts?.method || 'GET',
-      headers: opts?.headers,
-      body: opts?.body,
-      signal: controller.signal,
-      redirect: 'manual', // Don't follow redirects automatically (they could redirect to internal IPs)
-    });
+    for (var hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      response = await fetch(currentUrl, {
+        method: opts?.method || 'GET',
+        headers: opts?.headers,
+        body: opts?.body,
+        signal: controller.signal,
+        redirect: 'manual',
+      });
+
+      // Not a redirect — we're done
+      if (response.status < 300 || response.status >= 400) {
+        return response;
+      }
+
+      // Redirect — re-validate the Location before following
+      var location = response.headers.get('location');
+      if (!location) return response;
+
+      var nextUrl: URL;
+      try {
+        nextUrl = new URL(location, currentUrl);
+      } catch {
+        throw new Error('Invalid redirect URL');
+      }
+
+      if (nextUrl.protocol !== 'http:' && nextUrl.protocol !== 'https:') {
+        throw new Error('Redirect to non-HTTP protocol blocked');
+      }
+      if (nextUrl.username || nextUrl.password) {
+        throw new Error('Redirect with embedded credentials blocked');
+      }
+
+      // Re-resolve and re-validate the redirect destination IP
+      var blockedHosts2 = ['localhost', '127.0.0.1', '0.0.0.0', '::1', 'metadata.google.internal'];
+      if (blockedHosts2.indexOf(nextUrl.hostname) !== -1) {
+        throw new Error('Redirect to blocked hostname');
+      }
+      var redirectResult = await lookup(nextUrl.hostname).catch(function() { return null; });
+      if (!redirectResult || isPrivateIP(redirectResult.address)) {
+        throw new Error('Redirect resolves to a private/internal IP address');
+      }
+
+      currentUrl = nextUrl.toString();
+    }
+    throw new Error('Too many redirects');
   } finally {
     clearTimeout(timeout);
   }
