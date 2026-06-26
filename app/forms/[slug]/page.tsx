@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 var PATTERNS: Record<string, RegExp> = {
   letters_only: /^[a-zA-Z\s]+$/, numbers_only: /^\d+$/, alphanumeric: /^[a-zA-Z0-9\s]+$/,
@@ -305,6 +305,40 @@ export default function PublicFormPage(pageProps: any) {
   var rgRows = rgState[0]; var setRgRows = rgState[1];
   var crgState = useState<any>({});
   var customRgData = crgState[0]; var setCustomRgData = crgState[1];
+  // Anti-spam: honeypot value (bots fill it) + Cloudflare Turnstile token.
+  var hpState = useState('');
+  var hp = hpState[0]; var setHp = hpState[1];
+  var tsState = useState('');
+  var tsToken = tsState[0]; var setTsToken = tsState[1];
+  var turnstileRef = useRef<HTMLDivElement>(null);
+  var tsRenderedRef = useRef(false);
+
+  // Render the Turnstile widget only when the form reports a configured site key.
+  useEffect(function() {
+    var siteKey = form && form.turnstileSiteKey;
+    if (!siteKey || tsRenderedRef.current) return;
+    function renderWidget() {
+      var w = (window as any).turnstile;
+      if (w && turnstileRef.current && !tsRenderedRef.current) {
+        tsRenderedRef.current = true;
+        w.render(turnstileRef.current, {
+          sitekey: siteKey,
+          callback: function(token: string) { setTsToken(token); },
+          'error-callback': function() { setTsToken(''); },
+          'expired-callback': function() { setTsToken(''); },
+        });
+      }
+    }
+    if ((window as any).turnstile) { renderWidget(); return; }
+    var existing = document.getElementById('cf-turnstile-script');
+    if (existing) { existing.addEventListener('load', renderWidget); return; }
+    var s = document.createElement('script');
+    s.id = 'cf-turnstile-script';
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+    s.async = true; s.defer = true;
+    s.onload = renderWidget;
+    document.head.appendChild(s);
+  }, [form]);
 
   useEffect(function() {
     fetch('/api/public/forms/' + params.slug)
@@ -585,6 +619,7 @@ export default function PublicFormPage(pageProps: any) {
       if (firstErrorPage >= 0) setCurrentPage(firstErrorPage);
       return;
     }
+    if (form.turnstileSiteKey && !tsToken) { setFormError('Please complete the verification challenge.'); return; }
     setSubmitting(true);
     var submitValues: any = {};
     Object.keys(values).forEach(function(key) {
@@ -600,6 +635,8 @@ export default function PublicFormPage(pageProps: any) {
       var nonEmpty = cRows.filter(function(row: any) { return Object.values(row).some(function(v: any) { return v !== '' && v !== false; }); });
       if (nonEmpty.length > 0) submitValues[f.columnId] = nonEmpty;
     });
+    submitValues._hp_field = hp;
+    submitValues.cfTurnstileToken = tsToken;
     fetch('/api/public/forms/' + params.slug, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(submitValues) })
       .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
       .then(function(r) { if (!r.ok) { setFormError(r.data.error || 'Submission failed'); return; } setThankYouMessage(r.data.message); setSubmitted(true); })
@@ -689,9 +726,12 @@ export default function PublicFormPage(pageProps: any) {
             })}
           </div>
           <div className="px-8 py-6 bg-gray-50 dark:bg-gray-800 rounded-b-xl border-t border-gray-200 dark:border-gray-700">
+            {/* Honeypot — hidden from humans; bots fill it and get silently dropped */}
+            <input type="text" name="_hp_field" value={hp} onChange={function(e) { setHp(e.target.value); }} tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }} />
+            {form.turnstileSiteKey && (<div className="mb-4 flex justify-center"><div ref={turnstileRef} /></div>)}
             <div className="flex items-center justify-between">
               {isMultiPage && currentPage > 0 ? (<button type="button" onClick={function() { goToPage(currentPage - 1); }} className="px-6 py-3 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">Back</button>) : <div />}
-              {isMultiPage && currentPage < pages.length - 1 ? (<button type="button" onClick={function(e) { e.preventDefault(); e.stopPropagation(); goToPage(currentPage + 1); }} className="px-6 py-3 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700">Next</button>) : (<button type="button" disabled={submitting} onClick={function() { setShowConfirm(true); }} className="px-8 py-3 text-sm font-semibold bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">{submitting ? 'Submitting...' : form.submitButtonText || 'Submit'}</button>)}
+              {isMultiPage && currentPage < pages.length - 1 ? (<button type="button" onClick={function(e) { e.preventDefault(); e.stopPropagation(); goToPage(currentPage + 1); }} className="px-6 py-3 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700">Next</button>) : (<button type="button" disabled={submitting || (form.turnstileSiteKey && !tsToken)} onClick={function() { setShowConfirm(true); }} className="px-8 py-3 text-sm font-semibold bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">{submitting ? 'Submitting...' : form.submitButtonText || 'Submit'}</button>)}
             </div>
             {isMultiPage && (<p className="text-center text-xs text-gray-400 mt-3">Page {currentPage + 1} of {pages.length}</p>)}
           </div>

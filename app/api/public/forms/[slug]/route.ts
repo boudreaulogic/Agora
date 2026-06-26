@@ -3,6 +3,9 @@ import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimiter';
 import { NextRequest } from 'next/server';
+import { verifyTurnstile, turnstileSiteKey } from '@/lib/turnstile';
+import { validateSubmittedValue } from '@/lib/formValidation';
+import { getTrustedClientIp } from '@/lib/clientIp';
 
 // GET — public form data (no auth)
 export async function GET(
@@ -81,6 +84,9 @@ export async function GET(
       thankYouMessage: form.thankYouMessage,
       fields: publicFields,
       pages: form.pages || [{ id: 'page_1', title: 'Page 1', description: '' }],
+      // Non-null only when Cloudflare Turnstile is configured — tells the form
+      // whether to render the captcha widget.
+      turnstileSiteKey: turnstileSiteKey(),
     },
   });
 }
@@ -113,16 +119,33 @@ export async function POST(
   const fields = form.fields as any[];
   const columns = form.table.columns;
 
+  // Honeypot — a hidden field real users never fill, but bots do. Silently
+  // accept (so bots can't tell they were caught) and drop the submission.
+  if (body._hp_field) {
+    return NextResponse.json({ success: true, message: form.thankYouMessage || 'Thank you for your submission!' });
+  }
+
+  // Cloudflare Turnstile — inert unless TURNSTILE_SECRET_KEY is configured.
+  const clientIp = getTrustedClientIp(request.headers as any);
+  if (!(await verifyTurnstile(body.cfTurnstileToken, clientIp))) {
+    return NextResponse.json({ error: 'Captcha verification failed. Please try again.' }, { status: 400 });
+  }
+
+  // Server-side validation — the client checks are bypassable (anyone can POST
+  // here directly), so enforce required + type/length/format on the server too.
   for (const field of fields) {
-    if (!field.required || field.visible === false) continue;
-    const value = body[field.columnId];
-    if (value === undefined || value === null || value === '') {
-      const col = columns.find(c => c.id === field.columnId);
-      return NextResponse.json(
-        { error: (field.label || col?.name || 'Field') + ' is required' },
-        { status: 400 }
-      );
+    if (field.visible === false) continue;
+    if (field.type === 'section_header' || field.type === 'divider') continue;
+    if (field.type === 'repeating_group') {
+      // Bound repeating-group payloads so a submitter can't post a giant array.
+      const rgVal = body[field.columnId];
+      if (Array.isArray(rgVal) && rgVal.length > 500) {
+        return NextResponse.json({ error: (field.label || 'Section') + ' has too many rows' }, { status: 400 });
+      }
+      continue;
     }
+    const err = validateSubmittedValue(field, body[field.columnId]);
+    if (err) return NextResponse.json({ error: err }, { status: 400 });
   }
 
   const data: Record<string, any> = {};
