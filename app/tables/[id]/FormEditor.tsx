@@ -206,6 +206,13 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
                     <input type="color" value={theme.logoColor || '#1E3A5F'} onChange={function(e) { setThemeKey('logoColor', e.target.value); }} className="w-full h-7 rounded border border-gray-300 dark:border-gray-600 cursor-pointer bg-white dark:bg-gray-800" />
                   </div>
                 </div>
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center space-x-1.5 text-[10px] text-gray-600 dark:text-gray-300 cursor-pointer">
+                    <input type="checkbox" checked={!!theme.textColor} onChange={function(e) { setThemeKey('textColor', e.target.checked ? (theme.textColor || '#111827') : ''); }} className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600" />
+                    <span>Custom text color (for dark backgrounds)</span>
+                  </label>
+                  {theme.textColor ? <input type="color" value={theme.textColor} onChange={function(e) { setThemeKey('textColor', e.target.value); }} className="w-10 h-6 rounded border border-gray-300 dark:border-gray-600 cursor-pointer bg-white dark:bg-gray-800" /> : null}
+                </div>
                 <label className="flex items-center justify-between text-[10px] text-gray-600 dark:text-gray-300 cursor-pointer">
                   <span>Hide Agora branding</span>
                   <input type="checkbox" checked={theme.hideBranding === true} onChange={function(e) { setThemeKey('hideBranding', e.target.checked); }} className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600" />

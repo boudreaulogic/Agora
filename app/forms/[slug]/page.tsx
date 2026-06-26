@@ -725,13 +725,17 @@ export default function PublicFormPage(pageProps: any) {
   }
 
   // ---- Appearance theme (defaults when form.theme is null) ----
-  var th = Object.assign({ background: 'gray', showCard: true, accentColor: '#2563eb', logoColor: '#1E3A5F', hideBranding: false, inheritFont: true }, (form && form.theme) || {});
+  var th = Object.assign({ background: 'gray', showCard: true, accentColor: '#2563eb', logoColor: '#1E3A5F', hideBranding: false, inheritFont: true, textColor: '' }, (form && form.theme) || {});
   var accent = th.accentColor || '#2563eb';
   var transparentBg = th.background === 'transparent';
   var bgClass = transparentBg ? '' : (th.background === 'white' ? 'bg-white dark:bg-gray-950' : 'bg-gray-50 dark:bg-gray-950');
   var cardChrome = th.showCard ? 'bg-white dark:bg-gray-900 shadow-sm border border-gray-200 dark:border-gray-700' : 'bg-transparent';
+  // Footer bar (holds the submit button) — only painted when the card is shown.
+  var footerChrome = th.showCard ? 'bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700' : '';
+  var textStyle: any = th.textColor ? { color: th.textColor } : undefined;
   var rootStyle: any = {};
   if (th.inheritFont && parentFont) rootStyle.fontFamily = parentFont;
+  if (th.textColor) rootStyle.color = th.textColor;
   var outerClass = [isEmbed ? '' : 'min-h-screen', bgClass, isEmbed ? 'py-2 px-2' : 'py-8 px-4'].filter(Boolean).join(' ');
   var statusClass = (isEmbed ? '' : 'min-h-screen ') + bgClass + ' flex items-center justify-center py-10';
 
@@ -752,8 +756,8 @@ export default function PublicFormPage(pageProps: any) {
             </div>
           )}
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{form.name}</h1>
-            {form.description && <p className="mt-2 text-gray-600 dark:text-gray-400">{form.description}</p>}
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100" style={textStyle}>{form.name}</h1>
+            {form.description && <p className="mt-2 text-gray-600 dark:text-gray-400" style={textStyle}>{form.description}</p>}
           </div>
         </div>
         {isMultiPage && (
@@ -783,12 +787,12 @@ export default function PublicFormPage(pageProps: any) {
                 return <RgBlock key={fi} field={field} values={values} visibleCount={vc} errors={errors} touched={touched} onFieldChange={handleChange} onFieldBlur={handleBlur} onCalcUpdate={handleCalcUpdate} onAddRow={function() { setRgRows(function(p: any) { return Object.assign({}, p, { [field.columnId]: Math.min(vc + 1, mx) }); }); }} onRemoveRow={function() { setRgRows(function(p: any) { return Object.assign({}, p, { [field.columnId]: vc - 1 }); }); }} />;
               }
               if (field.type === 'divider') return <hr key={fi} className="border-gray-200 dark:border-gray-700" />;
-              if (field.type === 'section_header') return (<div key={fi} className="pt-2"><h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{field.label}</h3>{field.description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{field.description}</p>}</div>);
+              if (field.type === 'section_header') return (<div key={fi} className="pt-2"><h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100" style={textStyle}>{field.label}</h3>{field.description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5" style={textStyle}>{field.description}</p>}</div>);
               var fieldError = touched[field.columnId] ? errors[field.columnId] : null;
-              return (<div key={fi} id={'field-' + field.columnId} className="space-y-1.5"><label className="block text-sm font-semibold text-gray-800 dark:text-gray-200">{field.label}{field.required && <span className="text-red-500 ml-1">*</span>}</label>{field.description && <p className="text-xs text-gray-500 dark:text-gray-400">{field.description}</p>}{renderField(field)}{fieldError && <p className="text-xs text-red-500 flex items-center space-x-1"><span>{fieldError}</span></p>}</div>);
+              return (<div key={fi} id={'field-' + field.columnId} className="space-y-1.5"><label className="block text-sm font-semibold text-gray-800 dark:text-gray-200" style={textStyle}>{field.label}{field.required && <span className="text-red-500 ml-1">*</span>}</label>{field.description && <p className="text-xs text-gray-500 dark:text-gray-400" style={textStyle}>{field.description}</p>}{renderField(field)}{fieldError && <p className="text-xs text-red-500 flex items-center space-x-1"><span>{fieldError}</span></p>}</div>);
             })}
           </div>
-          <div className="px-8 py-6 bg-gray-50 dark:bg-gray-800 rounded-b-xl border-t border-gray-200 dark:border-gray-700">
+          <div className={'px-8 py-6 rounded-b-xl ' + footerChrome}>
             {/* Honeypot — hidden from humans; bots fill it and get silently dropped */}
             <input type="text" name="_hp_field" value={hp} onChange={function(e) { setHp(e.target.value); }} tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }} />
             {form.turnstileSiteKey && (<div className="mb-4 flex justify-center"><div ref={turnstileRef} /></div>)}
