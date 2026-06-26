@@ -98,7 +98,7 @@ export function FormsManager({
     // height (no scrollbars/dead space) and (2) passes the host page's font in
     // so the form matches your site. Paste into a "Custom HTML" block.
     const code =
-      '<iframe id="agora-form-' + slug + '" src="' + src + '" style="width:100%;border:0;overflow:hidden;" scrolling="no"></iframe>\n' +
+      '<iframe id="agora-form-' + slug + '" src="' + src + '" style="width:100%;border:0;overflow:hidden;background:transparent;" scrolling="no" allowtransparency="true"></iframe>\n' +
       '<script>(function(){var f=document.getElementById("agora-form-' + slug + '");' +
       'window.addEventListener("message",function(e){if(e.origin!=="' + origin + '")return;' +
       'if(e.data&&e.data.type==="agora-form-height"&&e.data.slug==="' + slug + '"){f.style.height=e.data.height+"px";}});' +
