@@ -153,7 +153,11 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      return NextResponse.redirect(new URL('/login', request.url));
+      // Remember where they were headed (e.g. an approval link) so login can
+      // return them there instead of dumping them on the home page.
+      var loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('callbackUrl', pathname + (request.nextUrl.search || ''));
+      return NextResponse.redirect(loginUrl);
     }
 
     // MFA enforcement — applies to ALL routes (pages AND API).
