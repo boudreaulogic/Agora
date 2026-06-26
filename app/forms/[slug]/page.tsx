@@ -317,6 +317,18 @@ export default function PublicFormPage(pageProps: any) {
     } catch {}
   }, []);
 
+  // When the theme is transparent, clear the document (<html>/<body>) background
+  // so the host page shows through the iframe — the root layout paints <body>
+  // white, which otherwise blocks transparency regardless of the form's own div.
+  useEffect(function() {
+    if (form && form.theme && form.theme.background === 'transparent') {
+      try {
+        document.documentElement.style.background = 'transparent';
+        document.body.style.background = 'transparent';
+      } catch {}
+    }
+  }, [form]);
+
   // Receive the host page's font so an embedded form matches the site.
   useEffect(function() {
     function onMsg(e: any) {
