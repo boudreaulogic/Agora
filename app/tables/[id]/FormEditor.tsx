@@ -196,6 +196,22 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
                   <span>Use host site's font when embedded</span>
                   <input type="checkbox" checked={theme.inheritFont !== false} onChange={function(e) { setThemeKey('inheritFont', e.target.checked); }} className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600" />
                 </label>
+                <div>
+                  <label className="block text-[9px] font-medium text-gray-500 mb-0.5">Google Font name (loads from Google — match your site)</label>
+                  <input type="text" value={theme.googleFont || ''} onChange={function(e) { setThemeKey('googleFont', e.target.value); }} placeholder="e.g. Poppins, Inter, Montserrat" className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 dark:text-gray-200" />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-medium text-gray-500 mb-0.5">Or font-family (CSS, advanced)</label>
+                  <input type="text" value={theme.fontFamily || ''} onChange={function(e) { setThemeKey('fontFamily', e.target.value); }} placeholder="e.g. Georgia, serif" className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 dark:text-gray-200" />
+                </div>
+                <label className="flex items-center justify-between text-[10px] text-gray-600 dark:text-gray-300 cursor-pointer">
+                  <span>Center text</span>
+                  <input type="checkbox" checked={theme.textAlign === 'center'} onChange={function(e) { setThemeKey('textAlign', e.target.checked ? 'center' : 'left'); }} className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600" />
+                </label>
+                <label className="flex items-center justify-between text-[10px] text-gray-600 dark:text-gray-300 cursor-pointer">
+                  <span>Hide form title</span>
+                  <input type="checkbox" checked={theme.hideTitle === true} onChange={function(e) { setThemeKey('hideTitle', e.target.checked); }} className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600" />
+                </label>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="block text-[9px] font-medium text-gray-500 mb-0.5">Accent color</label>
