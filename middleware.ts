@@ -101,9 +101,9 @@ export async function middleware(request: NextRequest) {
   var csp = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com https://challenges.cloudflare.com",
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' blob: data:",
-    "font-src 'self'",
+    "font-src 'self' https://fonts.gstatic.com",
     "connect-src 'self' wss://* ws://* https://challenges.cloudflare.com",
     "frame-src 'self' https://challenges.cloudflare.com",
     "object-src 'none'",

@@ -329,6 +329,23 @@ export default function PublicFormPage(pageProps: any) {
     }
   }, [form]);
 
+  // Load a Google Font when configured so the form can match the host site.
+  useEffect(function() {
+    try {
+      var name = form && form.theme && form.theme.googleFont ? String(form.theme.googleFont).trim() : '';
+      if (!name) return;
+      var href = 'https://fonts.googleapis.com/css2?family=' + name.split(' ').map(encodeURIComponent).join('+') + ':wght@400;500;600;700&display=swap';
+      var id = 'agora-gfont';
+      var el = document.getElementById(id) as HTMLLinkElement | null;
+      if (el) { el.href = href; }
+      else {
+        var l = document.createElement('link');
+        l.id = id; l.rel = 'stylesheet'; l.href = href;
+        document.head.appendChild(l);
+      }
+    } catch {}
+  }, [form]);
+
   // Receive the host page's font so an embedded form matches the site.
   useEffect(function() {
     function onMsg(e: any) {
@@ -725,7 +742,7 @@ export default function PublicFormPage(pageProps: any) {
   }
 
   // ---- Appearance theme (defaults when form.theme is null) ----
-  var th = Object.assign({ background: 'gray', showCard: true, accentColor: '#2563eb', logoColor: '#1E3A5F', hideBranding: false, inheritFont: true, textColor: '' }, (form && form.theme) || {});
+  var th = Object.assign({ background: 'gray', showCard: true, accentColor: '#2563eb', logoColor: '#1E3A5F', hideBranding: false, inheritFont: true, textColor: '', hideTitle: false, textAlign: 'left', fontFamily: '', googleFont: '' }, (form && form.theme) || {});
   var accent = th.accentColor || '#2563eb';
   var transparentBg = th.background === 'transparent';
   var bgClass = transparentBg ? '' : (th.background === 'white' ? 'bg-white dark:bg-gray-950' : 'bg-gray-50 dark:bg-gray-950');
@@ -733,8 +750,15 @@ export default function PublicFormPage(pageProps: any) {
   // Footer bar (holds the submit button) — only painted when the card is shown.
   var footerChrome = th.showCard ? 'bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700' : '';
   var textStyle: any = th.textColor ? { color: th.textColor } : undefined;
+  var alignClass = th.textAlign === 'center' ? 'text-center' : '';
+  var headerShown = !th.hideBranding || !th.hideTitle;
   var rootStyle: any = {};
-  if (th.inheritFont && parentFont) rootStyle.fontFamily = parentFont;
+  // Font precedence: host-page font (embedded + inheritFont) → Google Font → manual CSS stack.
+  var fontFam = '';
+  if (th.inheritFont && parentFont) fontFam = parentFont;
+  else if (th.googleFont) fontFam = "'" + String(th.googleFont).replace(/['"]/g, '') + "', sans-serif";
+  else if (th.fontFamily) fontFam = th.fontFamily;
+  if (fontFam) rootStyle.fontFamily = fontFam;
   if (th.textColor) rootStyle.color = th.textColor;
   var outerClass = [isEmbed ? '' : 'min-h-screen', bgClass, isEmbed ? 'py-2 px-2' : 'py-8 px-4'].filter(Boolean).join(' ');
   var statusClass = (isEmbed ? '' : 'min-h-screen ') + bgClass + ' flex items-center justify-center py-10';
@@ -748,18 +772,22 @@ export default function PublicFormPage(pageProps: any) {
   return (
     <div className={outerClass} style={rootStyle}>
       <div className="max-w-2xl mx-auto">
-        <div className={'rounded-t-xl p-8 ' + cardChrome + (th.showCard ? ' border-b-0' : '')}>
-          {!th.hideBranding && (
-            <div className="flex items-center space-x-2 mb-4">
-              <svg width="28" height="28" viewBox="0 0 512 512"><circle cx="256" cy="256" r="220" fill={th.logoColor}/><polygon points="256,100 360,380 300,380 276,310 236,310 212,380 152,380" fill="white"/></svg>
-              <span className="text-sm font-semibold text-gray-400">Agora</span>
-            </div>
-          )}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100" style={textStyle}>{form.name}</h1>
-            {form.description && <p className="mt-2 text-gray-600 dark:text-gray-400" style={textStyle}>{form.description}</p>}
+        {headerShown && (
+          <div className={'rounded-t-xl p-8 ' + cardChrome + (th.showCard ? ' border-b-0' : '')}>
+            {!th.hideBranding && (
+              <div className={'flex items-center space-x-2 mb-4 ' + (th.textAlign === 'center' ? 'justify-center' : '')}>
+                <svg width="28" height="28" viewBox="0 0 512 512"><circle cx="256" cy="256" r="220" fill={th.logoColor}/><polygon points="256,100 360,380 300,380 276,310 236,310 212,380 152,380" fill="white"/></svg>
+                <span className="text-sm font-semibold text-gray-400">Agora</span>
+              </div>
+            )}
+            {!th.hideTitle && (
+              <div className={alignClass}>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100" style={textStyle}>{form.name}</h1>
+                {form.description && <p className="mt-2 text-gray-600 dark:text-gray-400" style={textStyle}>{form.description}</p>}
+              </div>
+            )}
           </div>
-        </div>
+        )}
         {isMultiPage && (
           <div className={(th.showCard ? 'bg-white dark:bg-gray-900 border-x border-gray-200 dark:border-gray-700 ' : '') + 'px-8 py-4'}>
             <div className="flex items-center justify-center flex-wrap gap-2">
@@ -773,7 +801,7 @@ export default function PublicFormPage(pageProps: any) {
             </div>
           </div>
         )}
-        <form onSubmit={handleSubmit} className={'rounded-b-xl ' + cardChrome + (th.showCard ? ' border-t-0' : '')}>
+        <form onSubmit={handleSubmit} className={(headerShown ? 'rounded-b-xl' : 'rounded-xl') + ' ' + cardChrome + (headerShown && th.showCard ? ' border-t-0' : '')}>
           <div className="p-8 space-y-6">
             {formError && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">{formError}</div>}
             {isMultiPage && currentPageObj && (<div className="mb-2"><h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{currentPageObj.title}</h2>{currentPageObj.description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{currentPageObj.description}</p>}</div>)}
@@ -787,9 +815,9 @@ export default function PublicFormPage(pageProps: any) {
                 return <RgBlock key={fi} field={field} values={values} visibleCount={vc} errors={errors} touched={touched} onFieldChange={handleChange} onFieldBlur={handleBlur} onCalcUpdate={handleCalcUpdate} onAddRow={function() { setRgRows(function(p: any) { return Object.assign({}, p, { [field.columnId]: Math.min(vc + 1, mx) }); }); }} onRemoveRow={function() { setRgRows(function(p: any) { return Object.assign({}, p, { [field.columnId]: vc - 1 }); }); }} />;
               }
               if (field.type === 'divider') return <hr key={fi} className="border-gray-200 dark:border-gray-700" />;
-              if (field.type === 'section_header') return (<div key={fi} className="pt-2"><h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100" style={textStyle}>{field.label}</h3>{field.description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5" style={textStyle}>{field.description}</p>}</div>);
+              if (field.type === 'section_header') return (<div key={fi} className={'pt-2 ' + alignClass}><h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100" style={textStyle}>{field.label}</h3>{field.description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5" style={textStyle}>{field.description}</p>}</div>);
               var fieldError = touched[field.columnId] ? errors[field.columnId] : null;
-              return (<div key={fi} id={'field-' + field.columnId} className="space-y-1.5"><label className="block text-sm font-semibold text-gray-800 dark:text-gray-200" style={textStyle}>{field.label}{field.required && <span className="text-red-500 ml-1">*</span>}</label>{field.description && <p className="text-xs text-gray-500 dark:text-gray-400" style={textStyle}>{field.description}</p>}{renderField(field)}{fieldError && <p className="text-xs text-red-500 flex items-center space-x-1"><span>{fieldError}</span></p>}</div>);
+              return (<div key={fi} id={'field-' + field.columnId} className={'space-y-1.5 ' + alignClass}><label className="block text-sm font-semibold text-gray-800 dark:text-gray-200" style={textStyle}>{field.label}{field.required && <span className="text-red-500 ml-1">*</span>}</label>{field.description && <p className="text-xs text-gray-500 dark:text-gray-400" style={textStyle}>{field.description}</p>}{renderField(field)}{fieldError && <p className="text-xs text-red-500 flex items-center space-x-1"><span>{fieldError}</span></p>}</div>);
             })}
           </div>
           <div className={'px-8 py-6 rounded-b-xl ' + footerChrome}>
