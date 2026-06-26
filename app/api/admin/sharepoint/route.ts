@@ -94,12 +94,18 @@ export async function POST(request: Request) {
 
   if (body.action === 'get_lists') {
     try {
-      var { getSiteId, getLists } = await import('@/lib/sharepoint');
-      var config = await import('@/lib/sharepoint').then(function(m) { return m.getSharePointConfig(); });
-      if (!config?.siteUrl) return NextResponse.json({ error: 'No site URL configured' }, { status: 400 });
-      var siteId = await getSiteId(config.siteUrl);
+      var { getSiteId, getLists, getSharePointConfig } = await import('@/lib/sharepoint');
+      // Optional per-site browsing: an admin can point at any granted site URL
+      // (Sites.Selected). Falls back to the globally configured site.
+      var browseUrl = (body.siteUrl || '').trim();
+      if (!browseUrl) {
+        var cfg = await getSharePointConfig();
+        browseUrl = cfg?.siteUrl || '';
+      }
+      if (!browseUrl) return NextResponse.json({ error: 'No site URL configured' }, { status: 400 });
+      var siteId = await getSiteId(browseUrl);
       var lists = await getLists(siteId);
-      return NextResponse.json({ siteId: siteId, lists: lists });
+      return NextResponse.json({ siteId: siteId, siteUrl: browseUrl, lists: lists });
     } catch (err: any) {
       return NextResponse.json({ error: err.message || 'Failed to fetch lists' }, { status: 500 });
     }

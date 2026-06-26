@@ -270,7 +270,8 @@ model Group {
   tableShares       TableShare[]
   columnPermissions ColumnPermission[] @relation("GroupColumnPermissions")
   workspaceMembers  WorkspaceMember[]
-  
+  sharePointAccess  SharePointConnectionAccess[]
+
   @@map("groups")
 }
 
@@ -884,6 +885,54 @@ model SystemSetting {
   createdAt DateTime @default(now())
   
   @@map("system_settings")
+}
+
+// ============================================================================
+// SHAREPOINT LIST CONNECTIONS (admin-curated catalog + Agora-level access)
+// ============================================================================
+
+// An admin-configured connection to a single SharePoint list. With the
+// Sites.Selected app-permission model the app reg is granted specific sites in
+// Entra; the admin then registers individual lists here. End users only ever
+// see the lists registered here that they are granted access to.
+model SharePointListConnection {
+  id           String   @id @default(cuid())
+  name         String                       // friendly label shown to users
+  description  String?
+  siteUrl      String                       // SharePoint site URL (granted via Sites.Selected)
+  siteId       String                       // resolved Microsoft Graph site id
+  listId       String
+  listName     String
+  isActive     Boolean  @default(true)
+  visibleToAll Boolean  @default(false)      // any authenticated user may use it
+  lastTestedAt DateTime?
+  testStatus   String   @default("unknown")  // ok | error | unknown
+  createdById  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  access       SharePointConnectionAccess[]
+
+  @@unique([siteId, listId])
+  @@index([createdById])
+  @@map("sharepoint_list_connections")
+}
+
+// Group-based access grant for a connection. Mirrors AgoraTablePermission.
+// A user sees a connection if it is visibleToAll, or they belong to a granted
+// group (admins always see every connection).
+model SharePointConnectionAccess {
+  id           String   @id @default(cuid())
+  connectionId String
+  groupId      String
+
+  connection   SharePointListConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  group        Group                    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, groupId])
+  @@index([connectionId])
+  @@index([groupId])
+  @@map("sharepoint_connection_access")
 }
 
 // ============================================================================

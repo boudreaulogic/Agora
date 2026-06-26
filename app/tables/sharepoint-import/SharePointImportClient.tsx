@@ -32,7 +32,6 @@ export function SharePointImportClient({ workspaces }: { workspaces: any[] }) {
   // SP data
   var ls = useState(true); var loading = ls[0]; var setLoading = ls[1];
   var sls = useState<any[]>([]); var spLists = sls[0]; var setSpLists = sls[1];
-  var sis = useState(''); var siteId = sis[0]; var setSiteId = sis[1];
   var cols = useState<any[]>([]); var spColumns = cols[0]; var setSpColumns = cols[1];
   var lcols = useState(false); var loadingCols = lcols[0]; var setLoadingCols = lcols[1];
 
@@ -54,40 +53,32 @@ export function SharePointImportClient({ workspaces }: { workspaces: any[] }) {
   var prs = useState<any>(null); var pullResult = prs[0]; var setPullResult = prs[1];
   var ctid = useState(''); var createdTableId = ctid[0]; var setCreatedTableId = ctid[1];
 
-  // Load SP lists on mount
+  // Load the connections this user is allowed to see (admin-curated catalog)
   useEffect(function() {
-    fetch('/api/admin/sharepoint', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'get_lists' }),
-    })
+    fetch('/api/sharepoint/connections')
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.error) { setMessage(data.error); setMessageType('error'); return; }
-        setSpLists(data.lists || []);
-        setSiteId(data.siteId || '');
+        setSpLists(data.connections || []);
       })
-      .catch(function() { setMessage('Failed to connect to SharePoint. Check Admin → SharePoint Settings.'); setMessageType('error'); })
+      .catch(function() { setMessage('Failed to load SharePoint lists. Ask an admin to configure connections in Admin → SharePoint Settings.'); setMessageType('error'); })
       .finally(function() { setLoading(false); });
   }, []);
 
-  function handleListSelect(listId: string) {
-    setSelectedListId(listId);
-    var list = spLists.find(function(l) { return l.id === listId; });
-    setSelectedListName(list?.displayName || '');
-    setTableName(list?.displayName || '');
+  function handleListSelect(connectionId: string) {
+    setSelectedListId(connectionId);
+    var conn = spLists.find(function(l) { return l.id === connectionId; });
+    setSelectedListName(conn?.name || conn?.listName || '');
+    setTableName(conn?.name || conn?.listName || '');
     setSpColumns([]);
     setSelectedColumns({});
 
-    if (listId && siteId) {
+    if (connectionId) {
       setLoadingCols(true);
-      fetch('/api/admin/sharepoint', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get_columns', siteId: siteId, listId: listId }),
-      })
+      fetch('/api/sharepoint/connections/' + connectionId + '/columns')
         .then(function(r) { return r.json(); })
         .then(function(data) {
+          if (data.error) { setMessage(data.error); setMessageType('error'); return; }
           if (data.columns) {
             var mapped = data.columns.map(function(c: any) {
               var type = 'text';
@@ -154,9 +145,7 @@ export function SharePointImportClient({ workspaces }: { workspaces: any[] }) {
           description: tableDesc.trim(),
           icon: '📋',
           workspaceId: workspaceId || null,
-          siteId: siteId,
-          listId: selectedListId,
-          listName: selectedListName,
+          connectionId: selectedListId,
           columns: colsToImport,
         }),
       });
@@ -255,11 +244,11 @@ export function SharePointImportClient({ workspaces }: { workspaces: any[] }) {
         {step === 1 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Choose a SharePoint List</h2>
-            <p className="text-sm text-gray-500 mb-6">Select the SharePoint list you want to connect to Agora. The list must already exist in SharePoint.</p>
+            <p className="text-sm text-gray-500 mb-6">These are the SharePoint lists you have been granted access to. Select one to connect it to Agora.</p>
 
             {spLists.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-500">No SharePoint lists found. Make sure your SharePoint connection is configured in Admin → SharePoint Settings.</p>
+                <p className="text-gray-500">No SharePoint lists are available to you. An admin can register lists and grant access in Admin → SharePoint Settings.</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -271,8 +260,10 @@ export function SharePointImportClient({ workspaces }: { workspaces: any[] }) {
                         (isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50')}>
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className={'font-medium ' + (isSelected ? 'text-blue-900' : 'text-gray-900')}>{list.displayName}</p>
-                          {list.description && <p className="text-xs text-gray-400 mt-0.5">{list.description}</p>}
+                          <p className={'font-medium ' + (isSelected ? 'text-blue-900' : 'text-gray-900')}>{list.name}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            SharePoint list: {list.listName}{list.description ? ' — ' + list.description : ''}
+                          </p>
                         </div>
                         {isSelected && <span className="text-blue-600 text-lg">✓</span>}
                       </div>
