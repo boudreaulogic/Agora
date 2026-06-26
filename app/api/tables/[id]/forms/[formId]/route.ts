@@ -52,6 +52,7 @@ export async function PATCH(
       ...(body.isActive !== undefined && { isActive: body.isActive }),
       ...(body.allowMultiple !== undefined && { allowMultiple: body.allowMultiple }),
       ...(body.pages !== undefined && { pages: body.pages }),
+      ...(body.theme !== undefined && { theme: body.theme }),
     },
   });
 

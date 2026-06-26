@@ -305,6 +305,44 @@ export default function PublicFormPage(pageProps: any) {
   var rgRows = rgState[0]; var setRgRows = rgState[1];
   var crgState = useState<any>({});
   var customRgData = crgState[0]; var setCustomRgData = crgState[1];
+  // Appearance/embed: parent page font (for embeds), embed-mode flag.
+  var pfState = useState(''); var parentFont = pfState[0]; var setParentFont = pfState[1];
+  var emState = useState(false); var isEmbed = emState[0]; var setIsEmbed = emState[1];
+
+  // Detect embed mode (?embed=1 or running inside a frame).
+  useEffect(function() {
+    try {
+      var p = new URLSearchParams(window.location.search).get('embed');
+      setIsEmbed(p === '1' || window.parent !== window);
+    } catch {}
+  }, []);
+
+  // Receive the host page's font so an embedded form matches the site.
+  useEffect(function() {
+    function onMsg(e: any) {
+      if (e && e.data && e.data.type === 'agora-parent-style' && typeof e.data.fontFamily === 'string') {
+        setParentFont(e.data.fontFamily.slice(0, 300));
+      }
+    }
+    window.addEventListener('message', onMsg);
+    return function() { window.removeEventListener('message', onMsg); };
+  }, []);
+
+  // Report content height to the parent so the iframe can auto-resize (no scrollbars).
+  useEffect(function() {
+    function postHeight() {
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'agora-form-height', slug: params.slug, height: document.body.scrollHeight }, '*');
+        }
+      } catch {}
+    }
+    postHeight();
+    var ro: any = null;
+    if (typeof ResizeObserver !== 'undefined') { ro = new ResizeObserver(postHeight); ro.observe(document.body); }
+    window.addEventListener('resize', postHeight);
+    return function() { if (ro) ro.disconnect(); window.removeEventListener('resize', postHeight); };
+  }, [form, submitted, currentPage]);
   // Anti-spam: honeypot value (bots fill it) + Cloudflare Turnstile token.
   var hpState = useState('');
   var hp = hpState[0]; var setHp = hpState[1];
@@ -674,27 +712,40 @@ export default function PublicFormPage(pageProps: any) {
     }
   }
 
-  if (loading) return <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
-  if (formError && !form) return <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center"><div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 max-w-md text-center"><h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Form Not Available</h1><p className="text-gray-500">{formError}</p></div></div>;
-  if (submitted) return <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center"><div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 max-w-md text-center"><h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">Submitted!</h1><p className="text-gray-600 dark:text-gray-400">{thankYouMessage}</p><p className="text-xs text-gray-400 mt-6 flex items-center justify-center space-x-1.5"><span>Powered by</span><span className="font-medium">Agora</span></p></div></div>;
+  // ---- Appearance theme (defaults when form.theme is null) ----
+  var th = Object.assign({ background: 'gray', showCard: true, accentColor: '#2563eb', logoColor: '#1E3A5F', hideBranding: false, inheritFont: true }, (form && form.theme) || {});
+  var accent = th.accentColor || '#2563eb';
+  var transparentBg = th.background === 'transparent';
+  var bgClass = transparentBg ? '' : (th.background === 'white' ? 'bg-white dark:bg-gray-950' : 'bg-gray-50 dark:bg-gray-950');
+  var cardChrome = th.showCard ? 'bg-white dark:bg-gray-900 shadow-sm border border-gray-200 dark:border-gray-700' : 'bg-transparent';
+  var rootStyle: any = {};
+  if (th.inheritFont && parentFont) rootStyle.fontFamily = parentFont;
+  var outerClass = [isEmbed ? '' : 'min-h-screen', bgClass, isEmbed ? 'py-2 px-2' : 'py-8 px-4'].filter(Boolean).join(' ');
+  var statusClass = (isEmbed ? '' : 'min-h-screen ') + bgClass + ' flex items-center justify-center py-10';
+
+  if (loading) return <div className={statusClass} style={rootStyle}><div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: accent }} /></div>;
+  if (formError && !form) return <div className={statusClass} style={rootStyle}><div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 max-w-md text-center"><h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Form Not Available</h1><p className="text-gray-500">{formError}</p></div></div>;
+  if (submitted) return <div className={statusClass} style={rootStyle}><div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 max-w-md text-center"><h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">Submitted!</h1><p className="text-gray-600 dark:text-gray-400">{thankYouMessage}</p>{!th.hideBranding && <p className="text-xs text-gray-400 mt-6 flex items-center justify-center space-x-1.5"><span>Powered by</span><span className="font-medium">Agora</span></p>}</div></div>;
 
   var visibleFields = getVisibleFieldsForPage(currentPage);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-8 px-4">
+    <div className={outerClass} style={rootStyle}>
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white dark:bg-gray-900 rounded-t-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 border-b-0">
-          <div className="flex items-center space-x-2 mb-4">
-            <svg width="28" height="28" viewBox="0 0 512 512"><circle cx="256" cy="256" r="220" fill="#1E3A5F"/><polygon points="256,100 360,380 300,380 276,310 236,310 212,380 152,380" fill="white"/></svg>
-            <span className="text-sm font-semibold text-gray-400">Agora</span>
-          </div>
-          <div className="border-l-4 border-blue-600 pl-6">
+        <div className={'rounded-t-xl p-8 ' + cardChrome + (th.showCard ? ' border-b-0' : '')}>
+          {!th.hideBranding && (
+            <div className="flex items-center space-x-2 mb-4">
+              <svg width="28" height="28" viewBox="0 0 512 512"><circle cx="256" cy="256" r="220" fill={th.logoColor}/><polygon points="256,100 360,380 300,380 276,310 236,310 212,380 152,380" fill="white"/></svg>
+              <span className="text-sm font-semibold text-gray-400">Agora</span>
+            </div>
+          )}
+          <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{form.name}</h1>
             {form.description && <p className="mt-2 text-gray-600 dark:text-gray-400">{form.description}</p>}
           </div>
         </div>
         {isMultiPage && (
-          <div className="bg-white dark:bg-gray-900 border-x border-gray-200 dark:border-gray-700 px-8 py-4">
+          <div className={(th.showCard ? 'bg-white dark:bg-gray-900 border-x border-gray-200 dark:border-gray-700 ' : '') + 'px-8 py-4'}>
             <div className="flex items-center justify-center flex-wrap gap-2">
               {pages.map(function(page: any, pi: number) {
                 return (<button key={page.id} onClick={function() { goToPage(pi); }} className={'inline-flex items-center space-x-1.5 px-4 py-2 rounded-full text-sm transition-colors ' + (pi === currentPage ? 'bg-blue-600 text-white shadow-sm' : pi < currentPage ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200')}>
@@ -706,7 +757,7 @@ export default function PublicFormPage(pageProps: any) {
             </div>
           </div>
         )}
-        <form onSubmit={handleSubmit}className="bg-white dark:bg-gray-900 rounded-b-xl shadow-sm border border-gray-200 dark:border-gray-700 border-t-0">
+        <form onSubmit={handleSubmit} className={'rounded-b-xl ' + cardChrome + (th.showCard ? ' border-t-0' : '')}>
           <div className="p-8 space-y-6">
             {formError && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">{formError}</div>}
             {isMultiPage && currentPageObj && (<div className="mb-2"><h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{currentPageObj.title}</h2>{currentPageObj.description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{currentPageObj.description}</p>}</div>)}
@@ -731,13 +782,13 @@ export default function PublicFormPage(pageProps: any) {
             {form.turnstileSiteKey && (<div className="mb-4 flex justify-center"><div ref={turnstileRef} /></div>)}
             <div className="flex items-center justify-between">
               {isMultiPage && currentPage > 0 ? (<button type="button" onClick={function() { goToPage(currentPage - 1); }} className="px-6 py-3 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">Back</button>) : <div />}
-              {isMultiPage && currentPage < pages.length - 1 ? (<button type="button" onClick={function(e) { e.preventDefault(); e.stopPropagation(); goToPage(currentPage + 1); }} className="px-6 py-3 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700">Next</button>) : (<button type="button" disabled={submitting || (form.turnstileSiteKey && !tsToken)} onClick={function() { setShowConfirm(true); }} className="px-8 py-3 text-sm font-semibold bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">{submitting ? 'Submitting...' : form.submitButtonText || 'Submit'}</button>)}
+              {isMultiPage && currentPage < pages.length - 1 ? (<button type="button" onClick={function(e) { e.preventDefault(); e.stopPropagation(); goToPage(currentPage + 1); }} className="px-6 py-3 text-sm font-semibold text-white rounded-lg" style={{ backgroundColor: accent }}>Next</button>) : (<button type="button" disabled={submitting || (form.turnstileSiteKey && !tsToken)} onClick={function() { setShowConfirm(true); }} className="px-8 py-3 text-sm font-semibold text-white rounded-lg disabled:opacity-50" style={{ backgroundColor: accent }}>{submitting ? 'Submitting...' : form.submitButtonText || 'Submit'}</button>)}
             </div>
             {isMultiPage && (<p className="text-center text-xs text-gray-400 mt-3">Page {currentPage + 1} of {pages.length}</p>)}
           </div>
         </form>
-        {showConfirm && (<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={function() { setShowConfirm(false); }}><div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4" onClick={function(e) { e.stopPropagation(); }}><div className="text-center"><h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Ready to submit?</h3><p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{isMultiPage ? 'Please review all ' + pages.length + ' pages before submitting.' : 'Please review all fields before submitting.'}</p></div><div className="flex items-center space-x-3 pt-2"><button type="button" onClick={function() { setShowConfirm(false); }} className="flex-1 px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">Go Back</button><button type="button" onClick={function() { handleSubmit(); }} disabled={submitting} className="flex-1 px-4 py-3 text-sm font-semibold bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">{submitting ? 'Submitting...' : 'Yes, Submit'}</button></div></div></div>)}
-        <p className="text-center text-xs text-gray-400 mt-4 flex items-center justify-center space-x-1.5"><span>Powered by</span><svg width="14" height="14" viewBox="0 0 512 512"><circle cx="256" cy="256" r="220" fill="#9CA3AF"/><polygon points="256,100 360,380 300,380 276,310 236,310 212,380 152,380" fill="white"/></svg><span className="font-medium">Agora</span></p>
+        {showConfirm && (<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={function() { setShowConfirm(false); }}><div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4" onClick={function(e) { e.stopPropagation(); }}><div className="text-center"><h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Ready to submit?</h3><p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{isMultiPage ? 'Please review all ' + pages.length + ' pages before submitting.' : 'Please review all fields before submitting.'}</p></div><div className="flex items-center space-x-3 pt-2"><button type="button" onClick={function() { setShowConfirm(false); }} className="flex-1 px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">Go Back</button><button type="button" onClick={function() { handleSubmit(); }} disabled={submitting} className="flex-1 px-4 py-3 text-sm font-semibold text-white rounded-lg disabled:opacity-50" style={{ backgroundColor: accent }}>{submitting ? 'Submitting...' : 'Yes, Submit'}</button></div></div></div>)}
+        {!th.hideBranding && <p className="text-center text-xs text-gray-400 mt-4 flex items-center justify-center space-x-1.5"><span>Powered by</span><svg width="14" height="14" viewBox="0 0 512 512"><circle cx="256" cy="256" r="220" fill="#9CA3AF"/><polygon points="256,100 360,380 300,380 276,310 236,310 212,380 152,380" fill="white"/></svg><span className="font-medium">Agora</span></p>}
       </div>
     </div>
   );
