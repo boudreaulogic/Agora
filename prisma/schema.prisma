@@ -644,7 +644,10 @@ model AgoraForm {
   
   fields           Json     @default("[]")
   pages            Json     @default("[]")
-  
+  // Appearance/theme for the public + embedded render (background, accent color,
+  // logo color, branding visibility, font inheritance). Null = defaults.
+  theme            Json?
+
   isActive         Boolean  @default(true)
   allowMultiple    Boolean  @default(true)
   

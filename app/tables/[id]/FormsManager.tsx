@@ -92,8 +92,19 @@ export function FormsManager({
   }
 
   function copyEmbedCode(slug: string) {
-    const url = window.location.origin + '/forms/' + slug;
-    navigator.clipboard.writeText('<iframe src="' + url + '" width="100%" height="800" frameborder="0"></iframe>');
+    const origin = window.location.origin;
+    const src = origin + '/forms/' + slug + '?embed=1';
+    // iframe + a small script that (1) auto-resizes the frame to the form's
+    // height (no scrollbars/dead space) and (2) passes the host page's font in
+    // so the form matches your site. Paste into a "Custom HTML" block.
+    const code =
+      '<iframe id="agora-form-' + slug + '" src="' + src + '" style="width:100%;border:0;overflow:hidden;" scrolling="no"></iframe>\n' +
+      '<script>(function(){var f=document.getElementById("agora-form-' + slug + '");' +
+      'window.addEventListener("message",function(e){if(e.origin!=="' + origin + '")return;' +
+      'if(e.data&&e.data.type==="agora-form-height"&&e.data.slug==="' + slug + '"){f.style.height=e.data.height+"px";}});' +
+      'f.addEventListener("load",function(){try{f.contentWindow.postMessage({type:"agora-parent-style",fontFamily:getComputedStyle(document.body).fontFamily},"' + origin + '");}catch(x){}});' +
+      '})();<\/script>';
+    navigator.clipboard.writeText(code);
     setCopiedSlug(slug + '-embed');
     setTimeout(() => setCopiedSlug(null), 2000);
   }

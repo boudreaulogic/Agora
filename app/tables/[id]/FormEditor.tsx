@@ -32,8 +32,11 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
   var rcprs = useState<string[]>([]); var rgColumnsPerRow = rcprs[0]; var setRgColumnsPerRow = rcprs[1];
   var rrcs = useState(5); var rgRowCount = rrcs[0]; var setRgRowCount = rrcs[1];
   var rcss = useState(''); var rgColumnSearch = rcss[0]; var setRgColumnSearch = rcss[1];
+  var ths = useState<any>(Object.assign({ background: 'gray', showCard: true, accentColor: '#2563eb', logoColor: '#1E3A5F', hideBranding: false, inheritFont: true }, form.theme || {})); var theme = ths[0]; var setTheme = ths[1];
+  var saps = useState(false); var showAppearance = saps[0]; var setShowAppearance = saps[1];
+  function setThemeKey(k: string, v: any) { setTheme(function(p: any) { return Object.assign({}, p, { [k]: v }); }); }
 
-  async function handleSave() { setSaving(true); try { await onUpdate({ name: name, description: description, submitButtonText: submitButtonText, thankYouMessage: thankYouMessage, fields: fields, pages: pages }); setSaved(true); setTimeout(function() { setSaved(false); }, 2000); } finally { setSaving(false); } }
+  async function handleSave() { setSaving(true); try { await onUpdate({ name: name, description: description, submitButtonText: submitButtonText, thankYouMessage: thankYouMessage, fields: fields, pages: pages, theme: theme }); setSaved(true); setTimeout(function() { setSaved(false); }, 2000); } finally { setSaving(false); } }
   function updateField(index: number, updates: any) { setFields(function(prev) { return prev.map(function(f, i) { return i === index ? Object.assign({}, f, updates) : f; }); }); }
   function moveField(index: number, direction: 'up' | 'down') { var gi = fields.map(function(f, i) { return f.pageId === activePageId ? i : -1; }).filter(function(i) { return i !== -1; }); var li = gi.indexOf(index); var ni = direction === 'up' ? li - 1 : li + 1; if (ni < 0 || ni >= gi.length) return; var nf = fields.slice(); var t = nf[gi[li]]; nf[gi[li]] = nf[gi[ni]]; nf[gi[ni]] = t; setFields(nf); setActiveFieldIndex(gi[ni]); }
   function removeField(index: number) { setFields(function(prev) { return prev.filter(function(_, i) { return i !== index; }); }); setActiveFieldIndex(null); setShowFieldSettings(false); setShowRgSettings(false); }
@@ -170,6 +173,47 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
           </div>
           <div><label className="block text-[9px] font-bold text-gray-400 uppercase mb-0.5">Description</label><input type="text" value={description} onChange={function(e) { setDescription(e.target.value); }} placeholder="Optional..." className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-800 dark:text-gray-200" /></div>
           <div><label className="block text-[9px] font-bold text-gray-400 uppercase mb-0.5">Thank You Message</label><input type="text" value={thankYouMessage} onChange={function(e) { setThankYouMessage(e.target.value); }} className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-800 dark:text-gray-200" /></div>
+          {/* Appearance / theming — applies to the public + embedded form */}
+          <div className="pt-1.5 border-t border-gray-100 dark:border-gray-800">
+            <button onClick={function() { setShowAppearance(!showAppearance); }} className="w-full flex items-center justify-between text-[9px] font-bold text-gray-400 uppercase py-0.5 hover:text-gray-600">
+              <span>{'\u{1F3A8}'} Appearance</span><span>{showAppearance ? '▾' : '▸'}</span>
+            </button>
+            {showAppearance && (
+              <div className="space-y-2 pt-1.5">
+                <div>
+                  <label className="block text-[9px] font-medium text-gray-500 mb-0.5">Background</label>
+                  <select value={theme.background} onChange={function(e) { setThemeKey('background', e.target.value); }} className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 dark:text-gray-200">
+                    <option value="gray">Light gray</option>
+                    <option value="white">White</option>
+                    <option value="transparent">Transparent (blends into your site)</option>
+                  </select>
+                </div>
+                <label className="flex items-center justify-between text-[10px] text-gray-600 dark:text-gray-300 cursor-pointer">
+                  <span>Show card panel</span>
+                  <input type="checkbox" checked={theme.showCard !== false} onChange={function(e) { setThemeKey('showCard', e.target.checked); }} className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600" />
+                </label>
+                <label className="flex items-center justify-between text-[10px] text-gray-600 dark:text-gray-300 cursor-pointer">
+                  <span>Use host site's font when embedded</span>
+                  <input type="checkbox" checked={theme.inheritFont !== false} onChange={function(e) { setThemeKey('inheritFont', e.target.checked); }} className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600" />
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[9px] font-medium text-gray-500 mb-0.5">Accent color</label>
+                    <input type="color" value={theme.accentColor || '#2563eb'} onChange={function(e) { setThemeKey('accentColor', e.target.value); }} className="w-full h-7 rounded border border-gray-300 dark:border-gray-600 cursor-pointer bg-white dark:bg-gray-800" />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-medium text-gray-500 mb-0.5">Logo color</label>
+                    <input type="color" value={theme.logoColor || '#1E3A5F'} onChange={function(e) { setThemeKey('logoColor', e.target.value); }} className="w-full h-7 rounded border border-gray-300 dark:border-gray-600 cursor-pointer bg-white dark:bg-gray-800" />
+                  </div>
+                </div>
+                <label className="flex items-center justify-between text-[10px] text-gray-600 dark:text-gray-300 cursor-pointer">
+                  <span>Hide Agora branding</span>
+                  <input type="checkbox" checked={theme.hideBranding === true} onChange={function(e) { setThemeKey('hideBranding', e.target.checked); }} className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600" />
+                </label>
+                <p className="text-[9px] text-gray-400">Click <strong>Save Form</strong> to apply — changes show on the live &amp; embedded form.</p>
+              </div>
+            )}
+          </div>
         </div>
         {/* Page tabs */}
         <div className="flex items-center border-b border-gray-200 dark:border-gray-700 px-2 py-1.5 flex-shrink-0 overflow-x-auto space-x-1">

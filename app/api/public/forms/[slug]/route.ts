@@ -84,6 +84,7 @@ export async function GET(
       thankYouMessage: form.thankYouMessage,
       fields: publicFields,
       pages: form.pages || [{ id: 'page_1', title: 'Page 1', description: '' }],
+      theme: form.theme || null,
       // Non-null only when Cloudflare Turnstile is configured — tells the form
       // whether to render the captcha widget.
       turnstileSiteKey: turnstileSiteKey(),
