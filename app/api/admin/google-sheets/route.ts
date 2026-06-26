@@ -14,9 +14,11 @@ export async function GET(request: Request) {
 
   const emailSetting = await db.systemSetting.findUnique({ where: { key: 'google_sheets_email' } });
   const keySetting = await db.systemSetting.findUnique({ where: { key: 'google_sheets_key' } });
+  const driveFolderSetting = await db.systemSetting.findUnique({ where: { key: 'google_drive_folder_id' } });
 
   return NextResponse.json({
     serviceEmail: emailSetting?.value || '',
+    driveFolderId: driveFolderSetting?.value || '',
     isConfigured: !!(emailSetting?.value && keySetting?.value),
   });
 }
@@ -29,10 +31,19 @@ export async function PUT(request: Request) {
   const admin = await isAdmin(session.user.id);
   if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const { serviceEmail, serviceKey } = await request.json();
+  const { serviceEmail, serviceKey, driveFolderId } = await request.json();
 
   if (!serviceEmail?.trim()) {
     return NextResponse.json({ error: 'Service account email is required' }, { status: 400 });
+  }
+
+  // Drive folder / Shared Drive ID for attachment uploads (not encrypted).
+  if (driveFolderId !== undefined) {
+    await db.systemSetting.upsert({
+      where: { key: 'google_drive_folder_id' },
+      create: { key: 'google_drive_folder_id', value: (driveFolderId || '').trim(), encrypted: false },
+      update: { value: (driveFolderId || '').trim() },
+    });
   }
 
   // Save email (not encrypted — users need to see it)

@@ -11,6 +11,7 @@ export function GoogleSheetsSettingsClient() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [showKey, setShowKey] = useState(false);
+  const [driveFolderId, setDriveFolderId] = useState('');
 
   useEffect(() => {
     fetchSettings();
@@ -23,6 +24,7 @@ export function GoogleSheetsSettingsClient() {
       if (res.ok) {
         const data = await res.json();
         setServiceEmail(data.serviceEmail || '');
+        setDriveFolderId(data.driveFolderId || '');
         setIsConfigured(data.isConfigured || false);
         // Never return the actual key — just show if it's set
         if (data.isConfigured) {
@@ -48,7 +50,7 @@ export function GoogleSheetsSettingsClient() {
     setSaving(true);
     setTestResult(null);
     try {
-      const body: any = { serviceEmail: serviceEmail.trim() };
+      const body: any = { serviceEmail: serviceEmail.trim(), driveFolderId: driveFolderId.trim() };
       if (serviceKey !== '••••••••••••••••••••••••••••••••') {
         body.serviceKey = serviceKey.trim();
       }
@@ -178,6 +180,20 @@ export function GoogleSheetsSettingsClient() {
             </div>
           )}
           <p className="text-xs text-gray-400 mt-1">The private key is encrypted before storage and never displayed again</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Attachments Shared Drive ID <span className="text-gray-400 font-normal">(for PDF exports)</span></label>
+          <input
+            type="text"
+            value={driveFolderId}
+            onChange={(e) => setDriveFolderId(e.target.value)}
+            placeholder="0AHd... (Shared Drive or folder ID)"
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-mono"
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Where exported PDFs are uploaded before being hyperlinked into the sheet. A service account has no Drive storage of its own, so create a <strong>Shared Drive</strong>, add <code className="bg-gray-100 px-1 rounded text-[11px]">{serviceEmail || 'the service account'}</code> as <strong>Content Manager</strong>, and paste its ID (the part after <code className="bg-gray-100 px-1 rounded text-[11px]">/drive/folders/</code> in the URL).
+          </p>
         </div>
 
         {/* Test Result */}

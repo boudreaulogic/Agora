@@ -269,9 +269,24 @@ export async function getGoogleDriveClient() {
 }
 
 /**
- * Upload a file to Google Drive in a specific folder.
- * Creates the folder path if it doesn't exist.
- * Returns the file's webViewLink.
+ * The configured destination for attachment uploads — a Shared Drive (or a
+ * folder inside one) that the service account is a member of. A service account
+ * has NO "My Drive" storage quota, so uploads must land in a Shared Drive whose
+ * storage is pooled. Set in Admin → Google Sheets.
+ */
+export async function getConfiguredDriveFolderId(): Promise<string | null> {
+  try {
+    var s = await db.systemSetting.findUnique({ where: { key: 'google_drive_folder_id' } });
+    return s?.value ? s.value.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Upload a file to Google Drive under the configured Shared Drive folder.
+ * Creates the named subfolder if needed, makes the file viewable by anyone with
+ * the link (so a sheet HYPERLINK opens), and returns the file's webViewLink.
  */
 export async function uploadToDrive(
   filename: string,
@@ -284,10 +299,16 @@ export async function uploadToDrive(
     var drive = await getGoogleDriveClient();
     if (!drive) return { success: false, error: 'Google Drive not configured' };
 
-    // Find or create the folder
-    var folderId = await findOrCreateFolder(drive, folderName, parentFolderId);
+    // Resolve the root: explicit parent, else the configured Shared Drive folder.
+    var rootId = parentFolderId || await getConfiguredDriveFolderId();
+    if (!rootId) {
+      return { success: false, error: 'No Google Drive folder configured. Create a Shared Drive, add the service account as Content Manager, and set its ID in Admin → Google Sheets.' };
+    }
 
-    // Upload the file
+    // Find or create the per-table subfolder under that root.
+    var folderId = await findOrCreateFolder(drive, folderName, rootId);
+
+    // Upload the file (supportsAllDrives required for Shared Drives).
     var { Readable } = await import('stream');
     var stream = new Readable();
     stream.push(fileBuffer);
@@ -303,7 +324,19 @@ export async function uploadToDrive(
         body: stream,
       },
       fields: 'id,webViewLink',
+      supportsAllDrives: true,
     });
+
+    // Make the file viewable by anyone with the link so the HYPERLINK works.
+    try {
+      await drive.permissions.create({
+        fileId: fileRes.data.id as string,
+        requestBody: { role: 'reader', type: 'anyone' },
+        supportsAllDrives: true,
+      });
+    } catch (permErr: any) {
+      console.error('[Google Drive] Could not set link permission:', permErr.message);
+    }
 
     console.log('[Google Drive] Uploaded: ' + filename + ' to folder: ' + folderName);
     return {
@@ -330,6 +363,8 @@ async function findOrCreateFolder(drive: any, folderName: string, parentId?: str
     q: query,
     fields: 'files(id,name)',
     spaces: 'drive',
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true,
   });
 
   if (searchRes.data.files && searchRes.data.files.length > 0) {
@@ -348,6 +383,7 @@ async function findOrCreateFolder(drive: any, folderName: string, parentId?: str
   var createRes = await drive.files.create({
     requestBody: folderMeta,
     fields: 'id',
+    supportsAllDrives: true,
   });
 
   console.log('[Google Drive] Created folder: ' + folderName);
