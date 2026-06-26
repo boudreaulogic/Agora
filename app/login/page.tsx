@@ -6,17 +6,22 @@ import { LoginForm } from './LoginForm';
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  searchParams: { error?: string; callbackUrl?: string };
 }) {
+  // Post-login destination. Only same-origin relative paths are allowed
+  // (must start with a single '/') to prevent open-redirect abuse.
+  const rawCb = searchParams?.callbackUrl || '';
+  const dest = rawCb.startsWith('/') && !rawCb.startsWith('//') ? rawCb : '/';
+
   // Fresh install check — redirect to setup if no users exist
   const userCount = await db.user.count();
   if (userCount === 0) {
     redirect('/setup');
   }
   const session = await auth();
-  
+
   if (session?.user) {
-    redirect('/');
+    redirect(dest);
   }
   async function handleLogin(formData: FormData) {
     'use server';
@@ -32,7 +37,7 @@ export default async function LoginPage({
       await signIn('credentials', {
         email: email,
         password: formData.get('password'),
-        redirectTo: user?.mfaEnabled ? '/verify-mfa' : '/',
+        redirectTo: user?.mfaEnabled ? '/verify-mfa?callbackUrl=' + encodeURIComponent(dest) : dest,
       });
     } catch (error: any) {
       if (error?.message?.includes('NEXT_REDIRECT')) throw error;

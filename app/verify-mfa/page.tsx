@@ -64,8 +64,13 @@ export default function VerifyMfaPage() {
         body: JSON.stringify({ action: 'verify', code: fullCode }),
       });
       if (res.ok) {
-        // Set a cookie or session flag to mark MFA as verified
-        router.push('/');
+        // Return to where login was headed (e.g. an approval link), if safe.
+        var dest = '/';
+        try {
+          var cb = new URLSearchParams(window.location.search).get('callbackUrl') || '';
+          if (cb.startsWith('/') && !cb.startsWith('//')) dest = cb;
+        } catch {}
+        router.push(dest);
       } else {
         var data = await res.json();
         setError(data.error || 'Verification failed');
