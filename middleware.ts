@@ -27,6 +27,21 @@ function isPublic(pathname: string): boolean {
 
 var isProd = process.env.NODE_ENV === 'production';
 
+// Routes allowed to be embedded in an <iframe> on an external site (public
+// forms, embeddable dashboards). Everything else stays X-Frame-Options DENY /
+// frame-ancestors 'none' so the authenticated app can't be clickjacked.
+var EMBED_PREFIXES = ['/forms/', '/embed/'];
+// Allowed parent origins for embedding. Override with FORM_EMBED_ORIGINS
+// (space- or comma-separated). Defaults to the Boudreau Logic WordPress site.
+var EMBED_ANCESTORS = (process.env.FORM_EMBED_ORIGINS || 'https://boudreaulogic.com https://www.boudreaulogic.com')
+  .replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
+function isEmbeddablePath(pathname: string): boolean {
+  for (var i = 0; i < EMBED_PREFIXES.length; i++) {
+    if (pathname.startsWith(EMBED_PREFIXES[i])) return true;
+  }
+  return false;
+}
+
 // Cookie name must match the name configured in lib/auth.ts
 var SESSION_COOKIE = isProd
   ? '__Host-next-auth.session-token'
@@ -76,17 +91,25 @@ export async function middleware(request: NextRequest) {
   var isDev = process.env.NODE_ENV === 'development';
 
   // Content Security Policy
+  // Embeddable routes (forms/dashboards) may be framed by the allowed parent
+  // origins; everything else forbids framing entirely. challenges.cloudflare.com
+  // is whitelisted so an optional Cloudflare Turnstile widget can load on forms.
+  var embeddable = isEmbeddablePath(pathname);
+  var frameAncestors = embeddable
+    ? "frame-ancestors 'self' " + EMBED_ANCESTORS
+    : "frame-ancestors 'none'";
   var csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com https://challenges.cloudflare.com",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' blob: data:",
     "font-src 'self'",
-    "connect-src 'self' wss://* ws://*",
+    "connect-src 'self' wss://* ws://* https://challenges.cloudflare.com",
+    "frame-src 'self' https://challenges.cloudflare.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
-    "frame-ancestors 'none'",
+    frameAncestors,
     isDev ? '' : 'upgrade-insecure-requests',
   ].filter(Boolean).join('; ');
 
@@ -158,7 +181,9 @@ export async function middleware(request: NextRequest) {
 
   // Security headers
   response.headers.set('Content-Security-Policy', csp);
-  response.headers.set('X-Frame-Options', 'DENY');
+  // X-Frame-Options can't express an allowlist, so only DENY on non-embeddable
+  // routes; embeddable routes rely on the CSP frame-ancestors directive above.
+  if (!embeddable) response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set(
