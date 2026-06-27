@@ -13,7 +13,9 @@ var PUBLIC_PREFIXES = [
   '/api/auth/',      // NextAuth's own endpoints
   '/api/public/',    // public form submission endpoints
   '/api/approvals/', // token-gated approval links (token is the credential)
+  '/api/insights/embed-query', // token-gated embedded dashboard queries (token is the credential)
   '/forms/',         // public form pages
+  '/embed/',         // token-gated embedded dashboard pages (token is the credential)
   '/_next/',
 ];
 

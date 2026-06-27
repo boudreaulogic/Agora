@@ -17,6 +17,7 @@ export async function POST(request: Request) {
         function: body.function || 'count',
         filters: body.filters,
         compareFilters: body.compareFilters,
+        sparkline: body.sparkline,
       });
       return NextResponse.json(kpiResult);
     }
@@ -40,11 +41,14 @@ export async function POST(request: Request) {
       return NextResponse.json(mtResult);
     }
 
-    // Default: widget query
+    // Default: widget query (with optional pivot via `series`)
     var result = await executeWidgetQuery({
       tableId: body.tableId,
       groupBy: body.groupBy,
-	  dateGrouping: body.dateGrouping || undefined,
+      dateGrouping: body.dateGrouping || undefined,
+      series: body.series || undefined,
+      seriesDateGrouping: body.seriesDateGrouping || undefined,
+      seriesLimit: body.seriesLimit || undefined,
       aggregations: body.aggregations || [],
       filters: body.filters,
       orderBy: body.orderBy,
