@@ -11,7 +11,7 @@ export default async function DataModelPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
       <AppSidebar />
       <main className="flex-1 overflow-hidden">
         <DataModelClient />

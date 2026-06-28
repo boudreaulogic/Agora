@@ -185,14 +185,14 @@ export function ConditionalFormattingModal({
       <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
 
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Conditional Formatting</h2>
-              <p className="text-xs text-gray-500 mt-0.5">Color rows and cells based on rules. Last matching rule wins.</p>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Conditional Formatting</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Color rows and cells based on rules. Last matching rule wins.</p>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -204,8 +204,8 @@ export function ConditionalFormattingModal({
             {rules.length === 0 ? (
               <div className="text-center py-10">
                 <div className="text-3xl mb-3">🎨</div>
-                <p className="text-sm font-medium text-gray-900 mb-1">No formatting rules yet</p>
-                <p className="text-xs text-gray-500 mb-4">Add rules to highlight rows and cells based on conditions</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">No formatting rules yet</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Add rules to highlight rows and cells based on conditions</p>
                 <button onClick={addRule} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                   + Add Rule
                 </button>
@@ -226,12 +226,12 @@ export function ConditionalFormattingModal({
                       onDrop={() => handleDrop(index)}
                       className={`border rounded-lg transition-all ${
                         isDragOver ? 'border-blue-400 bg-blue-50' :
-                        isExpanded ? 'border-blue-300 bg-white shadow-sm' : 'border-gray-200 bg-white'
+                        isExpanded ? 'border-blue-300 bg-white dark:bg-gray-900 shadow-sm' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
                       }`}
                     >
                       {/* Rule Header (collapsed view) */}
                       <div className="flex items-center px-3 py-2.5 cursor-pointer" onClick={() => setExpandedRule(isExpanded ? null : rule.id)}>
-                        <div className="cursor-grab text-gray-300 hover:text-gray-500 mr-2 flex-shrink-0" title="Drag to reorder">
+                        <div className="cursor-grab text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 mr-2 flex-shrink-0" title="Drag to reorder">
                           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M8 6a2 2 0 100-4 2 2 0 000 4zm0 8a2 2 0 100-4 2 2 0 000 4zm0 8a2 2 0 100-4 2 2 0 000 4zm8-16a2 2 0 100-4 2 2 0 000 4zm0 8a2 2 0 100-4 2 2 0 000 4zm0 8a2 2 0 100-4 2 2 0 000 4z"/>
                           </svg>
@@ -243,7 +243,7 @@ export function ConditionalFormattingModal({
                           style={{ backgroundColor: rule.bgColor || '#fff' }}
                         />
 
-                        <span className="text-xs text-gray-700 flex-1 truncate">
+                        <span className="text-xs text-gray-700 dark:text-gray-300 flex-1 truncate">
                           {getRuleSummary(rule)}
                         </span>
 
@@ -262,15 +262,15 @@ export function ConditionalFormattingModal({
 
                       {/* Expanded Rule Editor */}
                       {isExpanded && (
-                        <div className="px-3 pb-3 space-y-3 border-t border-gray-100 pt-3">
+                        <div className="px-3 pb-3 space-y-3 border-t border-gray-100 dark:border-gray-800 pt-3">
                           {/* Condition Row */}
                           <div>
-                            <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">When</label>
+                            <label className="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">When</label>
                             <div className="flex space-x-1.5">
                               <select
                                 value={rule.columnId}
                                 onChange={(e) => updateRule(rule.id, { columnId: e.target.value, value: '' })}
-                                className="flex-1 px-2 py-1.5 text-xs border border-gray-300 rounded-lg bg-white focus:ring-1 focus:ring-blue-500"
+                                className="flex-1 px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-1 focus:ring-blue-500"
                               >
                                 {formattableColumns.map((col: any) => (
                                   <option key={col.id} value={col.id}>{col.name}</option>
@@ -279,7 +279,7 @@ export function ConditionalFormattingModal({
                               <select
                                 value={rule.operator}
                                 onChange={(e) => updateRule(rule.id, { operator: e.target.value })}
-                                className="w-36 px-2 py-1.5 text-xs border border-gray-300 rounded-lg bg-white focus:ring-1 focus:ring-blue-500"
+                                className="w-36 px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-1 focus:ring-blue-500"
                               >
                                 {OPERATORS.map(op => (
                                   <option key={op.value} value={op.value}>{op.label}</option>
@@ -294,7 +294,7 @@ export function ConditionalFormattingModal({
                                   <select
                                     value={rule.value}
                                     onChange={(e) => updateRule(rule.id, { value: e.target.value })}
-                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg bg-white focus:ring-1 focus:ring-blue-500"
+                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-1 focus:ring-blue-500"
                                   >
                                     <option value="">Select a value...</option>
                                     {getSelectOptions(rule.columnId).map((opt: any) => (
@@ -305,7 +305,7 @@ export function ConditionalFormattingModal({
                                   <select
                                     value={rule.value}
                                     onChange={(e) => updateRule(rule.id, { value: e.target.value })}
-                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg bg-white focus:ring-1 focus:ring-blue-500"
+                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-1 focus:ring-blue-500"
                                   >
                                     <option value="true">Checked</option>
                                     <option value="false">Unchecked</option>
@@ -316,7 +316,7 @@ export function ConditionalFormattingModal({
                                     value={rule.value}
                                     onChange={(e) => updateRule(rule.id, { value: e.target.value })}
                                     placeholder="Enter value..."
-                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg bg-white focus:ring-1 focus:ring-blue-500"
+                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-1 focus:ring-blue-500"
                                   />
                                 )}
                               </div>
@@ -325,12 +325,12 @@ export function ConditionalFormattingModal({
 
                           {/* Target */}
                           <div>
-                            <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Apply to</label>
+                            <label className="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Apply to</label>
                             <div className="flex space-x-1.5">
                               <button
                                 onClick={() => updateRule(rule.id, { target: 'row', targetColumnId: undefined })}
                                 className={`flex-1 px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                                  rule.target === 'row' ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                                  rule.target === 'row' ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
                                 }`}
                               >
                                 Entire Row
@@ -338,7 +338,7 @@ export function ConditionalFormattingModal({
                               <button
                                 onClick={() => updateRule(rule.id, { target: 'cell', targetColumnId: rule.columnId })}
                                 className={`flex-1 px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                                  rule.target === 'cell' ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                                  rule.target === 'cell' ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
                                 }`}
                               >
                                 Specific Cell
@@ -359,11 +359,11 @@ export function ConditionalFormattingModal({
 
                           {/* Formatting */}
                           <div>
-                            <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Format</label>
+                            <label className="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Format</label>
 
                             {/* Background color */}
                             <div className="mb-2.5">
-                              <span className="text-[10px] text-gray-400 mb-1 block">Background</span>
+                              <span className="text-[10px] text-gray-400 dark:text-gray-500 mb-1 block">Background</span>
                               <div className="flex items-center flex-wrap gap-1.5">
                                 {PRESET_BG_COLORS.map(c => (
                                   <button
@@ -387,7 +387,7 @@ export function ConditionalFormattingModal({
                                     {rule.bgColor && !PRESET_BG_COLORS.find(p => p.value === rule.bgColor) ? '' : '#'}
                                   </button>
                                   {showCustomBg === rule.id && (
-                                    <div className="absolute top-8 left-0 z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-2">
+                                    <div className="absolute top-8 left-0 z-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2">
                                       <input
                                         type="color"
                                         value={rule.bgColor || '#ffffff'}
@@ -399,7 +399,7 @@ export function ConditionalFormattingModal({
                                         value={rule.bgColor || ''}
                                         onChange={(e) => updateRule(rule.id, { bgColor: e.target.value })}
                                         placeholder="#hex"
-                                        className="w-20 mt-1 px-1.5 py-1 text-[10px] border border-gray-300 rounded"
+                                        className="w-20 mt-1 px-1.5 py-1 text-[10px] border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-gray-200"
                                       />
                                     </div>
                                   )}
@@ -409,7 +409,7 @@ export function ConditionalFormattingModal({
 
                             {/* Text color */}
                             <div className="mb-2.5">
-                              <span className="text-[10px] text-gray-400 mb-1 block">Text color</span>
+                              <span className="text-[10px] text-gray-400 dark:text-gray-500 mb-1 block">Text color</span>
                               <div className="flex items-center flex-wrap gap-1.5">
                                 {PRESET_TEXT_COLORS.map(c => (
                                   <button
@@ -433,7 +433,7 @@ export function ConditionalFormattingModal({
                                     {rule.textColor && !PRESET_TEXT_COLORS.find(p => p.value === rule.textColor) ? '' : '#'}
                                   </button>
                                   {showCustomText === rule.id && (
-                                    <div className="absolute top-8 left-0 z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-2">
+                                    <div className="absolute top-8 left-0 z-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2">
                                       <input
                                         type="color"
                                         value={rule.textColor || '#000000'}
@@ -445,7 +445,7 @@ export function ConditionalFormattingModal({
                                         value={rule.textColor || ''}
                                         onChange={(e) => updateRule(rule.id, { textColor: e.target.value })}
                                         placeholder="#hex"
-                                        className="w-20 mt-1 px-1.5 py-1 text-[10px] border border-gray-300 rounded"
+                                        className="w-20 mt-1 px-1.5 py-1 text-[10px] border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-gray-200"
                                       />
                                     </div>
                                   )}
@@ -461,15 +461,15 @@ export function ConditionalFormattingModal({
                                 onChange={(e) => updateRule(rule.id, { bold: e.target.checked })}
                                 className="h-3.5 w-3.5 text-blue-600 border-gray-300 rounded"
                               />
-                              <span className="text-xs text-gray-600 font-medium">Bold text</span>
+                              <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">Bold text</span>
                             </label>
                           </div>
 
                           {/* Live Preview */}
                           <div>
-                            <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Preview</label>
+                            <label className="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Preview</label>
                             <div
-                              className="px-4 py-2.5 rounded-lg border border-gray-200 text-xs"
+                              className="px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 text-xs"
                               style={{
                                 backgroundColor: rule.bgColor || undefined,
                                 color: rule.textColor || undefined,
@@ -489,13 +489,13 @@ export function ConditionalFormattingModal({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between flex-shrink-0">
-            <button onClick={addRule} className="flex items-center space-x-1.5 px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+          <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
+            <button onClick={addRule} className="flex items-center space-x-1.5 px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
               <span>Add Rule</span>
             </button>
             <div className="flex items-center space-x-2">
-              <button onClick={onClose} className="px-4 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+              <button onClick={onClose} className="px-4 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">Cancel</button>
               <button onClick={handleSave} className="px-4 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Save Rules</button>
             </div>
           </div>

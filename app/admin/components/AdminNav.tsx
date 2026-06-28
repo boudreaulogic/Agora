@@ -31,14 +31,14 @@ export function AdminNav({
   };
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Left: Exit Admin */}
           <div className="flex items-center space-x-8">
             <Link
               href="/"
-              className="flex items-center text-gray-700 hover:text-gray-900 font-medium transition-colors"
+              className="flex items-center text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium transition-colors"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -47,7 +47,7 @@ export function AdminNav({
             </Link>
 
             {/* Divider */}
-            <div className="h-8 w-px bg-gray-300"></div>
+            <div className="h-8 w-px bg-gray-300 dark:bg-gray-600"></div>
 
             {/* Admin Sections */}
             <div className="flex space-x-1">
@@ -57,8 +57,8 @@ export function AdminNav({
                   href={item.href}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     isActive(item.href)
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800'
                   }`}
                 >
                   {item.name}
@@ -71,7 +71,7 @@ export function AdminNav({
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-3 text-gray-700 hover:text-gray-900 transition-colors"
+              className="flex items-center space-x-3 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
             >
               <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm">
                 {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
@@ -94,29 +94,29 @@ export function AdminNav({
                 ></div>
 
                 {/* Menu */}
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
-                  <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-900">{user.name || 'User'}</p>
-                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-20">
+                  <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user.name || 'User'}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
                   </div>
-                  
+
                   <Link
                     href="/"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                     onClick={() => setShowUserMenu(false)}
                   >
                     🏠 Dashboard
                   </Link>
-                  
+
                   <Link
                     href="/admin/users"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                     onClick={() => setShowUserMenu(false)}
                   >
                     👥 Admin Panel
                   </Link>
 
-                  <div className="border-t border-gray-100 mt-2 pt-2">
+                  <div className="border-t border-gray-100 dark:border-gray-800 mt-2 pt-2">
                     <form action={signOutAction}>
                       <button
                         type="submit"

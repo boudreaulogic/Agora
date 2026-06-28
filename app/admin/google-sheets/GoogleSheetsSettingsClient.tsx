@@ -106,8 +106,8 @@ export function GoogleSheetsSettingsClient() {
   return (
     <div className="max-w-2xl mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Google Sheets Integration</h1>
-        <p className="text-sm text-gray-500 mt-1">Connect a Google service account to enable Google Sheets integration for all users.</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Google Sheets Integration</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Connect a Google service account to enable Google Sheets integration for all users.</p>
       </div>
 
       {/* Status Banner */}
@@ -115,10 +115,10 @@ export function GoogleSheetsSettingsClient() {
         <div className="flex items-center space-x-3">
           <span className="text-xl">{isConfigured ? '✅' : '⚠️'}</span>
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
               {isConfigured ? 'Google Sheets Connected' : 'Not Configured'}
             </h3>
-            <p className="text-xs text-gray-600 mt-0.5">
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
               {isConfigured
                 ? 'Users can connect Google Sheets by pasting a sheet URL and sharing it with the service account.'
                 : 'Set up a Google service account to enable Google Sheets integration.'}
@@ -143,22 +143,22 @@ export function GoogleSheetsSettingsClient() {
       )}
 
       {/* Credentials Form */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-5">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-6 space-y-5">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Service Account Email</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Service Account Email</label>
           <input
             type="email"
             value={serviceEmail}
             onChange={(e) => setServiceEmail(e.target.value)}
             placeholder="agora-bot@your-project.iam.gserviceaccount.com"
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm dark:bg-gray-800 dark:text-gray-100"
           />
-          <p className="text-xs text-gray-400 mt-1">This is the email users will share their Google Sheets with</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">This is the email users will share their Google Sheets with</p>
         </div>
 
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="block text-sm font-medium text-gray-700">Service Account Key (JSON)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Service Account Key (JSON)</label>
             {isConfigured && (
               <button onClick={() => { setShowKey(!showKey); if (!showKey) setServiceKey(''); }}
                 className="text-xs text-blue-600 hover:text-blue-800">
@@ -172,27 +172,27 @@ export function GoogleSheetsSettingsClient() {
               onChange={(e) => setServiceKey(e.target.value)}
               placeholder='Paste the entire JSON key file contents here...'
               rows={6}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-mono"
+              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-mono dark:bg-gray-800 dark:text-gray-100"
             />
           ) : (
-            <div className="px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-500 font-mono">
+            <div className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50 text-sm text-gray-500 dark:text-gray-400 font-mono">
               ••••••••••••••••••••••••••••••••
             </div>
           )}
-          <p className="text-xs text-gray-400 mt-1">The private key is encrypted before storage and never displayed again</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">The private key is encrypted before storage and never displayed again</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Attachments Shared Drive ID <span className="text-gray-400 font-normal">(for PDF exports)</span></label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Attachments Shared Drive ID <span className="text-gray-400 dark:text-gray-500 font-normal">(for PDF exports)</span></label>
           <input
             type="text"
             value={driveFolderId}
             onChange={(e) => setDriveFolderId(e.target.value)}
             placeholder="0AHd... (Shared Drive or folder ID)"
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-mono"
+            className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-mono dark:bg-gray-800 dark:text-gray-100"
           />
-          <p className="text-xs text-gray-400 mt-1">
-            Where exported PDFs are uploaded before being hyperlinked into the sheet. A service account has no Drive storage of its own, so create a <strong>Shared Drive</strong>, add <code className="bg-gray-100 px-1 rounded text-[11px]">{serviceEmail || 'the service account'}</code> as <strong>Content Manager</strong>, and paste its ID (the part after <code className="bg-gray-100 px-1 rounded text-[11px]">/drive/folders/</code> in the URL).
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            Where exported PDFs are uploaded before being hyperlinked into the sheet. A service account has no Drive storage of its own, so create a <strong>Shared Drive</strong>, add <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded text-[11px]">{serviceEmail || 'the service account'}</code> as <strong>Content Manager</strong>, and paste its ID (the part after <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded text-[11px]">/drive/folders/</code> in the URL).
           </p>
         </div>
 
@@ -206,12 +206,12 @@ export function GoogleSheetsSettingsClient() {
         )}
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+        <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-2">
             {isConfigured && (
               <>
                 <button onClick={handleTest} disabled={testing}
-                  className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors">
+                  className="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300 disabled:opacity-50 transition-colors">
                   {testing ? 'Testing...' : 'Test Connection'}
                 </button>
                 <button onClick={handleDisconnect}
@@ -230,12 +230,12 @@ export function GoogleSheetsSettingsClient() {
 
       {/* User Instructions */}
       {isConfigured && (
-        <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">How Users Connect a Sheet</h3>
-          <ol className="text-xs text-gray-600 space-y-1 list-decimal ml-4">
+        <div className="mt-6 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">How Users Connect a Sheet</h3>
+          <ol className="text-xs text-gray-600 dark:text-gray-400 space-y-1 list-decimal ml-4">
             <li>Click "+ Create Table" and choose "Connect Google Sheet"</li>
             <li>Paste the Google Sheet URL</li>
-            <li>Share the sheet with <code className="bg-gray-200 px-1.5 py-0.5 rounded font-mono text-[11px]">{serviceEmail}</code> as an Editor</li>
+            <li>Share the sheet with <code className="bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded font-mono text-[11px]">{serviceEmail}</code> as an Editor</li>
             <li>Click Connect — tabs from the sheet appear as tables in Agora</li>
           </ol>
         </div>

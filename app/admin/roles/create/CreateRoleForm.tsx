@@ -87,15 +87,15 @@ export function CreateRoleForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200">
+    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
       {/* Basic Info */}
-      <div className="p-6 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
-        
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Basic Information</h2>
+
         <div className="space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Role Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -103,27 +103,27 @@ export function CreateRoleForm({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Content Editor"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
               required
             />
           </div>
 
           {/* Slug (auto-generated) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Slug (auto-generated)
             </label>
             <input
               type="text"
               value={slug}
               readOnly
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Description
             </label>
             <textarea
@@ -131,7 +131,7 @@ export function CreateRoleForm({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What can users with this role do?"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
             />
           </div>
         </div>
@@ -140,8 +140,8 @@ export function CreateRoleForm({
       {/* Permissions */}
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Permissions</h2>
-          <span className="text-sm text-gray-500">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Permissions</h2>
+          <span className="text-sm text-gray-500 dark:text-gray-400">
             {selectedPermissions.size} selected
           </span>
         </div>
@@ -152,7 +152,7 @@ export function CreateRoleForm({
             const someSelected = permissions.some(p => selectedPermissions.has(p.id));
 
             return (
-              <div key={category} className="border border-gray-200 rounded-lg p-4">
+              <div key={category} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                 {/* Category Header */}
                 <div className="flex items-center mb-3">
                   <input
@@ -164,9 +164,9 @@ export function CreateRoleForm({
                       }
                     }}
                     onChange={() => toggleCategory(permissions)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
                   />
-                  <label className="ml-3 text-sm font-semibold text-gray-900 uppercase tracking-wide">
+                  <label className="ml-3 text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">
                     {category}
                   </label>
                 </div>
@@ -179,14 +179,14 @@ export function CreateRoleForm({
                         type="checkbox"
                         checked={selectedPermissions.has(permission.id)}
                         onChange={() => togglePermission(permission.id)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-0.5"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded mt-0.5"
                       />
                       <div className="ml-3">
-                        <label className="text-sm font-medium text-gray-700">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                           {permission.name}
                         </label>
                         {permission.description && (
-                          <p className="text-xs text-gray-500 mt-0.5">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                             {permission.description}
                           </p>
                         )}
@@ -201,11 +201,11 @@ export function CreateRoleForm({
       </div>
 
       {/* Actions */}
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end space-x-3">
+      <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end space-x-3">
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100"
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
         >
           Cancel
         </button>

@@ -91,11 +91,11 @@ export function GalleryBoard({
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-100 p-6">
+    <div className="flex-1 overflow-y-auto bg-gray-100 dark:bg-gray-950 p-6">
       {/* Search Bar */}
       <div className="mb-4 flex items-center justify-between">
         <div className="relative w-72">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
@@ -103,25 +103,25 @@ export function GalleryBoard({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search cards..."
-            className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
             >
               ✕
             </button>
           )}
         </div>
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-gray-500 dark:text-gray-400">
           {filteredRows.length} card{filteredRows.length !== 1 ? 's' : ''}
         </span>
       </div>
 
       {/* Cards Grid */}
       {filteredRows.length === 0 ? (
-        <div className="text-center py-16 text-gray-500">
+        <div className="text-center py-16 text-gray-500 dark:text-gray-400">
           {searchQuery ? 'No cards match your search.' : 'No records to display.'}
         </div>
       ) : (
@@ -135,7 +135,7 @@ export function GalleryBoard({
               <div
                 key={row.id}
                 onClick={() => onCardClick(row)}
-                className="bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-lg hover:border-gray-300 transition-all group"
+                className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600 transition-all group"
               >
                 {/* Accent Bar */}
                 <div className={`h-1.5 bg-gradient-to-r ${accent}`} />
@@ -143,7 +143,7 @@ export function GalleryBoard({
                 {/* Card Content */}
                 <div className="p-4">
                   {/* Title */}
-                  <h3 className="font-semibold text-gray-900 text-sm mb-3 truncate group-hover:text-blue-700 transition-colors">
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-3 truncate group-hover:text-blue-700 transition-colors">
                     {title}
                   </h3>
 
@@ -157,7 +157,7 @@ export function GalleryBoard({
 
                       return (
                         <div key={col.id} className="flex items-start space-x-2">
-                          <span className="text-xs text-gray-400 w-20 flex-shrink-0 pt-0.5 truncate">
+                          <span className="text-xs text-gray-400 dark:text-gray-500 w-20 flex-shrink-0 pt-0.5 truncate">
                             {col.name}
                           </span>
                           {col.type === 'select' ? (
@@ -165,7 +165,7 @@ export function GalleryBoard({
                               {formatted}
                             </span>
                           ) : col.type === 'checkbox' ? (
-                            <span className={`text-xs font-medium ${val ? 'text-green-600' : 'text-gray-400'}`}>
+                            <span className={`text-xs font-medium ${val ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
                               {formatted}
                             </span>
                           ) : col.type === 'rating' ? (
@@ -175,7 +175,7 @@ export function GalleryBoard({
                           ) : col.type === 'url' ? (
                             <span className="text-xs text-blue-600 truncate">{formatted}</span>
                           ) : (
-                            <span className="text-xs text-gray-700 truncate">{formatted}</span>
+                            <span className="text-xs text-gray-700 dark:text-gray-300 truncate">{formatted}</span>
                           )}
                         </div>
                       );
@@ -184,8 +184,8 @@ export function GalleryBoard({
                 </div>
 
                 {/* Footer */}
-                <div className="px-4 py-2 bg-gray-50 border-t border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="text-xs text-gray-400">Click to view details</span>
+                <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-800 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="text-xs text-gray-400 dark:text-gray-500">Click to view details</span>
                 </div>
               </div>
             );

@@ -17,9 +17,9 @@ export function ImportDuplicateModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-md w-full">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
               <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -27,8 +27,8 @@ export function ImportDuplicateModal({
               </svg>
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Duplicate Rows Detected</h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Duplicate Rows Detected</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 {duplicates === 0 
                   ? 'All rows are new!'
                   : `Found ${duplicates} duplicate row${duplicates !== 1 ? 's' : ''} already in the table`
@@ -41,20 +41,20 @@ export function ImportDuplicateModal({
         {/* Body */}
         <div className="p-6 space-y-4">
           {/* Stats */}
-          <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Total rows in CSV:</span>
-              <span className="font-semibold text-gray-900">{duplicates + newRows}</span>
+              <span className="text-gray-600 dark:text-gray-400">Total rows in CSV:</span>
+              <span className="font-semibold text-gray-900 dark:text-gray-100">{duplicates + newRows}</span>
             </div>
             {duplicates > 0 && (
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">⚠️ Duplicate rows:</span>
+                <span className="text-gray-600 dark:text-gray-400">⚠️ Duplicate rows:</span>
                 <span className="font-semibold text-yellow-700">{duplicates}</span>
               </div>
             )}
             {newRows > 0 && (
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">✅ New rows:</span>
+                <span className="text-gray-600 dark:text-gray-400">✅ New rows:</span>
                 <span className="font-semibold text-green-700">{newRows}</span>
               </div>
             )}
@@ -63,8 +63,8 @@ export function ImportDuplicateModal({
           {/* Options */}
           {duplicates > 0 ? (
             <div className="space-y-3">
-              <label 
-                className="flex items-start space-x-3 cursor-pointer p-3 border-2 rounded-lg hover:bg-gray-50 transition-colors"
+              <label
+                className="flex items-start space-x-3 cursor-pointer p-3 border-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 style={{ borderColor: mode === 'skip' ? '#3B82F6' : '#E5E7EB' }}
               >
                 <input
@@ -75,15 +75,15 @@ export function ImportDuplicateModal({
                   className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
                 />
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900">✅ Skip duplicates (Recommended)</div>
-                  <div className="text-sm text-gray-600 mt-1">
+                  <div className="font-medium text-gray-900 dark:text-gray-100">✅ Skip duplicates (Recommended)</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Import only {newRows} new row{newRows !== 1 ? 's' : ''}
                   </div>
                 </div>
               </label>
 
-              <label 
-                className="flex items-start space-x-3 cursor-pointer p-3 border-2 rounded-lg hover:bg-gray-50 transition-colors"
+              <label
+                className="flex items-start space-x-3 cursor-pointer p-3 border-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 style={{ borderColor: mode === 'all' ? '#3B82F6' : '#E5E7EB' }}
               >
                 <input
@@ -94,8 +94,8 @@ export function ImportDuplicateModal({
                   className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
                 />
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900">⚠️ Import all (Creates duplicates)</div>
-                  <div className="text-sm text-gray-600 mt-1">
+                  <div className="font-medium text-gray-900 dark:text-gray-100">⚠️ Import all (Creates duplicates)</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Import all {duplicates + newRows} rows, creating {duplicates} duplicate{duplicates !== 1 ? 's' : ''}
                   </div>
                 </div>
@@ -119,10 +119,10 @@ export function ImportDuplicateModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end space-x-3">
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end space-x-3">
           <button
             onClick={onCancel}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
           >
             Cancel
           </button>

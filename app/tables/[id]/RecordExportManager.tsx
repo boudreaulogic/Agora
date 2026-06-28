@@ -30,7 +30,7 @@ function SearchableColumnSelect({ value, onChange, columns }: { value: string; o
       <button
         onClick={() => { setIsOpen(!isOpen); setSearch(''); }}
         className={`w-full px-2.5 py-1.5 text-xs border rounded-lg text-left flex items-center justify-between ${
-          value ? 'border-green-300 bg-green-50/30 text-gray-900' : 'border-gray-300 bg-white text-gray-400'
+          value ? 'border-green-300 bg-green-50/30 text-gray-900 dark:text-gray-100' : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500'
         }`}
       >
         <span className="truncate">{selected ? `${selected.name} (${selected.type})` : '— Not mapped —'}</span>
@@ -40,21 +40,21 @@ function SearchableColumnSelect({ value, onChange, columns }: { value: string; o
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-hidden">
-          <div className="p-1.5 border-b border-gray-100">
+        <div className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-hidden">
+          <div className="p-1.5 border-b border-gray-100 dark:border-gray-800">
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search columns..."
-              className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-100 dark:bg-gray-800"
               autoFocus
             />
           </div>
           <div className="overflow-y-auto max-h-48">
             <button
               onClick={() => { onChange(''); setIsOpen(false); setSearch(''); }}
-              className={`w-full px-3 py-1.5 text-xs text-left hover:bg-gray-50 ${!value ? 'bg-blue-50 text-blue-700' : 'text-gray-400'}`}
+              className={`w-full px-3 py-1.5 text-xs text-left hover:bg-gray-50 dark:hover:bg-gray-800 ${!value ? 'bg-blue-50 text-blue-700' : 'text-gray-400 dark:text-gray-500'}`}
             >
               — Not mapped —
             </button>
@@ -62,16 +62,16 @@ function SearchableColumnSelect({ value, onChange, columns }: { value: string; o
               <button
                 key={col.id}
                 onClick={() => { onChange(col.id); setIsOpen(false); setSearch(''); }}
-                className={`w-full px-3 py-1.5 text-xs text-left hover:bg-gray-50 flex items-center justify-between ${
-                  value === col.id ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                className={`w-full px-3 py-1.5 text-xs text-left hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center justify-between ${
+                  value === col.id ? 'bg-blue-50 text-blue-700' : 'text-gray-700 dark:text-gray-300'
                 }`}
               >
                 <span>{col.name}</span>
-                <span className="text-gray-400 text-[10px]">{col.type}</span>
+                <span className="text-gray-400 dark:text-gray-500 text-[10px]">{col.type}</span>
               </button>
             ))}
             {filtered.length === 0 && (
-              <div className="px-3 py-3 text-xs text-gray-400 text-center">No columns match</div>
+              <div className="px-3 py-3 text-xs text-gray-400 dark:text-gray-500 text-center">No columns match</div>
             )}
           </div>
         </div>
@@ -256,18 +256,18 @@ export function RecordExportManager({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
           <div>
-            <h2 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
               <span>📄</span>
               <span>Record Export</span>
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">Upload PDF templates and map fields to table columns</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Upload PDF templates and map fields to table columns</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+            <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -275,9 +275,9 @@ export function RecordExportManager({
 
         <div className="flex flex-1 overflow-hidden">
           {/* Left sidebar — Templates list */}
-          <div className="w-64 border-r border-gray-200 flex flex-col flex-shrink-0">
-            <div className="p-4 border-b border-gray-100">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Templates</h3>
+          <div className="w-64 border-r border-gray-200 dark:border-gray-700 flex flex-col flex-shrink-0">
+            <div className="p-4 border-b border-gray-100 dark:border-gray-800">
+              <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Templates</h3>
 
               {/* Upload new */}
               <div className="space-y-2 mb-3">
@@ -286,7 +286,7 @@ export function RecordExportManager({
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
                   placeholder="Template name..."
-                  className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  className="w-full px-2.5 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-100 dark:bg-gray-800"
                 />
                 <input
                   ref={fileInputRef}
@@ -317,12 +317,12 @@ export function RecordExportManager({
             {/* Template list */}
             <div className="flex-1 overflow-y-auto p-2">
               {loading ? (
-                <div className="text-center py-8 text-xs text-gray-400">Loading...</div>
+                <div className="text-center py-8 text-xs text-gray-400 dark:text-gray-500">Loading...</div>
               ) : templates.length === 0 ? (
-                <div className="text-center py-8 text-xs text-gray-400">
+                <div className="text-center py-8 text-xs text-gray-400 dark:text-gray-500">
                   <p className="text-2xl mb-2">📄</p>
                   <p>No templates yet</p>
-                  <p className="text-gray-300 mt-1">Upload a fillable PDF to get started</p>
+                  <p className="text-gray-300 dark:text-gray-600 mt-1">Upload a fillable PDF to get started</p>
                 </div>
               ) : (
                 <div className="space-y-1">
@@ -333,18 +333,18 @@ export function RecordExportManager({
                       className={`p-2.5 rounded-lg cursor-pointer transition-colors ${
                         activeTemplate?.id === t.id
                           ? 'bg-blue-50 border border-blue-200'
-                          : 'hover:bg-gray-50 border border-transparent'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="min-w-0">
-                          <p className="text-xs font-medium text-gray-900 truncate">{t.name}</p>
-                          <p className="text-[10px] text-gray-400 truncate">{t.originalFilename}</p>
+                          <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{t.name}</p>
+                          <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{t.originalFilename}</p>
                           <div className="flex items-center space-x-2 mt-1">
                             {t.includeAuditPage && (
                               <span className="text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Audit</span>
                             )}
-                            <span className="text-[9px] text-gray-400">
+                            <span className="text-[9px] text-gray-400 dark:text-gray-500">
                               {(t.fieldMappings as any[])?.filter((m: any) => m.columnId).length || 0} mapped
                             </span>
                           </div>
@@ -368,7 +368,7 @@ export function RecordExportManager({
           {/* Right — Field mapping editor */}
           <div className="flex-1 flex flex-col overflow-hidden">
             {!activeTemplate ? (
-              <div className="flex-1 flex items-center justify-center text-gray-400">
+              <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500">
                 <div className="text-center">
                   <p className="text-4xl mb-3">📋</p>
                   <p className="text-sm">Select or upload a template to configure field mappings</p>
@@ -377,10 +377,10 @@ export function RecordExportManager({
             ) : (
               <>
                 {/* Template header */}
-                <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+                <div className="px-6 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0">
                   <div>
-                    <h3 className="text-sm font-bold text-gray-900">{activeTemplate.name}</h3>
-                    <p className="text-[10px] text-gray-400">{mappedCount} of {totalFields} fields mapped</p>
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{activeTemplate.name}</h3>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500">{mappedCount} of {totalFields} fields mapped</p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
@@ -403,7 +403,7 @@ export function RecordExportManager({
                           setTemplates(prev => prev.map(t => t.id === data.template.id ? data.template : t));
                         }
                       }}
-                      className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg bg-white text-gray-700"
+                      className="px-2 py-1.5 text-xs border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
                     >
                       <option value="">Filename: Default</option>
                       {columns.filter(c => ['text', 'email', 'number'].includes(c.type)).map(col => (
@@ -425,7 +425,7 @@ export function RecordExportManager({
 
                 {/* Progress bar */}
                 <div className="px-6 py-2 flex-shrink-0">
-                  <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-blue-500 rounded-full transition-all"
                       style={{ width: `${totalFields > 0 ? (mappedCount / totalFields) * 100 : 0}%` }}
@@ -436,14 +436,14 @@ export function RecordExportManager({
                 {/* Field mappings */}
                 <div className="flex-1 overflow-y-auto px-6 py-3">
                   {extractedFields.length === 0 ? (
-                    <div className="text-center py-12 text-gray-400">
+                    <div className="text-center py-12 text-gray-400 dark:text-gray-500">
                       <p className="text-2xl mb-2">⚠️</p>
                       <p className="text-sm">No fillable form fields found in this PDF</p>
-                      <p className="text-xs text-gray-300 mt-1">Make sure your PDF has form fields (not just text)</p>
+                      <p className="text-xs text-gray-300 dark:text-gray-600 mt-1">Make sure your PDF has form fields (not just text)</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <div className="grid grid-cols-2 gap-4 px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      <div className="grid grid-cols-2 gap-4 px-3 py-2 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                         <span>PDF Field</span>
                         <span>Table Column</span>
                       </div>
@@ -451,14 +451,14 @@ export function RecordExportManager({
                         <div
                           key={mapping.pdfFieldName}
                           className={`grid grid-cols-2 gap-4 px-3 py-2.5 rounded-lg border transition-colors ${
-                            mapping.columnId ? 'border-green-200 bg-green-50/30' : 'border-gray-200 bg-white'
+                            mapping.columnId ? 'border-green-200 bg-green-50/30' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
                           }`}
                         >
                           <div className="flex items-center space-x-2">
-                            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${mapping.columnId ? 'bg-green-500' : 'bg-gray-300'}`} />
+                            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${mapping.columnId ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
                             <div className="min-w-0">
-                              <p className="text-xs font-medium text-gray-900 truncate">{mapping.pdfFieldName}</p>
-                              <p className="text-[10px] text-gray-400">{mapping.pdfFieldType}</p>
+                              <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{mapping.pdfFieldName}</p>
+                              <p className="text-[10px] text-gray-400 dark:text-gray-500">{mapping.pdfFieldType}</p>
                             </div>
                           </div>
                           <SearchableColumnSelect
@@ -473,7 +473,7 @@ export function RecordExportManager({
                 </div>
 
                 {/* Save bar */}
-                <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-end flex-shrink-0">
+                <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end flex-shrink-0">
                   <button
                     onClick={saveMappings}
                     disabled={isSaving}

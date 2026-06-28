@@ -262,19 +262,19 @@ export function RowExpandPanel({
     <>
       <div className="fixed inset-0 bg-black bg-opacity-20 z-30" onClick={onClose} />
 
-      <div className="fixed right-0 top-0 h-full w-[480px] bg-white shadow-2xl z-40 flex flex-col">
+      <div className="fixed right-0 top-0 h-full w-[480px] bg-white dark:bg-gray-900 shadow-2xl z-40 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-1">
-              <button onClick={goPrev} disabled={!hasPrev} className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors" title="Previous row (↑)">
-                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+              <button onClick={goPrev} disabled={!hasPrev} className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors" title="Previous row (↑)">
+                <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
               </button>
-              <button onClick={goNext} disabled={!hasNext} className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors" title="Next row (↓)">
-                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              <button onClick={goNext} disabled={!hasNext} className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors" title="Next row (↓)">
+                <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </button>
             </div>
-            <span className="text-sm text-gray-500">Row {currentIndex + 1} of {rows.length}</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">Row {currentIndex + 1} of {rows.length}</span>
             {isLocked && (<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">🔒 Locked</span>)}
           </div>
           <div className="flex items-center space-x-2">
@@ -291,8 +291,8 @@ export function RowExpandPanel({
                 )}
               </button>
             )}
-            <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-lg transition-colors" title="Close (Esc)">
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors" title="Close (Esc)">
+              <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
         </div>
@@ -357,7 +357,7 @@ export function RowExpandPanel({
                           {isApproving ? 'Processing...' : showApprovalReason === 'approve' ? 'Confirm Approve' : 'Confirm Deny'}
                         </button>
                         <button onClick={() => { setShowApprovalReason(null); setApprovalReason(''); }}
-                          className="px-4 py-2 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                          className="px-4 py-2 text-xs text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
                       </div>
                     </div>
                   ) : (
@@ -386,15 +386,15 @@ export function RowExpandPanel({
               return (
                 <div key={column.id} className="space-y-1.5">
                   <label className="flex items-center space-x-2">
-                    <span className="text-xs text-gray-400">{getColumnTypeIcon(column.type)}</span>
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{column.name}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{getColumnTypeIcon(column.type)}</span>
+                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{column.name}</span>
                     {isColumnNoEdit && !isComputed && (
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-gray-100 text-gray-500" title="You don't have edit permission for this column">🔒 View only</span>
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400" title="You don't have edit permission for this column">🔒 View only</span>
                     )}
                     {isComputed && (<span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-blue-50 text-blue-500">Auto</span>)}
                   </label>
                   <div className={`border rounded-lg px-3 py-2 transition-colors min-h-[40px] ${
-                    isFieldReadOnly || isComputed ? 'border-gray-200 bg-gray-50 cursor-not-allowed' : 'border-gray-200 hover:border-blue-300 bg-white'
+                    isFieldReadOnly || isComputed ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed' : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 bg-white dark:bg-gray-800'
                   }`}>
                     <EditableCell key={`${row.id}-${column.id}`} rowId={row.id} columnId={column.id} columnType={column.type}
                       columnSettings={column.settings} columnFormula={column.formula} column={column} initialValue={cellValue}
@@ -410,14 +410,14 @@ export function RowExpandPanel({
           <AuditTrail tableId={tableId} rowId={row.id} />
 
           {/* Comments Section */}
-          <div className="border-t border-gray-200">
+          <div className="border-t border-gray-200 dark:border-gray-700">
             <button onClick={() => setShowComments(!showComments)}
-              className="w-full flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors">
+              className="w-full flex items-center justify-between px-6 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
               <div className="flex items-center space-x-2">
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
-                <span className="text-sm font-semibold text-gray-700">Comments {comments.length > 0 && `(${comments.length})`}</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Comments {comments.length > 0 && `(${comments.length})`}</span>
               </div>
               <svg className={`w-4 h-4 text-gray-400 transition-transform ${showComments ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -427,12 +427,12 @@ export function RowExpandPanel({
             {showComments && (
               <div className="px-6 pb-6">
                 {isLoadingComments ? (
-                  <div className="text-center py-4"><span className="text-sm text-gray-400">Loading comments...</span></div>
+                  <div className="text-center py-4"><span className="text-sm text-gray-400 dark:text-gray-500">Loading comments...</span></div>
                 ) : comments.length === 0 ? (
                   <div className="text-center py-6">
                     <div className="text-2xl mb-2">💬</div>
-                    <p className="text-sm text-gray-400">No comments yet</p>
-                    <p className="text-xs text-gray-400 mt-1">Be the first to leave a comment</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500">No comments yet</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Be the first to leave a comment</p>
                   </div>
                 ) : (
                   <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
@@ -444,10 +444,10 @@ export function RowExpandPanel({
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline space-x-2">
-                            <span className="text-sm font-medium text-gray-900">{comment.user?.name || comment.user?.email || 'Unknown'}</span>
-                            <span className="text-xs text-gray-400">{formatTimestamp(comment.createdAt)}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{comment.user?.name || comment.user?.email || 'Unknown'}</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500">{formatTimestamp(comment.createdAt)}</span>
                           </div>
-                          <p className="text-sm text-gray-700 mt-0.5 whitespace-pre-wrap break-words">{comment.text}</p>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 mt-0.5 whitespace-pre-wrap break-words">{comment.text}</p>
                         </div>
                       </div>
                     ))}
@@ -458,7 +458,7 @@ export function RowExpandPanel({
                   <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handlePostComment(); } }}
                     placeholder="Write a comment... (Enter to send)" rows={2}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 dark:bg-gray-800 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                   <button onClick={handlePostComment} disabled={!newComment.trim() || isPostingComment}
                     className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors self-end" title="Send comment">
                     {isPostingComment ? (
@@ -474,10 +474,10 @@ export function RowExpandPanel({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400">{effectiveReadOnly ? '🔒 This row is locked or read-only' : 'Click any field to edit'}</span>
-            <button onClick={onClose} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">Close</button>
+            <span className="text-xs text-gray-400 dark:text-gray-500">{effectiveReadOnly ? '🔒 This row is locked or read-only' : 'Click any field to edit'}</span>
+            <button onClick={onClose} className="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors dark:text-gray-300">Close</button>
           </div>
         </div>
       </div>
@@ -530,24 +530,24 @@ function AuditTrail({ tableId, rowId }: { tableId: string; rowId: string }) {
 
   if (entries.length === 0 && !isOpen) {
     return (
-      <div className="border-t border-gray-200">
-        <button onClick={() => setIsOpen(true)} className="w-full flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors">
+      <div className="border-t border-gray-200 dark:border-gray-700">
+        <button onClick={() => setIsOpen(true)} className="w-full flex items-center justify-between px-6 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
           <div className="flex items-center space-x-2">
-            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-            <span className="text-sm font-semibold text-gray-700">Approval Audit Trail</span>
+            <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Approval Audit Trail</span>
           </div>
-          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+          <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
         </button>
       </div>
     );
   }
 
   return (
-    <div className="border-t border-gray-200">
-      <button onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors">
+    <div className="border-t border-gray-200 dark:border-gray-700">
+      <button onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between px-6 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
         <div className="flex items-center space-x-2">
-          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-          <span className="text-sm font-semibold text-gray-700">Approval Audit Trail {entries.length > 0 && `(${entries.length})`}</span>
+          <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Approval Audit Trail {entries.length > 0 && `(${entries.length})`}</span>
           {chainValid !== null && (
             <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${chainValid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
               {chainValid ? '🔗 Chain Valid' : '⚠️ Chain Broken'}
@@ -561,12 +561,12 @@ function AuditTrail({ tableId, rowId }: { tableId: string; rowId: string }) {
       {isOpen && (
         <div className="px-6 pb-6">
           {loading ? (
-            <div className="text-center py-4"><span className="text-sm text-gray-400">Loading audit trail...</span></div>
+            <div className="text-center py-4"><span className="text-sm text-gray-400 dark:text-gray-500">Loading audit trail...</span></div>
           ) : entries.length === 0 ? (
-            <div className="text-center py-6"><div className="text-2xl mb-2">🛡️</div><p className="text-sm text-gray-400">No approval history for this row</p></div>
+            <div className="text-center py-6"><div className="text-2xl mb-2">🛡️</div><p className="text-sm text-gray-400 dark:text-gray-500">No approval history for this row</p></div>
           ) : (
             <div className="relative">
-              <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
+              <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700" />
               <div className="space-y-4">
                 {entries.map((entry: any, i: number) => (
                   <div key={entry.id} className="relative flex items-start space-x-4 pl-2">
@@ -582,25 +582,25 @@ function AuditTrail({ tableId, rowId }: { tableId: string; rowId: string }) {
                     <div className="flex-1 min-w-0 pb-2">
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="text-xs font-semibold text-gray-900">{getActionLabel(entry.action)}</span>
-                          {entry.stageName && (<span className="text-[10px] text-gray-400 ml-1.5">— {entry.stageName}</span>)}
+                          <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">{getActionLabel(entry.action)}</span>
+                          {entry.stageName && (<span className="text-[10px] text-gray-400 dark:text-gray-500 ml-1.5">— {entry.stageName}</span>)}
                         </div>
-                        <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap">
                           {new Date(entry.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                         {entry.actorName === 'System' ? 'Automatic' : `By ${entry.actorName}`}
-                        {entry.actorEmail && entry.actorName !== 'System' && (<span className="text-gray-400"> ({entry.actorEmail})</span>)}
+                        {entry.actorEmail && entry.actorName !== 'System' && (<span className="text-gray-400 dark:text-gray-500"> ({entry.actorEmail})</span>)}
                       </p>
                       {entry.reason && (
-                        <div className="mt-1.5 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100">
-                          <p className="text-xs text-gray-600 italic">"{entry.reason}"</p>
+                        <div className="mt-1.5 px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 italic">"{entry.reason}"</p>
                         </div>
                       )}
                       <div className="mt-1 flex items-center space-x-1">
-                        <span className="text-[8px] font-mono text-gray-300 truncate max-w-[120px]" title={entry.entryHash}>#{entry.entryHash?.substring(0, 12)}</span>
-                        {entry.previousHash && (<span className="text-[8px] text-gray-300">← #{entry.previousHash?.substring(0, 8)}</span>)}
+                        <span className="text-[8px] font-mono text-gray-300 dark:text-gray-600 truncate max-w-[120px]" title={entry.entryHash}>#{entry.entryHash?.substring(0, 12)}</span>
+                        {entry.previousHash && (<span className="text-[8px] text-gray-300 dark:text-gray-600">← #{entry.previousHash?.substring(0, 8)}</span>)}
                       </div>
                     </div>
                   </div>

@@ -140,12 +140,12 @@ export function FormsManager({
                 </button>
               </div>
 
-              {loading ? <div className="text-center py-8 text-gray-400 text-sm">Loading...</div>
+              {loading ? <div className="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">Loading...</div>
               : forms.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="text-4xl mb-3">📋</div>
                   <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">No forms yet</h3>
-                  <p className="text-xs text-gray-500">Create a form to collect data — no login required.</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Create a form to collect data — no login required.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -165,7 +165,7 @@ export function FormsManager({
                             if (!f.pages) { f.pages = [{ id: 'page_1', title: 'Page 1', description: '' }]; f.fields = (f.fields || []).map((fld: any) => ({ ...fld, pageId: 'page_1' })); }
                             setEditingForm(f);
                           }} className="text-xs text-blue-600 dark:text-blue-400">Edit</button>
-                          <button onClick={() => handleToggleActive(form)} className="text-xs text-gray-500">{form.isActive ? 'Disable' : 'Enable'}</button>
+                          <button onClick={() => handleToggleActive(form)} className="text-xs text-gray-500 dark:text-gray-400">{form.isActive ? 'Disable' : 'Enable'}</button>
                           <button onClick={() => handleDelete(form.id)} className="text-xs text-red-500">Delete</button>
                         </div>
                       </div>

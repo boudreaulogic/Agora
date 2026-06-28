@@ -162,7 +162,7 @@ export function SharePointSettingsClient() {
       <div className="max-w-2xl mx-auto py-8 px-6">
         <div className="mb-6">
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">SharePoint Integration</h1>
-          <p className="text-sm text-gray-500 mt-1">Connect Agora to SharePoint via Microsoft Graph. Register specific lists below, then grant groups access — users only see the lists you allow.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Connect Agora to SharePoint via Microsoft Graph. Register specific lists below, then grant groups access — users only see the lists you allow.</p>
         </div>
 
         {message && (

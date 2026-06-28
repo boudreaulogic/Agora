@@ -118,10 +118,10 @@ export function ActivityPanel({
           : String(details.newValue).slice(0, 50);
         return (
           <div className="mt-1 text-xs">
-            <span className="font-medium text-gray-600">{details.columnName}:</span>
+            <span className="font-medium text-gray-600 dark:text-gray-400">{details.columnName}:</span>
             <div className="flex items-center space-x-1 mt-0.5">
               <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded line-through">{oldVal}</span>
-              <span className="text-gray-400">→</span>
+              <span className="text-gray-400 dark:text-gray-500">→</span>
               <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded">{newVal}</span>
             </div>
           </div>
@@ -129,26 +129,26 @@ export function ActivityPanel({
       }
       case 'COLUMN_ADDED':
         return (
-          <div className="mt-1 text-xs text-gray-500">
+          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             <span className="font-medium">{details.columnName}</span> ({details.columnType})
           </div>
         );
       case 'COLUMN_RENAMED':
         return (
-          <div className="mt-1 text-xs text-gray-500">
+          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             <span className="line-through">{details.oldName}</span> → <span className="font-medium">{details.newName}</span>
           </div>
         );
       case 'LINK_ADDED':
       case 'LINK_REMOVED':
         return (
-          <div className="mt-1 text-xs text-gray-500">
+          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             {details.count} record{details.count !== 1 ? 's' : ''} via <span className="font-medium">{details.columnName}</span>
           </div>
         );
       case 'COMMENT_ADDED':
         return (
-          <div className="mt-1 text-xs text-gray-500 italic">
+          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 italic">
             &ldquo;{details.textPreview}&rdquo;
           </div>
         );
@@ -196,36 +196,36 @@ export function ActivityPanel({
       <div className="fixed inset-0 bg-black bg-opacity-20 z-30" onClick={onClose} />
 
       {/* Panel */}
-      <div className="fixed right-0 top-0 h-full w-[420px] bg-white shadow-2xl z-40 flex flex-col">
+      <div className="fixed right-0 top-0 h-full w-[420px] bg-white dark:bg-gray-900 shadow-2xl z-40 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
           <div className="flex items-center space-x-2">
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <h2 className="text-lg font-bold text-gray-900">Activity Log</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Activity Log</h2>
             {total > 0 && (
-              <span className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full">
+              <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">
                 {total}
               </span>
             )}
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Filter Bar */}
-        <div className="px-6 py-3 border-b border-gray-200 bg-white">
+        <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
           <select
             value={filterAction}
             onChange={(e) => setFilterAction(e.target.value)}
-            className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
           >
             <option value="">All activity</option>
             <option value="CELL_UPDATED">Cell updates</option>
@@ -247,16 +247,16 @@ export function ActivityPanel({
           ) : groups.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="text-3xl mb-3">📋</div>
-              <p className="text-sm text-gray-500">No activity yet</p>
-              <p className="text-xs text-gray-400 mt-1">Changes to this table will appear here</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">No activity yet</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Changes to this table will appear here</p>
             </div>
           ) : (
             <div className="py-2">
               {groups.map((group, gi) => (
                 <div key={gi}>
                   {/* Date Header */}
-                  <div className="px-6 py-2 bg-gray-50 sticky top-0 z-10">
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <div className="px-6 py-2 bg-gray-50 dark:bg-gray-800/50 sticky top-0 z-10">
+                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       {group.label}
                     </span>
                   </div>
@@ -272,7 +272,7 @@ export function ActivityPanel({
                     return (
                       <div
                         key={activity.id}
-                        className="px-6 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100"
+                        className="px-6 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800"
                       >
                         <div className="flex items-start space-x-3">
                           {/* User Avatar */}
@@ -290,11 +290,11 @@ export function ActivityPanel({
                               <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${config.color}`}>
                                 {config.icon} {config.label}
                               </span>
-                              <span className="text-xs text-gray-400">
+                              <span className="text-xs text-gray-400 dark:text-gray-500">
                                 {formatTimestamp(activity.createdAt)}
                               </span>
                             </div>
-                            <div className="text-xs text-gray-600 mt-0.5">
+                            <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                               {activity.user?.name || activity.user?.email || 'Unknown user'}
                             </div>
                             {renderDetails(activity)}
@@ -323,8 +323,8 @@ export function ActivityPanel({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-gray-200 bg-gray-50">
-          <p className="text-xs text-gray-400 text-center">
+        <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+          <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
             Activity is retained for 3 weeks
           </p>
         </div>

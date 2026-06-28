@@ -115,7 +115,7 @@ export function ColumnHeaderMenu({
               <span className="ml-2 text-xs text-gray-700 dark:text-gray-300">{getOptionLabel(value)}</span>
             </label>
           ))}
-          {uniqueValues.length === 0 && <p className="px-2 py-1 text-xs text-gray-400">No values</p>}
+          {uniqueValues.length === 0 && <p className="px-2 py-1 text-xs text-gray-400 dark:text-gray-500">No values</p>}
         </div>
       );
     }
@@ -153,11 +153,11 @@ export function ColumnHeaderMenu({
             <button onClick={() => handleNumberFilter(monthAgo, today)} className="text-[9px] px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-100">Past 30 days</button>
             <button onClick={() => handleNumberFilter(yearStart, today)} className="text-[9px] px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-100">This year</button>
           </div>
-          <label className="text-[9px] text-gray-400 font-medium">From</label>
+          <label className="text-[9px] text-gray-400 dark:text-gray-500 font-medium">From</label>
           <input type="date" defaultValue={currentFilter?.min || ''}
             onChange={(e) => handleNumberFilter(e.target.value, currentFilter?.max)}
             className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded text-xs focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-800 dark:text-gray-200" />
-          <label className="text-[9px] text-gray-400 font-medium">To</label>
+          <label className="text-[9px] text-gray-400 dark:text-gray-500 font-medium">To</label>
           <input type="date" defaultValue={currentFilter?.max || ''}
             onChange={(e) => handleNumberFilter(currentFilter?.min, e.target.value)}
             className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded text-xs focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-800 dark:text-gray-200" />
@@ -201,7 +201,7 @@ export function ColumnHeaderMenu({
         className={'p-0.5 rounded transition-colors ' + (
           isSorted || hasFilter
             ? 'text-blue-600 dark:text-blue-400'
-            : 'text-gray-400 hover:text-gray-600 opacity-0 group-hover/header:opacity-100'
+            : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 opacity-0 group-hover/header:opacity-100'
         )}
       >
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

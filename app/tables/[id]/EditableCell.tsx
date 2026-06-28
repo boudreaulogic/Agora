@@ -184,7 +184,7 @@ export function EditableCell({
     // Handle lookup columns
     if (columnType === 'lookup') {
       if (!lookupValues || lookupValues.length === 0) {
-        return <span className="text-gray-400">—</span>;
+        return <span className="text-gray-400 dark:text-gray-500">—</span>;
       }
       const formatVal = (val: any) => {
         const ft = columnSettings?.lookupFieldType;
@@ -208,7 +208,7 @@ export function EditableCell({
     // Handle rollup columns
     if (columnType === 'rollup') {
       if (rollupValue === null || rollupValue === undefined) {
-        return <span className="text-gray-400">—</span>;
+        return <span className="text-gray-400 dark:text-gray-500">—</span>;
       }
       const fn = columnSettings?.rollupFunction || column?.rollupFunction || '';
       const formatVal = (val: any) => {
@@ -231,7 +231,7 @@ export function EditableCell({
     // Handle formula columns
     if (columnType === 'formula') {
       if (!calculatedValue) {
-        return <span className="text-gray-400 italic">No formula</span>;
+        return <span className="text-gray-400 dark:text-gray-500 italic">No formula</span>;
       }
       
       if (calculatedValue.error) {
@@ -274,18 +274,18 @@ export function EditableCell({
     // Handle linked_record
     if (columnType === 'linked_record') {
       if (!value) {
-        return <span className="text-gray-400 text-sm">🔗 Select...</span>;
+        return <span className="text-gray-400 dark:text-gray-500 text-sm">🔗 Select...</span>;
       }
       return (
         <div className="flex items-center space-x-1.5">
           <span className="text-blue-600 text-xs">🔗</span>
-          <span className="text-sm text-gray-900 truncate">{value.length > 25 ? value.slice(0, 8) + '...' : value}</span>
+          <span className="text-sm text-gray-900 dark:text-gray-100 truncate">{value.length > 25 ? value.slice(0, 8) + '...' : value}</span>
         </div>
       );
     }
 
 	if (!value) {
-		  return <span className="text-gray-400">{readOnly ? '—' : 'Click to edit'}</span>;
+		  return <span className="text-gray-400 dark:text-gray-500">{readOnly ? '—' : 'Click to edit'}</span>;
 		}
 
     switch (columnType) {
@@ -329,26 +329,26 @@ export function EditableCell({
       case 'percent':
         return (
           <div className="flex items-center space-x-2">
-            <div className="flex-1 bg-gray-200 rounded-full h-2">
+            <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div 
                 className="bg-blue-600 h-2 rounded-full"
                 style={{ width: `${Math.min(100, Math.max(0, parseFloat(value) || 0))}%` }}
               />
             </div>
-            <span className="text-xs text-gray-600">{value}%</span>
+            <span className="text-xs text-gray-600 dark:text-gray-400">{value}%</span>
           </div>
         );
       
       case 'progress':
         return (
           <div className="flex items-center space-x-2">
-            <div className="flex-1 bg-gray-200 rounded-full h-2">
+            <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div 
                 className="bg-green-600 h-2 rounded-full"
                 style={{ width: `${Math.min(100, Math.max(0, parseFloat(value) || 0))}%` }}
               />
             </div>
-            <span className="text-xs text-gray-600">{value}%</span>
+            <span className="text-xs text-gray-600 dark:text-gray-400">{value}%</span>
           </div>
         );
       
@@ -363,7 +363,7 @@ export function EditableCell({
               className="w-6 h-6 rounded border border-gray-300"
               style={{ backgroundColor: value }}
             />
-            <span className="text-xs text-gray-600">{value}</span>
+            <span className="text-xs text-gray-600 dark:text-gray-400">{value}</span>
           </div>
         );
       
@@ -409,7 +409,7 @@ export function EditableCell({
   // Formula columns are read-only
   if (columnType === 'formula') {
     return (
-      <div className="w-full h-full bg-gray-50 px-2 py-1 text-gray-700 italic cursor-not-allowed">
+      <div className="w-full h-full bg-gray-50 dark:bg-gray-800/50 px-2 py-1 text-gray-700 dark:text-gray-300 italic cursor-not-allowed">
         {renderDisplayValue()}
       </div>
     );
@@ -742,9 +742,9 @@ export function EditableCell({
     const currentValues = Array.isArray(value) ? value : (value ? value.split(',') : []);
     
     return (
-      <div className="border border-blue-500 rounded p-2 bg-white max-h-32 overflow-y-auto">
+      <div className="border border-blue-500 rounded p-2 bg-white dark:bg-gray-800 max-h-32 overflow-y-auto">
         {columnSettings.options.map((opt: any) => (
-          <label key={opt.value} className="flex items-center space-x-2 py-1 cursor-pointer hover:bg-gray-50">
+          <label key={opt.value} className="flex items-center space-x-2 py-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
             <input
               type="checkbox"
               defaultChecked={currentValues.includes(opt.value)}

@@ -175,13 +175,13 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
           <div><label className="block text-[9px] font-bold text-gray-400 uppercase mb-0.5">Thank You Message</label><input type="text" value={thankYouMessage} onChange={function(e) { setThankYouMessage(e.target.value); }} className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-800 dark:text-gray-200" /></div>
           {/* Appearance / theming — applies to the public + embedded form */}
           <div className="pt-1.5 border-t border-gray-100 dark:border-gray-800">
-            <button onClick={function() { setShowAppearance(!showAppearance); }} className="w-full flex items-center justify-between text-[9px] font-bold text-gray-400 uppercase py-0.5 hover:text-gray-600">
+            <button onClick={function() { setShowAppearance(!showAppearance); }} className="w-full flex items-center justify-between text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase py-0.5 hover:text-gray-600 dark:hover:text-gray-300">
               <span>{'\u{1F3A8}'} Appearance</span><span>{showAppearance ? '▾' : '▸'}</span>
             </button>
             {showAppearance && (
               <div className="space-y-2 pt-1.5">
                 <div>
-                  <label className="block text-[9px] font-medium text-gray-500 mb-0.5">Background</label>
+                  <label className="block text-[9px] font-medium text-gray-500 dark:text-gray-400 mb-0.5">Background</label>
                   <select value={theme.background} onChange={function(e) { setThemeKey('background', e.target.value); }} className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 dark:text-gray-200">
                     <option value="gray">Light gray</option>
                     <option value="white">White</option>
@@ -304,12 +304,12 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
                   {!hasLinePattern && <p className="text-[9px] text-gray-400">No repeating patterns found (e.g. Item 1, Line 1...)</p>}
                 </button>
               </div>
-              <div className="flex justify-end pt-2"><button onClick={function() { setShowRepeatingGroupSetup(false); }} className="px-4 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button></div>
+              <div className="flex justify-end pt-2"><button onClick={function() { setShowRepeatingGroupSetup(false); }} className="px-4 py-1.5 text-xs text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button></div>
             </>)}
 
             {rgMode === 'manual' && (<>
               <div className="flex items-center space-x-2">
-                <button onClick={function() { setRgMode('choose'); }} className="text-gray-400 hover:text-gray-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg></button>
+                <button onClick={function() { setRgMode('choose'); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg></button>
                 <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Manual Column Mapping</h3>
               </div>
               <p className="text-[10px] text-gray-500">Define column slots for each row, then assign table columns to each slot per row.</p>
@@ -340,7 +340,7 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
                   {manualRows.map(function(rowCols, ri) {
                     return (<div key={ri} className="border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[9px] font-bold text-gray-500">Row {ri + 1}</span>
+                        <span className="text-[9px] font-bold text-gray-500 dark:text-gray-400">Row {ri + 1}</span>
                         <button onClick={function() { removeManualRow(ri); }} className="text-[8px] text-gray-400 hover:text-red-500">Remove</button>
                       </div>
                       <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(' + manualSlots.length + ', 1fr)' }}>
@@ -367,13 +367,13 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
               </div>
 
               <div className="flex justify-end space-x-2 pt-2">
-                <button onClick={function() { setShowRepeatingGroupSetup(false); }} className="px-4 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                <button onClick={function() { setShowRepeatingGroupSetup(false); }} className="px-4 py-1.5 text-xs text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
                 <button onClick={addManualRepeatingGroup} disabled={manualSlots.length === 0 || manualRows.length === 0} className="px-4 py-1.5 text-xs bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 font-medium">{editingRgIndex !== null ? 'Update Group' : 'Create Group'}</button>
               </div>
             </>)}
 
             {rgMode === 'auto' && (<>
-              <div className="flex items-center space-x-2"><button onClick={function() { setRgMode('choose'); }} className="text-gray-400 hover:text-gray-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg></button><h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Auto-Detect Column Pattern</h3></div>
+              <div className="flex items-center space-x-2"><button onClick={function() { setRgMode('choose'); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg></button><h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Auto-Detect Column Pattern</h3></div>
               <p className="text-[10px] text-gray-500">Group columns that repeat (e.g. Line 1 QTY, Line 2 QTY...) into expandable rows.</p>
               <div><label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Group Label</label><input type="text" value={rgLabel} onChange={function(e) { setRgLabel(e.target.value); }} className="w-full px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-200" /></div>
               <div>
@@ -387,7 +387,7 @@ export function FormEditor({ form, tableColumns = [], onUpdate, onCopyLink, onCo
                 <div><label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Visible by Default</label><input type="number" value={rgDefaultVisible} onChange={function(e) { setRgDefaultVisible(parseInt(e.target.value) || 1); }} min={1} max={rgRowCount} className="w-full px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-200" /></div>
               </div>
               <div className="flex justify-end space-x-2 pt-2">
-                <button onClick={function() { setShowRepeatingGroupSetup(false); }} className="px-4 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                <button onClick={function() { setShowRepeatingGroupSetup(false); }} className="px-4 py-1.5 text-xs text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
                 <button onClick={addAutoRepeatingGroup} disabled={rgColumnsPerRow.length === 0} className="px-4 py-1.5 text-xs bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 font-medium">Create Group</button>
               </div>
             </>)}

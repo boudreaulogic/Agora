@@ -168,10 +168,10 @@ export function ChartsManager({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <h2 className="text-lg font-bold text-gray-900">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
               {editingChart ? 'Edit Chart' : 'Charts'}
             </h2>
             {editingChart && (
@@ -187,7 +187,7 @@ export function ChartsManager({
                 ← Back to list
               </button>
             )}
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -211,7 +211,7 @@ export function ChartsManager({
                   onChange={function(e) { setNewChartName(e.target.value); }}
                   onKeyDown={function(e) { if (e.key === 'Enter') handleCreate(); }}
                   placeholder="New chart name..."
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900" />
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-100 dark:bg-gray-800" />
                 <button onClick={handleCreate} disabled={!newChartName.trim() || creating}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
                   {creating ? 'Creating...' : 'Create Chart'}
@@ -219,26 +219,26 @@ export function ChartsManager({
               </div>
 
               {loading ? (
-                <div className="text-center py-8 text-gray-400">Loading charts...</div>
+                <div className="text-center py-8 text-gray-400 dark:text-gray-500">Loading charts...</div>
               ) : charts.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="text-4xl mb-3">📊</div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-1">No charts yet</h3>
-                  <p className="text-sm text-gray-500">Create a chart to visualize your data.</p>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">No charts yet</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Create a chart to visualize your data.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
                   {charts.map(function(chart) {
                     return (
-                      <div key={chart.id} className="border border-gray-200 rounded-lg overflow-hidden hover:border-gray-300 transition-colors">
-                        <div className="h-48 bg-gray-50 p-4 overflow-hidden">
+                      <div key={chart.id} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
+                        <div className="h-48 bg-gray-50 dark:bg-gray-800/50 p-4 overflow-hidden">
                           <ChartPreview chart={chart} columns={columns} rows={rows} tableId={tableId} />
                         </div>
-                        <div className="p-3 border-t border-gray-200 relative z-10 bg-white">
+                        <div className="p-3 border-t border-gray-200 dark:border-gray-700 relative z-10 bg-white dark:bg-gray-900">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
                               <span className="text-sm">{CHART_TYPES.find(function(t) { return t.value === chart.type; })?.icon || '📊'}</span>
-                              <span className="font-medium text-sm text-gray-900">{chart.name}</span>
+                              <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{chart.name}</span>
                               {chart.config?.mode === 'query' && (
                                 <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full">Multi-Table</span>
                               )}
@@ -424,41 +424,41 @@ function ChartEditor({ chart, tableId, columns, rows, onUpdate }: {
       <div className="col-span-2 space-y-5">
         {/* Chart name */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Chart Name</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Chart Name</label>
           <input type="text" value={name} onChange={function(e) { setName(e.target.value); }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900" />
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-100 dark:bg-gray-800" />
         </div>
 
         {/* Mode switcher */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Data Source</label>
-          <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Data Source</label>
+          <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
             <button onClick={function() { setMode('simple'); }}
               className={'flex-1 px-3 py-1.5 text-xs rounded-md transition-all font-medium ' +
-                (mode === 'simple' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                (mode === 'simple' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200')}>
               Simple
             </button>
             <button onClick={function() { setMode('query'); }}
               className={'flex-1 px-3 py-1.5 text-xs rounded-md transition-all font-medium ' +
-                (mode === 'query' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                (mode === 'query' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200')}>
               Multi-Table
             </button>
           </div>
-          <p className="text-[10px] text-gray-400 mt-1">
+          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
             {mode === 'simple' ? 'Chart data from this table only' : 'Query across linked tables with joins'}
           </p>
         </div>
 
         {/* Chart type */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Chart Type</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Chart Type</label>
           <div className="grid grid-cols-3 gap-2">
             {CHART_TYPES.map(function(t) {
               return (
                 <button key={t.value} onClick={function() { setChartType(t.value); }}
                   className={chartType === t.value
                     ? 'flex flex-col items-center p-2.5 rounded-lg border-2 border-blue-500 bg-blue-50 text-blue-700'
-                    : 'flex flex-col items-center p-2.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600'}>
+                    : 'flex flex-col items-center p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'}>
                   <span className="text-lg mb-0.5">{t.icon}</span>
                   <span className="text-[10px]">{t.label}</span>
                 </button>
@@ -471,18 +471,18 @@ function ChartEditor({ chart, tableId, columns, rows, onUpdate }: {
         {mode === 'simple' && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category (X-Axis)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category (X-Axis)</label>
               <select value={config.xColumn || ''} onChange={function(e) { updateConfig('xColumn', e.target.value); }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900">
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 dark:bg-gray-800">
                 <option value="">Select column...</option>
                 {categoryColumns.map(function(col) { return <option key={col.id} value={col.id}>{col.name}</option>; })}
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Value (Y-Axis)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Value (Y-Axis)</label>
               <select value={config.yColumn || ''} onChange={function(e) { updateConfig('yColumn', e.target.value || null); }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900">
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 dark:bg-gray-800">
                 <option value="">None (count rows)</option>
                 {numericColumns.map(function(col) { return <option key={col.id} value={col.id}>{col.name}</option>; })}
               </select>
@@ -490,9 +490,9 @@ function ChartEditor({ chart, tableId, columns, rows, onUpdate }: {
 
             {config.yColumn && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Aggregation</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Aggregation</label>
                 <select value={config.yAggregation || 'sum'} onChange={function(e) { updateConfig('yAggregation', e.target.value); }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900">
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 dark:bg-gray-800">
                   {AGGREGATIONS.map(function(agg) { return <option key={agg.value} value={agg.value}>{agg.label}</option>; })}
                 </select>
               </div>
@@ -500,10 +500,10 @@ function ChartEditor({ chart, tableId, columns, rows, onUpdate }: {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Show</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Show</label>
                 <select value={config.limit === undefined ? '0' : String(config.limit)}
                   onChange={function(e) { updateConfig('limit', parseInt(e.target.value, 10)); }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900">
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 dark:bg-gray-800">
                   <option value="0">All</option>
                   <option value="5">Top 5</option>
                   <option value="10">Top 10</option>
@@ -513,14 +513,14 @@ function ChartEditor({ chart, tableId, columns, rows, onUpdate }: {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sort</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sort</label>
                 <select value={(config.sortBy || 'value') + ':' + (config.sortDir || 'desc')}
                   onChange={function(e) {
                     var parts = e.target.value.split(':');
                     updateConfig('sortBy', parts[0]);
                     updateConfig('sortDir', parts[1]);
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900">
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 dark:bg-gray-800">
                   <option value="value:desc">Value (high to low)</option>
                   <option value="value:asc">Value (low to high)</option>
                   <option value="label:asc">Label (A to Z)</option>
@@ -539,14 +539,14 @@ function ChartEditor({ chart, tableId, columns, rows, onUpdate }: {
               <label className="block text-xs font-bold text-blue-800 uppercase tracking-wider">Group By</label>
               <select value={config.queryGroupByTableId || tableId}
                 onChange={function(e) { updateConfig('queryGroupByTableId', e.target.value); updateConfig('queryGroupByColumnId', ''); }}
-                className="w-full px-3 py-1.5 border border-blue-200 rounded-lg text-xs text-gray-900 bg-white">
+                className="w-full px-3 py-1.5 border border-blue-200 rounded-lg text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800">
                 {availableTables.map(function(t) {
                   return <option key={t.id} value={t.id}>{t.name}{t.isSource ? ' (source)' : ' (linked)'}</option>;
                 })}
               </select>
               <select value={config.queryGroupByColumnId || ''}
                 onChange={function(e) { updateConfig('queryGroupByColumnId', e.target.value); }}
-                className="w-full px-3 py-1.5 border border-blue-200 rounded-lg text-xs text-gray-900 bg-white">
+                className="w-full px-3 py-1.5 border border-blue-200 rounded-lg text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800">
                 <option value="">Select column...</option>
                 {(allCategoryColumns.filter(function(c) { return c.tableId === (config.queryGroupByTableId || tableId); }))
                   .map(function(col) { return <option key={col.id} value={col.id}>{col.name}</option>; })}
@@ -574,7 +574,7 @@ function ChartEditor({ chart, tableId, columns, rows, onUpdate }: {
                         measures[idx] = Object.assign({}, measures[idx], { tableId: e.target.value, columnId: '' });
                         updateConfig('queryMeasures', measures);
                       }}
-                      className="flex-1 px-2 py-1.5 border border-green-200 rounded text-[10px] text-gray-900 bg-white">
+                      className="flex-1 px-2 py-1.5 border border-green-200 rounded text-[10px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800">
                       {availableTables.map(function(t) {
                         return <option key={t.id} value={t.id}>{t.name}</option>;
                       })}
@@ -585,7 +585,7 @@ function ChartEditor({ chart, tableId, columns, rows, onUpdate }: {
                         measures[idx] = Object.assign({}, measures[idx], { columnId: e.target.value });
                         updateConfig('queryMeasures', measures);
                       }}
-                      className="flex-1 px-2 py-1.5 border border-green-200 rounded text-[10px] text-gray-900 bg-white">
+                      className="flex-1 px-2 py-1.5 border border-green-200 rounded text-[10px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800">
                       <option value="">Column...</option>
                       {allNumericColumns.filter(function(c) { return c.tableId === (m.tableId || tableId); })
                         .map(function(c) { return <option key={c.id} value={c.id}>{c.name}</option>; })}
@@ -596,7 +596,7 @@ function ChartEditor({ chart, tableId, columns, rows, onUpdate }: {
                         measures[idx] = Object.assign({}, measures[idx], { aggregation: e.target.value });
                         updateConfig('queryMeasures', measures);
                       }}
-                      className="w-16 px-1 py-1.5 border border-green-200 rounded text-[10px] text-gray-900 bg-white">
+                      className="w-16 px-1 py-1.5 border border-green-200 rounded text-[10px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800">
                       {AGGREGATIONS.map(function(a) { return <option key={a.value} value={a.value}>{a.label}</option>; })}
                     </select>
                     <button onClick={function() {
@@ -627,7 +627,7 @@ function ChartEditor({ chart, tableId, columns, rows, onUpdate }: {
                         filters[idx] = Object.assign({}, filters[idx], { tableId: e.target.value, columnId: '' });
                         updateConfig('queryFilters', filters);
                       }}
-                      className="w-20 px-1 py-1.5 border border-amber-200 rounded text-[10px] text-gray-900 bg-white">
+                      className="w-20 px-1 py-1.5 border border-amber-200 rounded text-[10px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800">
                       {availableTables.map(function(t) {
                         return <option key={t.id} value={t.id}>{t.name}</option>;
                       })}
@@ -638,7 +638,7 @@ function ChartEditor({ chart, tableId, columns, rows, onUpdate }: {
                         filters[idx] = Object.assign({}, filters[idx], { columnId: e.target.value });
                         updateConfig('queryFilters', filters);
                       }}
-                      className="flex-1 px-1 py-1.5 border border-amber-200 rounded text-[10px] text-gray-900 bg-white">
+                      className="flex-1 px-1 py-1.5 border border-amber-200 rounded text-[10px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800">
                       <option value="">Column...</option>
                       {filterTableCols.map(function(c: any) { return <option key={c.id} value={c.id}>{c.name}</option>; })}
                     </select>
@@ -648,7 +648,7 @@ function ChartEditor({ chart, tableId, columns, rows, onUpdate }: {
                         filters[idx] = Object.assign({}, filters[idx], { operator: e.target.value });
                         updateConfig('queryFilters', filters);
                       }}
-                      className="w-16 px-1 py-1.5 border border-amber-200 rounded text-[10px] text-gray-900 bg-white">
+                      className="w-16 px-1 py-1.5 border border-amber-200 rounded text-[10px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800">
                       {FILTER_OPERATORS.map(function(op) { return <option key={op.value} value={op.value}>{op.label}</option>; })}
                     </select>
                     {f.operator !== 'is_empty' && f.operator !== 'not_empty' && (
@@ -659,7 +659,7 @@ function ChartEditor({ chart, tableId, columns, rows, onUpdate }: {
                           updateConfig('queryFilters', filters);
                         }}
                         placeholder="Value..."
-                        className="flex-1 px-2 py-1.5 border border-amber-200 rounded text-[10px] text-gray-900 bg-white" />
+                        className="flex-1 px-2 py-1.5 border border-amber-200 rounded text-[10px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800" />
                     )}
                     <button onClick={function() {
                       var filters = (config.queryFilters || []).filter(function(_: any, i: number) { return i !== idx; });
@@ -683,8 +683,8 @@ function ChartEditor({ chart, tableId, columns, rows, onUpdate }: {
             )}
 
             {queryResult && (
-              <div className="bg-gray-50 rounded-lg p-2">
-                <p className="text-[10px] text-gray-500">
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
+                <p className="text-[10px] text-gray-500 dark:text-gray-400">
                   {queryResult.meta.filteredRows} rows → {queryResult.meta.groupCount} groups
                 </p>
               </div>
@@ -698,18 +698,18 @@ function ChartEditor({ chart, tableId, columns, rows, onUpdate }: {
             <input type="checkbox" checked={config.showLegend !== false}
               onChange={function(e) { updateConfig('showLegend', e.target.checked); }}
               className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-            <span className="text-sm text-gray-700">Legend</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">Legend</span>
           </label>
           <label className="flex items-center space-x-2 cursor-pointer">
             <input type="checkbox" checked={config.showValues !== false}
               onChange={function(e) { updateConfig('showValues', e.target.checked); }}
               className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-            <span className="text-sm text-gray-700">Values</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">Values</span>
           </label>
         </div>
 
         {/* Save */}
-        <div className="flex justify-end pt-4 border-t border-gray-200">
+        <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
           <button onClick={handleSave} disabled={saving}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium">
             {saving ? 'Saving...' : 'Save Chart'}
@@ -718,9 +718,9 @@ function ChartEditor({ chart, tableId, columns, rows, onUpdate }: {
       </div>
 
       {/* Right panel — preview */}
-      <div className="col-span-3 bg-gray-50 rounded-xl p-6 border border-gray-200">
-        <h3 className="text-sm font-semibold text-gray-500 mb-4">PREVIEW</h3>
-        <div className="bg-white rounded-lg p-4 min-h-[400px] flex items-center justify-center">
+      <div className="col-span-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+        <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-4">PREVIEW</h3>
+        <div className="bg-white dark:bg-gray-900 rounded-lg p-4 min-h-[400px] flex items-center justify-center">
           {mode === 'query' && queryResult ? (
             <QueryChartPreview
               chartType={chartType}
@@ -761,7 +761,7 @@ function QueryChartPreview({ chartType, name, data, meta, config }: {
   }, [data, chartType]);
 
   if (!data || data.length === 0) {
-    return <div className="text-center text-gray-400 text-sm">No data — run the query to see results</div>;
+    return <div className="text-center text-gray-400 dark:text-gray-500 text-sm">No data — run the query to see results</div>;
   }
 
   var measureKey = meta.measures[0]?.key || 'count';
@@ -799,7 +799,7 @@ function QueryChartPreview({ chartType, name, data, meta, config }: {
     return (
       <div ref={containerRef} className="w-full relative">
         {TooltipEl}
-        <h3 className="text-base font-semibold text-gray-900 mb-1 text-center">{name}</h3>
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1 text-center">{name}</h3>
         <p className="text-xs text-gray-400 mb-4 text-center">
           {meta.groupBy.columnName} — {meta.measures[0]?.aggregation || 'count'} of {meta.measures[0]?.name || 'rows'}
         </p>
@@ -841,7 +841,7 @@ function QueryChartPreview({ chartType, name, data, meta, config }: {
     return (
       <div ref={containerRef} className="w-full relative">
         {TooltipEl}
-        <h3 className="text-base font-semibold text-gray-900 mb-1 text-center">{name}</h3>
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1 text-center">{name}</h3>
         <p className="text-xs text-gray-400 mb-4 text-center">
           {meta.groupBy.columnName} — {meta.measures[0]?.aggregation || 'count'} of {meta.measures[0]?.name || 'rows'}
         </p>
@@ -852,7 +852,7 @@ function QueryChartPreview({ chartType, name, data, meta, config }: {
               <div key={i} className="flex items-center space-x-2"
                 onMouseMove={function(e) { showTooltip(e, d.label, d.value); }} onMouseLeave={hideTooltip}>
                 <span className="text-xs text-gray-600 w-24 truncate text-right flex-shrink-0" title={d.label}>{d.label}</span>
-                <div className="flex-1 bg-gray-100 rounded-full" style={{ height: '28px' }}>
+                <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full" style={{ height: '28px' }}>
                   <div className="h-full rounded-full flex items-center justify-end pr-2 transition-all duration-700 ease-out cursor-pointer hover:opacity-80"
                     style={{ width: animate ? Math.max(2, width) + '%' : '0%', backgroundColor: d.color }}>
                     {config.showValues !== false && width > 15 && (
@@ -885,7 +885,7 @@ function QueryChartPreview({ chartType, name, data, meta, config }: {
     return (
       <div ref={containerRef} className="w-full relative">
         {TooltipEl}
-        <h3 className="text-base font-semibold text-gray-900 mb-1 text-center">{name}</h3>
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1 text-center">{name}</h3>
         <p className="text-xs text-gray-400 mb-2 text-center">
           {meta.groupBy.columnName} — {meta.measures[0]?.aggregation || 'count'} of {meta.measures[0]?.name || 'rows'}
         </p>
@@ -945,7 +945,7 @@ function QueryChartPreview({ chartType, name, data, meta, config }: {
     return (
       <div ref={containerRef} className="flex flex-col items-center relative">
         {TooltipEl}
-        <h3 className="text-base font-semibold text-gray-900 mb-1">{name}</h3>
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">{name}</h3>
         <p className="text-xs text-gray-400 mb-3">{meta.groupBy.columnName} breakdown</p>
         <svg width={size} height={size} viewBox={'0 0 ' + size + ' ' + size}
           className={animate ? 'opacity-100 transition-opacity duration-500' : 'opacity-0'}>
@@ -989,7 +989,7 @@ function QueryChartPreview({ chartType, name, data, meta, config }: {
     );
   }
 
-  return <div className="text-center text-gray-400 text-sm">Unknown chart type</div>;
+  return <div className="text-center text-gray-400 dark:text-gray-500 text-sm">Unknown chart type</div>;
 }
 
 // ============================================================
@@ -1015,11 +1015,11 @@ function ChartPreview({ chart, columns, rows, tableId, fullSize = false }: {
 
   // If this is a query-mode chart, show placeholder in simple preview
   if (config.mode === 'query') {
-    return <div className="text-center text-gray-400 text-sm">Multi-table chart — click Edit to preview</div>;
+    return <div className="text-center text-gray-400 dark:text-gray-500 text-sm">Multi-table chart — click Edit to preview</div>;
   }
 
   if (!xCol) {
-    return <div className="text-center text-gray-400 text-sm">Select a category column</div>;
+    return <div className="text-center text-gray-400 dark:text-gray-500 text-sm">Select a category column</div>;
   }
 
   var groups: Record<string, { label: string; values: number[] }> = {};
@@ -1074,7 +1074,7 @@ function ChartPreview({ chart, columns, rows, tableId, fullSize = false }: {
   }
 
   if (data.length === 0) {
-    return <div className="text-center text-gray-400 text-sm">No data to display</div>;
+    return <div className="text-center text-gray-400 dark:text-gray-500 text-sm">No data to display</div>;
   }
 
   var maxValue = Math.max.apply(null, data.map(function(d) { return d.value; }));
@@ -1102,7 +1102,7 @@ function ChartPreview({ chart, columns, rows, tableId, fullSize = false }: {
     return (
       <div ref={containerRef} className={fullSize ? 'w-full relative' : 'w-full h-full flex flex-col justify-end relative'}>
         {TooltipEl}
-        {fullSize && <h3 className="text-base font-semibold text-gray-900 mb-1 text-center">{chart.name}</h3>}
+        {fullSize && <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1 text-center">{chart.name}</h3>}
         {fullSize && <p className="text-xs text-gray-400 mb-4 text-center">{xCol.name} vs {yCol?.name || 'Count'}</p>}
         <div className={fullSize ? 'relative' : ''}>
           {fullSize && (
@@ -1147,7 +1147,7 @@ function ChartPreview({ chart, columns, rows, tableId, fullSize = false }: {
     return (
       <div ref={containerRef} className={fullSize ? 'w-full relative' : 'w-full h-full flex flex-col justify-center relative'}>
         {TooltipEl}
-        {fullSize && <h3 className="text-base font-semibold text-gray-900 mb-1 text-center">{chart.name}</h3>}
+        {fullSize && <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1 text-center">{chart.name}</h3>}
         <div className="space-y-2 overflow-y-auto" style={{ maxHeight: fullSize ? '360px' : '120px' }}>
           {data.map(function(d, i) {
             var width = maxValue > 0 ? (d.value / maxValue) * 100 : 0;
@@ -1155,7 +1155,7 @@ function ChartPreview({ chart, columns, rows, tableId, fullSize = false }: {
               <div key={i} className="flex items-center space-x-2"
                 onMouseMove={function(e) { showTooltip(e, d.label, d.value); }} onMouseLeave={hideTooltip}>
                 {fullSize && <span className="text-xs text-gray-600 w-24 truncate text-right flex-shrink-0" title={d.label}>{d.label}</span>}
-                <div className="flex-1 bg-gray-100 rounded-full flex-shrink-0" style={{ height: fullSize ? '28px' : '12px' }}>
+                <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full flex-shrink-0" style={{ height: fullSize ? '28px' : '12px' }}>
                   <div className="h-full rounded-full flex items-center justify-end pr-2 transition-all duration-700 ease-out cursor-pointer hover:opacity-80"
                     style={{ width: animate ? Math.max(2, width) + '%' : '0%', backgroundColor: d.color }}>
                     {config.showValues !== false && fullSize && width > 15 && (
@@ -1192,7 +1192,7 @@ function ChartPreview({ chart, columns, rows, tableId, fullSize = false }: {
     return (
       <div ref={containerRef} className="w-full relative">
         {TooltipEl}
-        {fullSize && <h3 className="text-base font-semibold text-gray-900 mb-1 text-center">{chart.name}</h3>}
+        {fullSize && <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1 text-center">{chart.name}</h3>}
         <svg viewBox={'0 0 ' + svgWidth + ' ' + svgHeight} className="w-full">
           {fullSize && gridLines.map(function(v, i) {
             var y = padding + chartHeight - (maxValue > 0 ? (v / maxValue) * chartHeight : 0);
@@ -1252,7 +1252,7 @@ function ChartPreview({ chart, columns, rows, tableId, fullSize = false }: {
     return (
       <div ref={containerRef} className="flex flex-col items-center relative">
         {TooltipEl}
-        {fullSize && <h3 className="text-base font-semibold text-gray-900 mb-1">{chart.name}</h3>}
+        {fullSize && <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">{chart.name}</h3>}
         <svg width={pieSize} height={pieSize} viewBox={'0 0 ' + pieSize + ' ' + pieSize}
           className={animate ? 'opacity-100 transition-opacity duration-500' : 'opacity-0'}>
           {pieSlices.map(function(slice: any, i: number) {
@@ -1293,5 +1293,5 @@ function ChartPreview({ chart, columns, rows, tableId, fullSize = false }: {
     );
   }
 
-  return <div className="text-center text-gray-400 text-sm">Unknown chart type</div>;
+  return <div className="text-center text-gray-400 dark:text-gray-500 text-sm">Unknown chart type</div>;
 }

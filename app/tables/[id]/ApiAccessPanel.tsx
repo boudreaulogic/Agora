@@ -167,14 +167,14 @@ export function ApiAccessPanel({
       <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
 
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">API Access</h2>
-              <p className="text-xs text-gray-500 mt-0.5">Manage API keys and integrate with external tools</p>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">API Access</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Manage API keys and integrate with external tools</p>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -182,13 +182,13 @@ export function ApiAccessPanel({
           </div>
 
           {/* Tabs */}
-          <div className="flex border-b border-gray-200 px-6 flex-shrink-0">
+          <div className="flex border-b border-gray-200 dark:border-gray-700 px-6 flex-shrink-0">
             <button onClick={() => setActiveTab('keys')}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === 'keys' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === 'keys' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
               API Keys
             </button>
             <button onClick={() => setActiveTab('docs')}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === 'docs' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === 'docs' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
               Quick Start
             </button>
           </div>
@@ -206,7 +206,7 @@ export function ApiAccessPanel({
                     </div>
                     <p className="text-xs text-amber-700 mb-3">This is the only time you'll see this key. Copy it and store it securely.</p>
                     <div className="flex items-center space-x-2">
-                      <code className="flex-1 px-3 py-2 bg-white border border-amber-300 rounded-lg text-xs font-mono text-gray-900 select-all break-all">
+                      <code className="flex-1 px-3 py-2 bg-white dark:bg-gray-800 border border-amber-300 rounded-lg text-xs font-mono text-gray-900 dark:text-gray-100 select-all break-all">
                         {revealedKey.rawKey}
                       </code>
                       <button
@@ -225,36 +225,36 @@ export function ApiAccessPanel({
                 {/* Generate New Key */}
                 {!showNewKey ? (
                   <button onClick={() => setShowNewKey(true)}
-                    className="flex items-center space-x-2 px-4 py-2.5 text-sm border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 w-full transition-colors">
+                    className="flex items-center space-x-2 px-4 py-2.5 text-sm border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 w-full transition-colors">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                     <span>Generate New API Key</span>
                   </button>
                 ) : (
-                  <div className="border border-blue-200 bg-blue-50 rounded-lg p-4 space-y-3">
-                    <h4 className="text-sm font-semibold text-gray-900">New API Key</h4>
+                  <div className="border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/10 rounded-lg p-4 space-y-3">
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">New API Key</h4>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name</label>
                       <input type="text" value={newKeyName} onChange={(e) => setNewKeyName(e.target.value)}
                         placeholder="e.g. Device Inventory Script, Zapier Integration..."
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 dark:text-gray-100"
                         autoFocus
                         onKeyDown={(e) => { if (e.key === 'Enter') handleGenerate(); if (e.key === 'Escape') setShowNewKey(false); }}
                       />
                     </div>
                     <div className="flex space-x-3">
                       <div className="flex-1">
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Permission</label>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Permission</label>
                         <select value={newKeyPerms} onChange={(e) => setNewKeyPerms(e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white">
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-100">
                           {PERMISSION_OPTIONS.map(p => (
                             <option key={p.value} value={p.value}>{p.label} — {p.description}</option>
                           ))}
                         </select>
                       </div>
                       <div className="flex-1">
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Expires</label>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Expires</label>
                         <select value={newKeyExpiry} onChange={(e) => setNewKeyExpiry(e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white">
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-100">
                           {EXPIRY_OPTIONS.map(e => (
                             <option key={e.value} value={e.value}>{e.label}</option>
                           ))}
@@ -262,7 +262,7 @@ export function ApiAccessPanel({
                       </div>
                     </div>
                     <div className="flex justify-end space-x-2">
-                      <button onClick={() => setShowNewKey(false)} className="px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+                      <button onClick={() => setShowNewKey(false)} className="px-3 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">Cancel</button>
                       <button onClick={handleGenerate} disabled={!newKeyName.trim() || isGenerating}
                         className="px-4 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
                         {isGenerating ? 'Generating...' : 'Generate Key'}
@@ -277,32 +277,32 @@ export function ApiAccessPanel({
                 ) : keys.length === 0 && !revealedKey ? (
                   <div className="text-center py-8">
                     <div className="text-3xl mb-3">🔑</div>
-                    <p className="text-sm font-medium text-gray-900 mb-1">No API keys yet</p>
-                    <p className="text-xs text-gray-500">Generate a key to start integrating with external tools and scripts</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">No API keys yet</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Generate a key to start integrating with external tools and scripts</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
                     {keys.map(key => {
                       const badge = getPermBadge(key.permissions);
                       return (
-                        <div key={key.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg group">
+                        <div key={key.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg group">
                           <div className="flex items-center space-x-3 min-w-0">
-                            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                            <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
                               <span className="text-sm">🔑</span>
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center space-x-2">
-                                <p className="text-sm font-medium text-gray-900 truncate">{key.name}</p>
+                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{key.name}</p>
                                 <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded-full ${badge.cls}`}>{badge.label}</span>
                               </div>
-                              <div className="flex items-center space-x-3 text-[10px] text-gray-400 mt-0.5">
+                              <div className="flex items-center space-x-3 text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
                                 <code className="font-mono">{key.keyPrefix}...</code>
                                 <span>Created {formatDate(key.createdAt)}</span>
                                 <span>Last used: {getRelativeTime(key.lastUsedAt)}</span>
                                 {key.expiresAt && <span>Expires {formatDate(key.expiresAt)}</span>}
                               </div>
                               {key.createdBy && (
-                                <p className="text-[10px] text-gray-400 mt-0.5">By {key.createdBy.name || key.createdBy.email}</p>
+                                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">By {key.createdBy.name || key.createdBy.email}</p>
                               )}
                             </div>
                           </div>
@@ -319,29 +319,29 @@ export function ApiAccessPanel({
             ) : (
               /* Quick Start / Docs Tab */
               <div className="space-y-5">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-1">Base URL</h4>
-                  <code className="text-xs font-mono text-blue-700 bg-white px-2 py-1 rounded border border-gray-200 select-all">{apiBase}</code>
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Base URL</h4>
+                  <code className="text-xs font-mono text-blue-700 dark:text-blue-400 bg-white dark:bg-gray-800 px-2 py-1 rounded border border-gray-200 dark:border-gray-700 select-all">{apiBase}</code>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Authentication</h4>
-                  <p className="text-xs text-gray-600 mb-2">Include your API key in the Authorization header:</p>
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Authentication</h4>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Include your API key in the Authorization header:</p>
                   <pre className="text-xs font-mono bg-gray-900 text-green-400 p-3 rounded-lg overflow-x-auto">
 {`Authorization: Bearer ${exampleKey}`}
                   </pre>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">List Rows</h4>
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">List Rows</h4>
                   <pre className="text-xs font-mono bg-gray-900 text-green-400 p-3 rounded-lg overflow-x-auto">
 {`curl -H "Authorization: Bearer ${exampleKey}" \\
   "${apiBase}/tables/${tableId}/rows"`}
                   </pre>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Create a Row</h4>
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Create a Row</h4>
                   <pre className="text-xs font-mono bg-gray-900 text-green-400 p-3 rounded-lg overflow-x-auto">
 {`curl -X POST \\
   -H "Authorization: Bearer ${exampleKey}" \\
@@ -351,8 +351,8 @@ export function ApiAccessPanel({
                   </pre>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Update a Row</h4>
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Update a Row</h4>
                   <pre className="text-xs font-mono bg-gray-900 text-green-400 p-3 rounded-lg overflow-x-auto">
 {`curl -X PATCH \\
   -H "Authorization: Bearer ${exampleKey}" \\
@@ -362,8 +362,8 @@ export function ApiAccessPanel({
                   </pre>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Delete a Row</h4>
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Delete a Row</h4>
                   <pre className="text-xs font-mono bg-gray-900 text-green-400 p-3 rounded-lg overflow-x-auto">
 {`curl -X DELETE \\
   -H "Authorization: Bearer ${exampleKey}" \\
@@ -371,8 +371,8 @@ export function ApiAccessPanel({
                   </pre>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">PowerShell Example</h4>
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">PowerShell Example</h4>
                   <pre className="text-xs font-mono bg-gray-900 text-green-400 p-3 rounded-lg overflow-x-auto">
 {`$headers = @{
   "Authorization" = "Bearer ${exampleKey}"
@@ -390,8 +390,8 @@ Invoke-RestMethod -Uri "${apiBase}/tables/${tableId}/rows" \\
                   </pre>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Python Example</h4>
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Python Example</h4>
                   <pre className="text-xs font-mono bg-gray-900 text-green-400 p-3 rounded-lg overflow-x-auto">
 {`import requests
 
@@ -430,8 +430,8 @@ requests.post(f"{BASE}/tables/{TABLE}/rows",
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-3 border-t border-gray-200 flex justify-end flex-shrink-0">
-            <button onClick={onClose} className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 font-medium">Done</button>
+          <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end flex-shrink-0">
+            <button onClick={onClose} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium">Done</button>
           </div>
         </div>
       </div>

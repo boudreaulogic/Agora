@@ -31,8 +31,8 @@ export default async function CollegeScorecardPage() {
   return (
     <div className="mx-auto max-w-2xl p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold">College Scorecard Connector</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">College Scorecard Connector</h1>
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
           Sync school data from the U.S. Department of Education College Scorecard into an Agora table.
         </p>
       </div>

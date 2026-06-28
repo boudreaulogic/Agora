@@ -563,7 +563,7 @@ export function TableWithSelection({
 
       <div className="flex-1 overflow-auto">
         <div className="inline-block min-w-full align-middle">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
 
             <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0 z-10">
               <tr>
@@ -699,7 +699,7 @@ export function TableWithSelection({
               onSummaryChange={onSummaryChange}
             />
 
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
               {finalRows.length > 0 ? (
                 finalRows.map((row: any, index: number) => {
                   const formatting = formattingRules?.length ? evaluateFormattingRules(formattingRules, row, table.columns) : { rowStyle: {}, cellStyles: {} };
@@ -716,15 +716,15 @@ export function TableWithSelection({
                     onContextMenu={(e) => handleContextMenu(e, row)}
                     className={`group relative ${
                       selectedRows.includes(row.id)
-                        ? 'bg-blue-50'
+                        ? 'bg-blue-50 dark:bg-blue-900/20'
                         : rowEditors[row.id]
                           ? ''
                           : hasRowFormatting
                             ? ''
-                            : row.isLocked 
-                              ? 'bg-amber-50/50'
-                              : index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                    } hover:bg-blue-50 ${
+                            : row.isLocked
+                              ? 'bg-amber-50/50 dark:bg-amber-900/10'
+                              : index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800/50'
+                    } hover:bg-blue-50 dark:hover:bg-blue-900/20 ${
                       draggingRowId.current === row.id ? 'opacity-40' : 'opacity-100'
                     }`}
                     style={rowEditors[row.id] 
@@ -745,7 +745,7 @@ export function TableWithSelection({
                       />
                     )}
 
-                    <td className="w-20 px-3 py-4 border-r border-gray-200">
+                    <td className="w-20 px-3 py-4 border-r border-gray-200 dark:border-gray-700">
                       {rowEditors[row.id] && (
                         <div className="absolute left-0 top-0 px-2 py-0.5 text-[9px] font-medium text-white rounded-br-md z-10" style={{ backgroundColor: rowEditors[row.id].color }}>
                           {rowEditors[row.id].userName}
@@ -919,9 +919,9 @@ export function TableWithSelection({
                           data-cell-id={cellId}
                           onClick={() => { var ri = finalRows.findIndex(function(fr) { return fr.id === row.id; }); var ci = visibleColumns.findIndex(function(vc) { return vc.id === column.id; }); setFocusedCell({ rowIndex: ri, colIndex: ci }); }}
                           onDoubleClick={() => setExpandedRow(row)}
-                          className={`px-6 py-4 text-sm text-gray-900 border-r border-gray-200 overflow-hidden relative cursor-pointer hover:bg-blue-50/50 ${
-                            isHighlighted ? 'ring-2 ring-yellow-400 bg-yellow-50' : ''
-                          } ${focusedCell && finalRows[focusedCell.rowIndex]?.id === row.id && visibleColumns[focusedCell.colIndex]?.id === column.id ? 'ring-2 ring-blue-500 bg-blue-50/30' : ''}`}
+                          className={`px-6 py-4 text-sm text-gray-900 dark:text-gray-100 border-r border-gray-200 dark:border-gray-700 overflow-hidden relative cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-900/10 ${
+                            isHighlighted ? 'ring-2 ring-yellow-400 bg-yellow-50 dark:bg-yellow-900/20' : ''
+                          } ${focusedCell && finalRows[focusedCell.rowIndex]?.id === row.id && visibleColumns[focusedCell.colIndex]?.id === column.id ? 'ring-2 ring-blue-500 bg-blue-50/30 dark:bg-blue-900/20' : ''}`}
                           style={{ maxWidth: `${column.width || 200}px`, ...cellFormatting }}
                         >
                           <CellPresence cellId={cellId} />
@@ -956,20 +956,20 @@ export function TableWithSelection({
                 })
               ) : (
                 <tr>
-                  <td colSpan={visibleColumns.length + 1} className="px-6 py-12 text-center text-gray-400">
+                  <td colSpan={visibleColumns.length + 1} className="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
                     {table.rows.length === 0 && !hasAnything ? (
                       <>
                         <div className="text-4xl mb-4">📊</div>
-                        <p className="text-lg font-medium text-gray-900 mb-2">No rows yet</p>
-                        <p className="text-sm text-gray-500">Click "Add Row" to get started</p>
+                        <p className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No rows yet</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Click "Add Row" to get started</p>
                       </>
                     ) : (
                       <>
                         <div className="text-4xl mb-4">🔍</div>
-                        <p className="text-lg font-medium text-gray-900 mb-2">
+                        <p className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                           {hasActiveSearch ? 'No results found' : 'No matching rows'}
                         </p>
-                        <p className="text-sm text-gray-500 mb-4">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                           {hasActiveSearch 
                             ? `No rows match "${searchQuery}"` 
                             : 'Try adjusting your filters'}

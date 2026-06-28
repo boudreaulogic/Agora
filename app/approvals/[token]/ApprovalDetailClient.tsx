@@ -47,7 +47,7 @@ export function ApprovalDetailClient({ token }: { token: string }) {
       <div className="text-center">
         <div className="text-5xl mb-4">⚠️</div>
         <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Approval not found</h2>
-        <p className="text-sm text-gray-500 mt-1">This link may be invalid or expired.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">This link may be invalid or expired.</p>
       </div>
     </div>
   );
@@ -61,7 +61,7 @@ export function ApprovalDetailClient({ token }: { token: string }) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
       case 'approved': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
       case 'denied': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-      default: return 'bg-gray-100 text-gray-600';
+      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400';
     }
   }
 
@@ -98,7 +98,7 @@ export function ApprovalDetailClient({ token }: { token: string }) {
               if (val === undefined || val === null || val === '') return null;
               return (
                 <div key={col.id} className="flex items-start">
-                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider w-40 flex-shrink-0 pt-0.5">{col.name}</span>
+                  <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider w-40 flex-shrink-0 pt-0.5">{col.name}</span>
                   <span className="text-sm text-gray-900 dark:text-gray-100 flex-1">{String(val)}</span>
                 </div>
               );
@@ -116,7 +116,7 @@ export function ApprovalDetailClient({ token }: { token: string }) {
               {request.actions.map((act: any) => (
                 <div key={act.id} className="flex items-start space-x-3">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm ${
-                    act.action === 'approved' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                    act.action === 'approved' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
                   }`}>
                     {act.action === 'approved' ? '✓' : '✗'}
                   </div>
@@ -126,11 +126,11 @@ export function ApprovalDetailClient({ token }: { token: string }) {
                         {act.user?.name || act.user?.email || 'Unknown'}
                       </span>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                        act.action === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        act.action === 'approved' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                       }`}>
                         {act.action}
                       </span>
-                      <span className="text-xs text-gray-400">{new Date(act.createdAt).toLocaleString()}</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">{new Date(act.createdAt).toLocaleString()}</span>
                     </div>
                     {act.reason && (
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 italic">"{act.reason}"</p>
@@ -185,7 +185,7 @@ export function ApprovalDetailClient({ token }: { token: string }) {
           <div className="bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 text-center">
             <div className="text-3xl mb-2">{myAction?.action === 'approved' ? '✅' : '❌'}</div>
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">You already {myAction?.action} this request</p>
-            {myAction?.reason && <p className="text-xs text-gray-500 mt-1">Your comment: "{myAction.reason}"</p>}
+            {myAction?.reason && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Your comment: "{myAction.reason}"</p>}
           </div>
         )}
 
@@ -198,7 +198,7 @@ export function ApprovalDetailClient({ token }: { token: string }) {
             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">
               {result === 'approved' ? 'Approved!' : 'Denied'}
             </h3>
-            <p className="text-sm text-gray-500">Your decision has been recorded and the requester has been notified.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Your decision has been recorded and the requester has been notified.</p>
           </div>
         )}
 
@@ -207,7 +207,7 @@ export function ApprovalDetailClient({ token }: { token: string }) {
           <div className="bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 text-center">
             <div className="text-3xl mb-2">⏳</div>
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Waiting for approval</p>
-            <p className="text-xs text-gray-500 mt-1">You are not an approver for this request.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">You are not an approver for this request.</p>
           </div>
         )}
       </div>

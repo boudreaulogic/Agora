@@ -185,7 +185,7 @@ export function KanbanBoard({
   }
 
   return (
-    <div className="flex-1 overflow-x-auto overflow-y-hidden bg-gray-100 p-6">
+    <div className="flex-1 overflow-x-auto overflow-y-hidden bg-gray-100 dark:bg-gray-950 p-6">
       <div className="flex space-x-4 h-full min-h-0">
         {lanes.map((lane) => {
           const laneRows = getRowsForLane(lane);
@@ -199,7 +199,7 @@ export function KanbanBoard({
               className={`flex flex-col w-72 flex-shrink-0 rounded-xl transition-all ${
                 isDropTarget
                   ? 'bg-blue-100 ring-2 ring-blue-400 ring-offset-2'
-                  : 'bg-gray-50'
+                  : 'bg-gray-50 dark:bg-gray-800/50'
               }`}
               onDragEnter={(e) => handleDragEnter(e, lane)}
               onDragLeave={(e) => handleDragLeave(e, lane)}
@@ -214,7 +214,7 @@ export function KanbanBoard({
                     {laneName}
                   </span>
                 </div>
-                <span className="text-xs text-gray-500 bg-white px-2 py-0.5 rounded-full font-medium">
+                <span className="text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-700 px-2 py-0.5 rounded-full font-medium">
                   {laneRows.length}
                 </span>
               </div>
@@ -222,7 +222,7 @@ export function KanbanBoard({
               {/* Cards */}
               <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[100px]">
                 {laneRows.length === 0 && !isDropTarget && (
-                  <div className="text-center py-8 text-xs text-gray-400">
+                  <div className="text-center py-8 text-xs text-gray-400 dark:text-gray-500">
                     No items
                   </div>
                 )}
@@ -246,12 +246,12 @@ export function KanbanBoard({
                       onDragStart={(e) => handleDragStart(e, row.id)}
                       onDragEnd={handleDragEnd}
                       onClick={() => onCardClick(row)}
-                      className={`bg-white rounded-lg border border-gray-200 p-3 cursor-grab active:cursor-grabbing hover:shadow-md hover:border-gray-300 transition-all group ${
+                      className={`bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-3 cursor-grab active:cursor-grabbing hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all group ${
                         isDragging ? 'opacity-40' : ''
                       }`}
                     >
                       {/* Card Title */}
-                      <div className="font-medium text-sm text-gray-900 mb-1 truncate">
+                      <div className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-1 truncate">
                         {title}
                       </div>
 
@@ -266,7 +266,7 @@ export function KanbanBoard({
 
                             return (
                               <div key={col.id} className="flex items-center space-x-1.5">
-                                <span className="text-xs text-gray-400 truncate w-16 flex-shrink-0">
+                                <span className="text-xs text-gray-400 dark:text-gray-500 truncate w-16 flex-shrink-0">
                                   {col.name}
                                 </span>
                                 {col.type === 'select' ? (
@@ -274,7 +274,7 @@ export function KanbanBoard({
                                     {formatted}
                                   </span>
                                 ) : (
-                                  <span className="text-xs text-gray-600 truncate">
+                                  <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
                                     {formatted}
                                   </span>
                                 )}
@@ -285,9 +285,9 @@ export function KanbanBoard({
                       )}
 
                       {/* Card Footer */}
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="text-xs text-gray-400">Click to expand</span>
-                        <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-800 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-xs text-gray-400 dark:text-gray-500">Click to expand</span>
+                        <svg className="w-3 h-3 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                         </svg>
                       </div>

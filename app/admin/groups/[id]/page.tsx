@@ -165,14 +165,14 @@ export default async function GroupDetailPage({ params }: { params: { id: string
   const memberCount = group.members.filter(m => m.role === 'member').length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="bg-white dark:bg-gray-900 shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{group.name}</h1>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{group.name}</h1>
               {group.description && (
-                <p className="mt-1 text-sm text-gray-500">{group.description}</p>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{group.description}</p>
               )}
             </div>
             {canDeleteGroups && (
@@ -191,29 +191,29 @@ export default async function GroupDetailPage({ params }: { params: { id: string
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             <div className="grid grid-cols-4 gap-4">
-              <div className="bg-white rounded-lg shadow p-4">
-                <p className="text-xs text-gray-600">Total</p>
-                <p className="text-2xl font-bold text-gray-900">{group.members.length}</p>
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-4">
+                <p className="text-xs text-gray-600 dark:text-gray-400">Total</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{group.members.length}</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-4">
-                <p className="text-xs text-gray-600">Owners</p>
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-4">
+                <p className="text-xs text-gray-600 dark:text-gray-400">Owners</p>
                 <p className="text-2xl font-bold text-purple-600">{ownerCount}</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-4">
-                <p className="text-xs text-gray-600">Managers</p>
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-4">
+                <p className="text-xs text-gray-600 dark:text-gray-400">Managers</p>
                 <p className="text-2xl font-bold text-blue-600">{managerCount}</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-4">
-                <p className="text-xs text-gray-600">Members</p>
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-4">
+                <p className="text-xs text-gray-600 dark:text-gray-400">Members</p>
                 <p className="text-2xl font-bold text-green-600">{memberCount}</p>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900">Members</h2>
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Members</h2>
               </div>
-              <div className="divide-y divide-gray-200">
+              <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {group.members.map((membership) => {
                   const isLastOwner = membership.role === 'owner' && ownerCount === 1;
                   const canEditThisMember = canManage && !(isLastOwner && !canEditGroups);
@@ -225,11 +225,11 @@ export default async function GroupDetailPage({ params }: { params: { id: string
                           {membership.user.name?.charAt(0) || membership.user.email.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-gray-900 dark:text-gray-100">
                             {membership.user.name || 'No name'}
                           </p>
-                          <p className="text-sm text-gray-500">{membership.user.email}</p>
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{membership.user.email}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                             Joined {new Date(membership.joinedAt).toLocaleDateString()}
                           </p>
                         </div>
@@ -242,7 +242,7 @@ export default async function GroupDetailPage({ params }: { params: { id: string
                             <select
                               name="role"
                               defaultValue={membership.role}
-                              className="px-3 py-1 text-sm border border-gray-300 rounded-lg"
+                              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-gray-100"
                             >
                               <option value="member">Member</option>
                               <option value="manager">Manager</option>
@@ -254,11 +254,11 @@ export default async function GroupDetailPage({ params }: { params: { id: string
                           </form>
                         ) : (
                           <span className={`px-3 py-1 text-sm font-medium rounded-full ${
-                            membership.role === 'owner' 
+                            membership.role === 'owner'
                               ? 'bg-purple-100 text-purple-800'
                               : membership.role === 'manager'
                               ? 'bg-blue-100 text-blue-800'
-                              : 'bg-gray-100 text-gray-800'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                           }`}>
                             {membership.role.charAt(0).toUpperCase() + membership.role.slice(1)}
                             {isLastOwner && <span className="ml-1 text-xs">(Last)</span>}
@@ -285,22 +285,22 @@ export default async function GroupDetailPage({ params }: { params: { id: string
           </div>
 
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow sticky top-8">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow sticky top-8">
               {canManage && availableUsers.length > 0 ? (
                 <>
-                  <div className="px-6 py-4 border-b border-gray-200">
-                    <h2 className="text-xl font-semibold text-gray-900">Add Member</h2>
+                  <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Add Member</h2>
                   </div>
                   <div className="p-6">
                     <form action={addMember} className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Select User
                         </label>
                         <select
                           name="userId"
                           required
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-gray-100"
                         >
                           <option value="">Choose a user...</option>
                           {availableUsers.map((user) => (
@@ -321,8 +321,8 @@ export default async function GroupDetailPage({ params }: { params: { id: string
                 </>
               ) : (
                 <div className="p-6 text-center">
-                  <p className="text-sm text-gray-500">
-                    {canManage 
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {canManage
                       ? 'All active users are already in this group'
                       : 'Only owners and managers can add members'
                     }
@@ -330,19 +330,19 @@ export default async function GroupDetailPage({ params }: { params: { id: string
                 </div>
               )}
 
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                <h3 className="text-sm font-medium text-gray-900 mb-2">Group Info</h3>
-                <div className="text-xs text-gray-600 space-y-1">
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Group Info</h3>
+                <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                   <p><strong>Slug:</strong> {group.slug}</p>
                   <p><strong>Created:</strong> {new Date(group.createdAt).toLocaleDateString()}</p>
                   <p><strong>Permissions:</strong> {group.permissions.length}</p>
                   {currentUserMembership && (
-                    <p className="mt-2 pt-2 border-t border-gray-200">
+                    <p className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
                       <strong>Your Role:</strong> {currentUserMembership.role}
                     </p>
                   )}
                   {canEditGroups && (
-                    <p className="mt-2 pt-2 border-t border-gray-200 text-purple-600">
+                    <p className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 text-purple-600">
                       <strong>⚡ Admin Override Active</strong>
                     </p>
                   )}

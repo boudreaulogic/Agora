@@ -233,30 +233,30 @@ export function CalendarBoard({
   var conflictCount = Object.keys(conflicts).length;
 
   return (
-    <div className="flex-1 flex flex-col bg-white overflow-hidden">
+    <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 overflow-hidden">
       {/* Calendar Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
         <div className="flex items-center space-x-4">
-          <h2 className="text-xl font-bold text-gray-900">{MONTHS[currentMonth]} {currentYear}</h2>
-          <span className="text-sm text-gray-500">{monthEvents} event{monthEvents !== 1 ? 's' : ''}</span>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{MONTHS[currentMonth]} {currentYear}</h2>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{monthEvents} event{monthEvents !== 1 ? 's' : ''}</span>
           {isBookingMode && (<span className="text-[10px] font-bold px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">Booking Mode</span>)}
           {conflictCount > 0 && (<span className="text-[10px] font-bold px-2 py-0.5 bg-red-100 text-red-700 rounded-full animate-pulse">⚠ {conflictCount / 2 | 0} conflict{(conflictCount / 2 | 0) !== 1 ? 's' : ''}</span>)}
         </div>
         <div className="flex items-center space-x-2">
-          <button onClick={goToToday} className="px-3 py-1.5 text-sm border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">Today</button>
-          <button onClick={goToPrevMonth} className="p-1.5 border border-gray-300 bg-white hover:bg-gray-50 rounded-lg transition-colors">
-            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          <button onClick={goToToday} className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">Today</button>
+          <button onClick={goToPrevMonth} className="p-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+            <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
-          <button onClick={goToNextMonth} className="p-1.5 border border-gray-300 bg-white hover:bg-gray-50 rounded-lg transition-colors">
-            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          <button onClick={goToNextMonth} className="p-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+            <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           </button>
         </div>
       </div>
 
       {/* Day Headers */}
-      <div className="grid grid-cols-7 border-b border-gray-200">
+      <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-700">
         {DAYS.map(function(day) {
-          return (<div key={day} className="px-2 py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">{day}</div>);
+          return (<div key={day} className="px-2 py-2 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{day}</div>);
         })}
       </div>
 
@@ -272,8 +272,8 @@ export function CalendarBoard({
 
           return (
             <div key={index}
-              className={'border-b border-r border-gray-200 p-1 min-h-[100px] transition-colors ' +
-                (!dayInfo.isCurrentMonth ? 'bg-gray-50' : 'bg-white') +
+              className={'border-b border-r border-gray-200 dark:border-gray-700 p-1 min-h-[100px] transition-colors ' +
+                (!dayInfo.isCurrentMonth ? 'bg-gray-50 dark:bg-gray-950' : 'bg-white dark:bg-gray-900') +
                 (isDropTarget ? ' bg-blue-50 ring-1 ring-inset ring-blue-300' : '')}
               onDragOver={handleDragOver}
               onDragEnter={function(e) { handleDragEnter(e, dateKey); }}
@@ -283,10 +283,10 @@ export function CalendarBoard({
               <div className="flex items-center justify-between mb-1">
                 <span className={'inline-flex items-center justify-center w-6 h-6 text-xs rounded-full ' +
                   (isTodayDate ? 'bg-blue-600 text-white font-bold' :
-                   dayInfo.isCurrentMonth ? 'text-gray-900 font-medium' : 'text-gray-400')}>
+                   dayInfo.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 font-medium' : 'text-gray-400 dark:text-gray-600')}>
                   {dayInfo.date.getDate()}
                 </span>
-                {events.length > 0 && !isTodayDate && (<span className="text-xs text-gray-400">{events.length}</span>)}
+                {events.length > 0 && !isTodayDate && (<span className="text-xs text-gray-400 dark:text-gray-500">{events.length}</span>)}
               </div>
 
               {/* Events */}
@@ -343,7 +343,7 @@ export function CalendarBoard({
                     </div>
                   );
                 })}
-                {hasMore && (<div className="text-xs text-gray-500 px-1.5 font-medium">+{events.length - maxVisible} more</div>)}
+                {hasMore && (<div className="text-xs text-gray-500 dark:text-gray-400 px-1.5 font-medium">+{events.length - maxVisible} more</div>)}
               </div>
             </div>
           );

@@ -140,12 +140,12 @@ export function FindReplaceModal({
       />
 
       {/* Modal */}
-      <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-white rounded-lg shadow-xl w-full max-w-md">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Find and Replace</h2>
+      <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-md">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Find and Replace</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -156,7 +156,7 @@ export function FindReplaceModal({
         <div className="px-6 py-4 space-y-4" onKeyDown={handleKeyDown}>
           {/* Find Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Find
             </label>
             <input
@@ -165,13 +165,13 @@ export function FindReplaceModal({
               onChange={(e) => setFindValue(e.target.value)}
               placeholder="Search..."
               autoFocus
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
             />
           </div>
 
           {/* Replace Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Replace with
             </label>
             <input
@@ -179,7 +179,7 @@ export function FindReplaceModal({
               value={replaceValue}
               onChange={(e) => setReplaceValue(e.target.value)}
               placeholder="Replace..."
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
             />
           </div>
 
@@ -192,7 +192,7 @@ export function FindReplaceModal({
                 onChange={(e) => setMatchCase(e.target.checked)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
               />
-              <span className="text-gray-700">Match case</span>
+              <span className="text-gray-700 dark:text-gray-300">Match case</span>
             </label>
             <label className="flex items-center space-x-2 text-sm cursor-pointer">
               <input
@@ -201,13 +201,13 @@ export function FindReplaceModal({
                 onChange={(e) => setMatchWholeCell(e.target.checked)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
               />
-              <span className="text-gray-700">Match whole cell</span>
+              <span className="text-gray-700 dark:text-gray-300">Match whole cell</span>
             </label>
           </div>
 
           {/* Match Counter */}
           {findValue && (
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
               {matches.length > 0 ? (
                 <>
                   <span className="font-medium">{currentMatchIndex + 1}</span> of{' '}
@@ -224,14 +224,14 @@ export function FindReplaceModal({
             <button
               onClick={handlePrevious}
               disabled={matches.length === 0}
-              className="flex-1 px-4 py-2 text-sm border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               ← Previous
             </button>
             <button
               onClick={handleNext}
               disabled={matches.length === 0}
-              className="flex-1 px-4 py-2 text-sm border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next →
             </button>
@@ -256,9 +256,9 @@ export function FindReplaceModal({
           </div>
         </div>
 
-        <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 rounded-b-lg text-xs text-gray-500">
-          Press <kbd className="px-1.5 py-0.5 bg-white border border-gray-300 rounded">Enter</kbd> for next,{' '}
-          <kbd className="px-1.5 py-0.5 bg-white border border-gray-300 rounded">Shift+Enter</kbd> for previous
+        <div className="px-6 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 rounded-b-lg text-xs text-gray-500 dark:text-gray-400">
+          Press <kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded">Enter</kbd> for next,{' '}
+          <kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded">Shift+Enter</kbd> for previous
         </div>
       </div>
     </>

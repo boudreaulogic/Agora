@@ -65,7 +65,7 @@ export function ResizableColumn({
     // Just a div wrapper - DraggableColumn provides the <th>
     <div
       style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }}
-      className="relative flex items-center px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none"
+      className="relative flex items-center px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider select-none"
     >
       {/* Content */}
       <div className="flex-1 min-w-0">
