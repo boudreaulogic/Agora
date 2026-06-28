@@ -2,16 +2,40 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTheme } from '@/components/ThemeProvider';
 import Link from 'next/link';
 
 export function SettingsClient({ user }: { user: any }) {
-  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
 
   const [name, setName] = useState(user.name || '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // Account-bound theme. Initialised from the DB-backed value the server passed
+  // down; changing it persists to the user's account and re-renders the
+  // server-themed layout via router.refresh().
+  const [theme, setTheme] = useState<'light' | 'dark'>(user.theme === 'dark' ? 'dark' : 'light');
+  const [themeSaving, setThemeSaving] = useState(false);
+
+  async function setThemePref(next: 'light' | 'dark') {
+    if (next === theme || themeSaving) return;
+    // Optimistic: flip the UI instantly, then persist.
+    setTheme(next);
+    if (next === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+    setThemeSaving(true);
+    try {
+      await fetch('/api/users/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ theme: next }),
+      });
+      // Re-sync server components (root layout reads the saved preference).
+      router.refresh();
+    } finally {
+      setThemeSaving(false);
+    }
+  }
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -24,7 +48,7 @@ export function SettingsClient({ user }: { user: any }) {
     setSaving(true);
     setSaved(false);
     try {
-      const res = await fetch('/api/user/profile', {
+      const res = await fetch('/api/users/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim() }),
@@ -53,7 +77,7 @@ export function SettingsClient({ user }: { user: any }) {
 
     setPasswordSaving(true);
     try {
-      const res = await fetch('/api/user/password', {
+      const res = await fetch('/api/users/password', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentPassword, newPassword }),
@@ -138,7 +162,7 @@ export function SettingsClient({ user }: { user: any }) {
             </div>
             <div className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
               <button
-                onClick={function() { if (theme === 'dark') toggleTheme(); }}
+                onClick={function() { setThemePref('light'); }}
                 className={'px-3 py-1.5 text-xs rounded-md transition-colors ' + (theme === 'light' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm font-medium' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700')}
               >
                 <span className="flex items-center space-x-1.5">
@@ -149,7 +173,7 @@ export function SettingsClient({ user }: { user: any }) {
                 </span>
               </button>
               <button
-                onClick={function() { if (theme === 'light') toggleTheme(); }}
+                onClick={function() { setThemePref('dark'); }}
                 className={'px-3 py-1.5 text-xs rounded-md transition-colors ' + (theme === 'dark' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm font-medium' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700')}
               >
                 <span className="flex items-center space-x-1.5">

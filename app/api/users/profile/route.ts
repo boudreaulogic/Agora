@@ -6,11 +6,17 @@ export async function PATCH(request: Request) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { name } = await request.json();
+  const body = await request.json();
+
+  const data: { name?: string | null; theme?: string } = {};
+  if ('name' in body) data.name = body.name?.trim() || null;
+  // Appearance preference is account-bound; only ever set from the user's own
+  // settings. Whitelist the value so nothing but 'light'/'dark' lands in the DB.
+  if ('theme' in body) data.theme = body.theme === 'dark' ? 'dark' : 'light';
 
   await db.user.update({
     where: { id: session.user.id },
-    data: { name: name?.trim() || null },
+    data,
   });
 
   return NextResponse.json({ success: true });

@@ -164,6 +164,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       // Validate the server-side session record on every request.
       // If the row is missing, revoked, expired, or the user is disabled → reject.
+      var userTheme = 'light';
       if (token.sid) {
         try {
           var record = await db.userSession.findUnique({
@@ -171,7 +172,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             select: {
               revokedAt: true,
               expiresAt: true,
-              user: { select: { isActive: true } },
+              user: { select: { isActive: true, theme: true } },
             },
           });
 
@@ -184,6 +185,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             // Return a session object without a user — NextAuth treats this as unauthenticated
             return { ...session, user: undefined as any };
           }
+
+          // Account-bound appearance preference, surfaced for server-rendered theming.
+          userTheme = record.user.theme === 'dark' ? 'dark' : 'light';
         } catch {
           // DB error: fail closed (reject the session)
           return { ...session, user: undefined as any };
@@ -195,6 +199,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         (session.user as any).sid = token.sid as string;
         (session.user as any).mfaRequired = token.mfaRequired as boolean;
         (session.user as any).mfaVerified = token.mfaVerified as boolean;
+        (session.user as any).theme = userTheme;
       }
       return session;
     },

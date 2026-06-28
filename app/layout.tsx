@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import Script from 'next/script';
+import { auth } from '@/lib/auth';
 import { SessionGuard } from '@/components/SessionGuard';
-import { ThemeProvider } from '@/components/ThemeProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -15,19 +14,23 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Theme is account-bound and server-rendered: logged-out visitors (and every
+  // public/login page) always get light mode. Only a signed-in user who has set
+  // 'dark' in their own profile settings gets the dark class. Rendering it on
+  // the server avoids any light→dark flash on load.
+  const session = await auth();
+  const isDark = (session?.user as any)?.theme === 'dark';
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={isDark ? 'dark' : ''} suppressHydrationWarning>
       <body className={inter.className + ' bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100'}>
-        <Script id="theme-init" strategy="beforeInteractive">{`try{var t=localStorage.getItem('agora-theme');if(t==='dark')document.documentElement.classList.add('dark');else document.documentElement.classList.remove('dark')}catch(e){document.documentElement.classList.remove('dark')}`}</Script>
-        <ThemeProvider>
-          <SessionGuard />
-          {children}
-        </ThemeProvider>
+        <SessionGuard />
+        {children}
       </body>
     </html>
   );
