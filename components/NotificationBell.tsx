@@ -136,7 +136,7 @@ export function NotificationBell() {
                   Mark all read
                 </button>
               )}
-              <Link href="/notifications" onClick={() => setIsOpen(false)} className="text-[10px] text-gray-500 hover:text-gray-700 dark:text-gray-400">
+              <Link href="/notifications" onClick={() => setIsOpen(false)} className="text-[10px] text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                 View all
               </Link>
             </div>
@@ -151,7 +151,7 @@ export function NotificationBell() {
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center">
                 <div className="text-3xl mb-2">🔔</div>
-                <p className="text-xs text-gray-400">No notifications yet</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">No notifications yet</p>
               </div>
             ) : (
               notifications.map(n => (
@@ -173,7 +173,7 @@ export function NotificationBell() {
                       </div>
                       <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{n.message}</p>
                       <div className="flex items-center justify-between mt-1">
-                        <p className="text-[10px] text-gray-400">{timeAgo(n.createdAt)}</p>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500">{timeAgo(n.createdAt)}</p>
                         {n.tableId && (
                           <span className="text-[9px] text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">View →</span>
                         )}

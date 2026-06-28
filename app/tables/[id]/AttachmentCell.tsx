@@ -146,7 +146,7 @@ export function AttachmentCell({
               </>
             )}
           </button>
-          <p className="text-[10px] text-gray-400 mt-1">Max 10MB per file. Images, PDFs, Office docs, text, zip.</p>
+          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">Max 10MB per file. Images, PDFs, Office docs, text, zip.</p>
         </div>
       )}
 
@@ -158,7 +158,7 @@ export function AttachmentCell({
       {attachments.length > 0 && (
         <div className="space-y-1.5">
           {(showAll ? attachments : attachments.slice(0, 3)).map(att => (
-            <div key={att.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-100 group hover:bg-gray-100 transition-colors">
+            <div key={att.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-800 group hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
               <div className="flex items-center space-x-2.5 min-w-0">
                 {/* Thumbnail for images */}
                 {att.mimeType.startsWith('image/') ? (
@@ -177,11 +177,11 @@ export function AttachmentCell({
                     href={`/api/files/${att.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs font-medium text-gray-900 hover:text-blue-600 truncate block"
+                    className="text-xs font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 truncate block"
                   >
                     {att.originalName || att.originalname}
                   </a>
-                  <p className="text-[10px] text-gray-400">{formatFileSize(att.size)}</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500">{formatFileSize(att.size)}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">

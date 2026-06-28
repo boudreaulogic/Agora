@@ -389,17 +389,17 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
         onDragStart={function(e) { handleTableDragStart(e, table.id, table.name); }}
         onDragEnd={handleTableDragEnd}
       >
-        <div className="w-3 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 flex-shrink-0 mr-0.5">
+        <div className="w-3 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 flex-shrink-0 mr-0.5">
           <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 6a2 2 0 100-4 2 2 0 000 4zm0 8a2 2 0 100-4 2 2 0 000 4zm0 8a2 2 0 100-4 2 2 0 000 4zm8-16a2 2 0 100-4 2 2 0 000 4zm0 8a2 2 0 100-4 2 2 0 000 4zm0 8a2 2 0 100-4 2 2 0 000 4z"/></svg>
         </div>
         <a href={'/tables/' + table.id}
-          className={'flex items-center flex-1 min-w-0 px-2 py-1 text-xs rounded-l transition-colors ' + (currentTableId === table.id ? activeClass : 'text-gray-600 hover:bg-gray-100')}>
+          className={'flex items-center flex-1 min-w-0 px-2 py-1 text-xs rounded-l transition-colors ' + (currentTableId === table.id ? activeClass : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800')}>
           {table.isSharePointBacked && <svg className="w-3.5 h-3.5 mr-1 flex-shrink-0" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#0078D4"/><path d="M8 7h8v2H8V7zm0 4h8v2H8v-2zm0 4h5v2H8v-2z" fill="white"/></svg>}
           <span className="flex-1 truncate">{table.name}</span>
-          {!isInWorkspace && <span className="text-[10px] text-gray-400 opacity-0 group-hover:opacity-100">{table._count?.rows || 0}</span>}
+          {!isInWorkspace && <span className="text-[10px] text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100">{table._count?.rows || 0}</span>}
         </a>
         <button onClick={function(e) { e.preventDefault(); e.stopPropagation(); var rect = (e.target as HTMLElement).getBoundingClientRect(); setTableContextMenu({ table: table, x: rect.right, y: rect.top }); }}
-          className="p-1 rounded-r opacity-0 group-hover:opacity-100 hover:bg-gray-200 transition-all flex-shrink-0" title="Table options">
+          className="p-1 rounded-r opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all flex-shrink-0" title="Table options">
           <svg className="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>
         </button>
       </div>
@@ -411,7 +411,7 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
     <div className="h-11 flex items-center justify-between px-3 border-b border-gray-200 dark:border-gray-700">
       {!isCollapsed && (<Link href="/" className="text-sm font-bold text-gray-900 dark:text-gray-100 hover:text-blue-600 transition-colors flex items-center space-x-1.5"><AgoraLogo size={22} /><span>Agora</span></Link>)}
       <button onClick={function() { setIsCollapsed(!isCollapsed); }} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors">
-        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isCollapsed ? "M13 5l7 7-7 7M5 5l7 7-7 7" : "M11 19l-7-7 7-7m8 14l-7-7 7-7"} /></svg>
+        <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isCollapsed ? "M13 5l7 7-7 7M5 5l7 7-7 7" : "M11 19l-7-7 7-7m8 14l-7-7 7-7"} /></svg>
       </button>
     </div>
 
@@ -434,7 +434,7 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
       {(dashboards || []).length > 0 && (<div className="mb-3">
         <button onClick={function() { toggleSection('dashboards'); }}
           className="w-full flex items-center justify-between px-2 mb-1 hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors py-0.5">
-          <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Dashboards</h2>
+          <h2 className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Dashboards</h2>
           <svg className={'w-2.5 h-2.5 text-gray-400 transition-transform ' + (isSectionOpen('dashboards') ? 'rotate-90' : '')} fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
           </svg>
@@ -443,7 +443,7 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
           <div className="space-y-0.5">
             {(dashboards || []).map(function(d: any) { return (
               <a key={d.id} href={'/insights/' + d.id}
-                className="flex items-center px-2 py-1.5 text-xs rounded text-gray-600 hover:bg-blue-50 transition-colors">
+                className="flex items-center px-2 py-1.5 text-xs rounded text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-800 transition-colors">
                 <span className="mr-1.5">{d.icon || '📊'}</span>
                 <span className="flex-1 truncate">{d.name}</span>
               </a>
@@ -458,7 +458,7 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
       {workspaces.length > 0 && (<div className="mb-3">
         <button onClick={function() { toggleSection('workspaces'); }}
           className="w-full flex items-center justify-between px-2 mb-1 hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors py-0.5">
-          <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Workspaces</h2>
+          <h2 className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Workspaces</h2>
           <svg className={'w-2.5 h-2.5 text-gray-400 transition-transform ' + (isSectionOpen('workspaces') ? 'rotate-90' : '')} fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
           </svg>
@@ -511,7 +511,7 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
       {isAdmin && (sheetConnections || []).length > 0 && (<div className="mb-3">
         <button onClick={function() { toggleSection('sheets'); }}
           className="w-full flex items-center justify-between px-2 mb-1 hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors py-0.5">
-          <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Google Sheets</h2>
+          <h2 className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Google Sheets</h2>
           <svg className={'w-2.5 h-2.5 text-gray-400 transition-transform ' + (isSectionOpen('sheets') ? 'rotate-90' : '')} fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
           </svg>
@@ -546,7 +546,7 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
       {tables.filter(function(t: any) { return t.isSharePointBacked; }).length > 0 && (<div className="mb-3">
         <button onClick={function() { toggleSection('sharepoint'); }}
           className="w-full flex items-center justify-between px-2 mb-1 hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors py-0.5">
-          <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">SharePoint</h2>
+          <h2 className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">SharePoint</h2>
           <svg className={'w-2.5 h-2.5 text-gray-400 transition-transform ' + (isSectionOpen('sharepoint') ? 'rotate-90' : '')} fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
           </svg>
@@ -572,7 +572,7 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
         <div className="flex items-center justify-between px-2 mb-1">
           <button onClick={function() { toggleSection('myTables'); }}
             className="flex-1 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors py-0.5 pr-1">
-            <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{workspaces.length > 0 ? 'My Tables' : 'Tables'}</h2>
+            <h2 className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{workspaces.length > 0 ? 'My Tables' : 'Tables'}</h2>
             <svg className={'w-2.5 h-2.5 text-gray-400 transition-transform ' + (isSectionOpen('myTables') ? 'rotate-90' : '')} fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
             </svg>
@@ -598,24 +598,24 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
       {sharedTables.length > 0 && (<div className="mb-3">
         <button onClick={function() { toggleSection('shared'); }}
           className="w-full flex items-center justify-between px-2 mb-1 hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors py-0.5">
-          <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Shared with Me</h2>
+          <h2 className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Shared with Me</h2>
           <svg className={'w-2.5 h-2.5 text-gray-400 transition-transform ' + (isSectionOpen('shared') ? 'rotate-90' : '')} fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
           </svg>
         </button>
         {isSectionOpen('shared') && (
-          <div className="space-y-0.5">{sharedTables.map(function(table: any) { return (<Link key={table.id} href={'/tables/' + table.id} className={'flex items-center px-2 py-1.5 text-xs rounded transition-colors ' + (currentTableId === table.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100')}><span className="truncate">{table.name}</span></Link>); })}</div>
+          <div className="space-y-0.5">{sharedTables.map(function(table: any) { return (<Link key={table.id} href={'/tables/' + table.id} className={'flex items-center px-2 py-1.5 text-xs rounded transition-colors ' + (currentTableId === table.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800')}><span className="truncate">{table.name}</span></Link>); })}</div>
         )}
       </div>)}
 
       {/* Bottom actions — Create */}
-      <div className="border-t border-gray-200 pt-2 mt-2 space-y-0.5">
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2 space-y-0.5">
         <Link href="/tables/new" className="flex items-center px-2 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded">+ Create Table</Link>
         {!showNewWorkspace ? (<button onClick={function() { setShowNewWorkspace(true); }} className="flex items-center w-full px-2 py-1.5 text-xs text-purple-600 hover:bg-purple-50 rounded">+ Create Workspace</button>) : (<div className="px-2 py-1.5 space-y-1.5">
-          <input type="text" value={newWorkspaceName} onChange={function(e) { setNewWorkspaceName(e.target.value); }} onKeyDown={function(e) { if (e.key === 'Enter') handleCreateWorkspace(); if (e.key === 'Escape') { setShowNewWorkspace(false); setNewWorkspaceName(''); } }} placeholder="Workspace name..." autoFocus className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 bg-white text-gray-900" />
+          <input type="text" value={newWorkspaceName} onChange={function(e) { setNewWorkspaceName(e.target.value); }} onKeyDown={function(e) { if (e.key === 'Enter') handleCreateWorkspace(); if (e.key === 'Escape') { setShowNewWorkspace(false); setNewWorkspaceName(''); } }} placeholder="Workspace name..." autoFocus className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-purple-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
           <div className="flex space-x-1.5">
             <button onClick={handleCreateWorkspace} disabled={!newWorkspaceName.trim() || isCreating} className="flex-1 px-2 py-1 text-[10px] bg-purple-600 text-white rounded disabled:opacity-50">{isCreating ? '...' : 'Create'}</button>
-            <button onClick={function() { setShowNewWorkspace(false); setNewWorkspaceName(''); }} className="px-2 py-1 text-[10px] text-gray-500">Cancel</button>
+            <button onClick={function() { setShowNewWorkspace(false); setNewWorkspaceName(''); }} className="px-2 py-1 text-[10px] text-gray-500 dark:text-gray-400">Cancel</button>
           </div>
         </div>)}
 		<Link href="/tables/sharepoint-import" className="flex items-center px-2 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded">+ Connect SharePoint List</Link>
@@ -624,16 +624,16 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
         </button>
         {showNewWorkspace ? null : null}
         {false && (<div className="px-2 py-1.5 space-y-1.5">
-          <input type="text" value={newWorkspaceName} onChange={function(e) { setNewWorkspaceName(e.target.value); }} onKeyDown={function(e) { if (e.key === 'Enter') handleCreateWorkspace(); if (e.key === 'Escape') { setShowNewWorkspace(false); setNewWorkspaceName(''); } }} placeholder="Workspace name..." autoFocus className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 bg-white text-gray-900" />
+          <input type="text" value={newWorkspaceName} onChange={function(e) { setNewWorkspaceName(e.target.value); }} onKeyDown={function(e) { if (e.key === 'Enter') handleCreateWorkspace(); if (e.key === 'Escape') { setShowNewWorkspace(false); setNewWorkspaceName(''); } }} placeholder="Workspace name..." autoFocus className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-purple-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
           <div className="flex space-x-1.5">
             <button onClick={handleCreateWorkspace} disabled={!newWorkspaceName.trim() || isCreating} className="flex-1 px-2 py-1 text-[10px] bg-purple-600 text-white rounded disabled:opacity-50">{isCreating ? '...' : 'Create'}</button>
-            <button onClick={function() { setShowNewWorkspace(false); setNewWorkspaceName(''); }} className="px-2 py-1 text-[10px] text-gray-500">Cancel</button>
+            <button onClick={function() { setShowNewWorkspace(false); setNewWorkspaceName(''); }} className="px-2 py-1 text-[10px] text-gray-500 dark:text-gray-400">Cancel</button>
           </div>
         </div>)}
       </div>
 
       {/* Bottom actions — Automations & Marketplace */}
-      <div className="border-t border-gray-200 pt-2 mt-2 space-y-0.5">
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2 space-y-0.5">
         <a href="/automations" className="flex items-center w-full px-2 py-1.5 text-xs text-yellow-600 hover:bg-yellow-50 rounded">
           <span className="mr-1.5">⚡</span> Automations
         </a>
@@ -648,21 +648,21 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
 
     {/* Collapsed sidebar */}
     {isCollapsed && (<nav className="flex-1 px-1 py-2 overflow-y-auto"><div className="space-y-1">
-      {tables.map(function(table) { return (<Link key={table.id} href={'/tables/' + table.id} className={'flex items-center justify-center p-1 text-lg rounded ' + (currentTableId === table.id ? 'bg-blue-50' : 'hover:bg-gray-100')} title={table.name}>{table.icon || 'T'}</Link>); })}
+      {tables.map(function(table) { return (<Link key={table.id} href={'/tables/' + table.id} className={'flex items-center justify-center p-1 text-lg rounded ' + (currentTableId === table.id ? 'bg-blue-50' : 'hover:bg-gray-100 dark:hover:bg-gray-800')} title={table.name}>{table.icon || 'T'}</Link>); })}
     </div></nav>)}
 
     {/* Footer */}
-    <div className="border-t border-gray-200 p-2 space-y-1.5">
+    <div className="border-t border-gray-200 dark:border-gray-700 p-2 space-y-1.5">
       {!isCollapsed ? (<>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <div className="h-6 w-6 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-[10px]">{userName ? userName.charAt(0) : userEmail.charAt(0).toUpperCase()}</div>
-            <p className="text-xs font-medium text-gray-900 truncate max-w-[100px]">{userName || userEmail}</p>
+            <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate max-w-[100px]">{userName || userEmail}</p>
           </div>
           <NotificationBell />
-          <Link href="/settings" className="text-gray-400 hover:text-gray-600" title="Settings"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></Link>
+          <Link href="/settings" className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300" title="Settings"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></Link>
         </div>
-        {isAdmin && (<Link href="/admin/users" className="flex items-center px-2 py-1 text-[10px] text-purple-600 bg-purple-50 hover:bg-purple-100 rounded w-full">Admin Panel</Link>)}
+        {isAdmin && (<Link href="/admin/users" className="flex items-center px-2 py-1 text-[10px] text-purple-600 dark:text-purple-300 bg-purple-50 dark:bg-purple-500/15 hover:bg-purple-100 dark:hover:bg-purple-500/25 rounded w-full">Admin Panel</Link>)}
         <SignOutButton onSignOut={signOutAction} />
       </>) : (<div className="flex flex-col items-center space-y-1">
         <div className="h-6 w-6 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-[10px]">{userName ? userName.charAt(0) : userEmail.charAt(0).toUpperCase()}</div>
@@ -757,7 +757,7 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col" onClick={function(e) { e.stopPropagation(); }}>
         <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Members — {membersWorkspace.name}</h3>
-          <p className="text-[10px] text-gray-500 mt-0.5">Manage who has access to this workspace and all its tables</p>
+          <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Manage who has access to this workspace and all its tables</p>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           <div>
@@ -784,7 +784,7 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
             </div>
           </div>
           {isMembersLoading ? (
-            <p className="text-xs text-gray-500 text-center py-4">Loading...</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-4">Loading...</p>
           ) : (
             <div className="space-y-1.5">
               {wsMembers.map(function(m: any) {
@@ -798,7 +798,7 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
                       <div className={'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 ' + mIconBg}>{mIcon}</div>
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{mName}</p>
-                        <p className="text-[10px] text-gray-400">{mType}{m.user?.email ? ' · ' + m.user.email : ''}</p>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500">{mType}{m.user?.email ? ' · ' + m.user.email : ''}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-1.5 flex-shrink-0">
@@ -806,7 +806,7 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
                         <span className="px-2 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-800 rounded-full">Owner</span>
                       ) : (<>
                         <select value={m.permission} onChange={function(e) { handleUpdateMemberPerm(m.id, e.target.value); }}
-                          className={'text-[10px] font-medium px-1.5 py-0.5 rounded-full border-0 cursor-pointer ' + (m.permission === 'admin' ? 'bg-purple-100 text-purple-800' : m.permission === 'editor' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800')}>
+                          className={'text-[10px] font-medium px-1.5 py-0.5 rounded-full border-0 cursor-pointer ' + (m.permission === 'admin' ? 'bg-purple-100 text-purple-800' : m.permission === 'editor' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200')}>
                           <option value="viewer">Viewer</option>
                           <option value="editor">Editor</option>
                           <option value="admin">Admin</option>
@@ -821,16 +821,16 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
                   </div>
                 );
               })}
-              {wsMembers.length === 0 && <p className="text-xs text-gray-500 text-center py-4">No members yet.</p>}
+              {wsMembers.length === 0 && <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-4">No members yet.</p>}
             </div>
           )}
           <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-3">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Permission Levels</p>
+            <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Permission Levels</p>
             <div className="space-y-1 text-[10px]">
-              <div className="flex items-center space-x-2"><span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">Owner</span><span className="text-gray-500">Full control + transfer</span></div>
-              <div className="flex items-center space-x-2"><span className="px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-800 font-medium">Admin</span><span className="text-gray-500">Manage members + Editor</span></div>
-              <div className="flex items-center space-x-2"><span className="px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">Editor</span><span className="text-gray-500">Edit data + Viewer</span></div>
-              <div className="flex items-center space-x-2"><span className="px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-800 font-medium">Viewer</span><span className="text-gray-500">View only</span></div>
+              <div className="flex items-center space-x-2"><span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">Owner</span><span className="text-gray-500 dark:text-gray-400">Full control + transfer</span></div>
+              <div className="flex items-center space-x-2"><span className="px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-800 font-medium">Admin</span><span className="text-gray-500 dark:text-gray-400">Manage members + Editor</span></div>
+              <div className="flex items-center space-x-2"><span className="px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">Editor</span><span className="text-gray-500 dark:text-gray-400">Edit data + Viewer</span></div>
+              <div className="flex items-center space-x-2"><span className="px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-800 font-medium">Viewer</span><span className="text-gray-500 dark:text-gray-400">View only</span></div>
             </div>
           </div>
         </div>
@@ -855,7 +855,7 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
 
       {workspaces.length > 0 && (<>
         <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
-        <div className="px-3 py-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Move to...</div>
+        <div className="px-3 py-1 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Move to...</div>
         {workspaces.map(function(ws: any) {
           var currentWsId = getTableWorkspaceId(tableContextMenu!.table.id);
           var isCurrentWs = currentWsId === ws.id;
@@ -871,7 +871,7 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
               className={'flex items-center w-full px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 ' + (isCurrentWs ? 'text-gray-400 cursor-default' : 'text-purple-600')}>
               <span className="mr-2">{ws.icon || '📁'}</span>
               <span className="truncate">{ws.name}</span>
-              {isCurrentWs && <span className="ml-auto text-[9px] text-gray-400">current</span>}
+              {isCurrentWs && <span className="ml-auto text-[9px] text-gray-400 dark:text-gray-500">current</span>}
             </button>
           );
         })}
@@ -925,7 +925,7 @@ export function CollapsibleSidebar({ tables, sharedTables, workspaces, sheetConn
       </a>
       {workspaces.length > 0 && (<>
         <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
-        <div className="px-3 py-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Move to...</div>
+        <div className="px-3 py-1 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Move to...</div>
         {workspaces.map(function(ws: any) { return (
           <button key={ws.id} onClick={function() { setSheetContextMenu(null); }}
             className="flex items-center w-full px-3 py-1.5 text-xs text-purple-600 hover:bg-gray-100 dark:hover:bg-gray-700">

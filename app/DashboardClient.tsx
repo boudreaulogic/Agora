@@ -20,7 +20,7 @@ function timeAgo(dateStr: string): string {
 function MiniChart({ chart }: { chart: any }) {
   const config = chart.config || {};
   const xCol = chart.columns.find((c: any) => c.id === config.xColumn);
-  if (!xCol) return <div className="text-xs text-gray-400 text-center">No data configured</div>;
+  if (!xCol) return <div className="text-xs text-gray-400 dark:text-gray-500 text-center">No data configured</div>;
 
   const groups: Record<string, number[]> = {};
   chart.rows.forEach((row: any) => {
@@ -55,7 +55,7 @@ function MiniChart({ chart }: { chart: any }) {
     return { label, value: Math.round(value * 100) / 100, color };
   }).sort((a, b) => b.value - a.value).slice(0, 10);
 
-  if (data.length === 0) return <div className="text-xs text-gray-400 text-center">No data</div>;
+  if (data.length === 0) return <div className="text-xs text-gray-400 dark:text-gray-500 text-center">No data</div>;
   const maxVal = Math.max(...data.map(d => d.value));
   const total = data.reduce((s, d) => s + d.value, 0);
 
@@ -104,8 +104,8 @@ function MiniChart({ chart }: { chart: any }) {
           const w = maxVal > 0 ? (d.value / maxVal) * 100 : 0;
           return (
             <div key={i} className="flex items-center space-x-2">
-              <span className="text-[9px] text-gray-500 w-14 text-right truncate flex-shrink-0">{d.label.slice(0, 8)}</span>
-              <div className="flex-1 bg-gray-100 rounded-full h-4">
+              <span className="text-[9px] text-gray-500 dark:text-gray-400 w-14 text-right truncate flex-shrink-0">{d.label.slice(0, 8)}</span>
+              <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-4">
                 <div className="h-full rounded-full flex items-center justify-end pr-1.5" style={{ width: Math.max(8, w) + '%', backgroundColor: d.color }}>
                   {w > 25 && <span className="text-[8px] text-white font-medium">{d.value}</span>}
                 </div>
@@ -153,7 +153,7 @@ function MiniChart({ chart }: { chart: any }) {
       </div>
       <div className="flex justify-center space-x-1 mt-1.5 overflow-hidden">
         {data.map((d, i) => (
-          <span key={i} className="text-[8px] text-gray-400 truncate max-w-[28px] text-center">{d.label.slice(0, 4)}</span>
+          <span key={i} className="text-[8px] text-gray-400 dark:text-gray-500 truncate max-w-[28px] text-center">{d.label.slice(0, 4)}</span>
         ))}
       </div>
     </div>
@@ -164,7 +164,7 @@ function ExpandedChart({ chart }: { chart: any }) {
   const config = chart.config || {};
   const xCol = chart.columns.find((c: any) => c.id === config.xColumn);
   const yCol = chart.columns.find((c: any) => c.id === config.yColumn);
-  if (!xCol) return <div className="text-center text-gray-400">No data configured</div>;
+  if (!xCol) return <div className="text-center text-gray-400 dark:text-gray-500">No data configured</div>;
 
   const groups: Record<string, number[]> = {};
   chart.rows.forEach((row: any) => {
@@ -198,7 +198,7 @@ function ExpandedChart({ chart }: { chart: any }) {
     return { label, value: Math.round(value * 100) / 100, color };
   }).sort((a, b) => b.value - a.value);
 
-  if (data.length === 0) return <div className="text-center text-gray-400">No data</div>;
+  if (data.length === 0) return <div className="text-center text-gray-400 dark:text-gray-500">No data</div>;
   const maxVal = Math.max(...data.map(d => d.value));
   const total = data.reduce((s, d) => s + d.value, 0);
 
@@ -206,18 +206,18 @@ function ExpandedChart({ chart }: { chart: any }) {
   if (chart.type === 'horizontal_bar') {
     return (
       <div className="space-y-3">
-        <p className="text-xs text-gray-400 text-center mb-4">{xCol.name} vs {yCol?.name || 'Count'}</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 text-center mb-4">{xCol.name} vs {yCol?.name || 'Count'}</p>
         {data.map((d, i) => {
           const w = maxVal > 0 ? (d.value / maxVal) * 100 : 0;
           return (
             <div key={i} className="flex items-center space-x-3">
-              <span className="text-xs text-gray-600 w-28 text-right truncate flex-shrink-0">{d.label}</span>
-              <div className="flex-1 bg-gray-100 rounded-full h-7">
+              <span className="text-xs text-gray-600 dark:text-gray-400 w-28 text-right truncate flex-shrink-0">{d.label}</span>
+              <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-7">
                 <div className="h-full rounded-full flex items-center justify-end pr-3 transition-all duration-500" style={{ width: Math.max(4, w) + '%', backgroundColor: d.color }}>
                   {w > 15 && <span className="text-xs text-white font-medium">{d.value.toLocaleString()}</span>}
                 </div>
               </div>
-              {w <= 15 && <span className="text-xs text-gray-600 flex-shrink-0">{d.value.toLocaleString()}</span>}
+              {w <= 15 && <span className="text-xs text-gray-600 dark:text-gray-400 flex-shrink-0">{d.value.toLocaleString()}</span>}
             </div>
           );
         })}
@@ -267,8 +267,8 @@ function ExpandedChart({ chart }: { chart: any }) {
           {slices.map((d: any, i: number) => (
             <div key={i} className="flex items-center space-x-1.5">
               <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: d.color }} />
-              <span className="text-sm text-gray-700">{d.label}</span>
-              <span className="text-xs text-gray-400">({d.pct}%)</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">{d.label}</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">({d.pct}%)</span>
             </div>
           ))}
         </div>
@@ -305,15 +305,15 @@ function ExpandedChart({ chart }: { chart: any }) {
   // Bar chart (full size, default)
   return (
     <div>
-      <p className="text-xs text-gray-400 text-center mb-4">{xCol.name} vs {yCol?.name || 'Count'}</p>
+      <p className="text-xs text-gray-400 dark:text-gray-500 text-center mb-4">{xCol.name} vs {yCol?.name || 'Count'}</p>
       <div className="flex items-end justify-center space-x-3 h-72">
         {data.map((d, i) => {
           const h = maxVal > 0 ? (d.value / maxVal) * 100 : 0;
           return (
             <div key={i} className="flex flex-col items-center" style={{ width: Math.max(36, 400 / data.length) + 'px' }}>
-              <span className="text-xs text-gray-600 mb-1 font-medium">{d.value.toLocaleString()}</span>
+              <span className="text-xs text-gray-600 dark:text-gray-400 mb-1 font-medium">{d.value.toLocaleString()}</span>
               <div className="w-full rounded-t hover:opacity-80 transition-all" style={{ height: Math.max(4, h) + '%', backgroundColor: d.color, minHeight: '4px' }} />
-              <span className="text-[10px] text-gray-500 mt-2 text-center truncate w-full">{d.label}</span>
+              <span className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 text-center truncate w-full">{d.label}</span>
             </div>
           );
         })}
@@ -342,24 +342,24 @@ export function DashboardClient({ data }: { data: any }) {
     <div className="max-w-6xl mx-auto px-6 py-8">
       {/* Greeting */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">{data.greeting}, {data.userName}</h1>
-        <p className="text-sm text-gray-500 mt-1">Here's what's happening in your workspace</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{data.greeting}, {data.userName}</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Here's what's happening in your workspace</p>
       </div>
 
       {/* Quick Actions */}
       {hasQuickActions && (
         <div className="mb-8">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Quick Actions</h2>
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Quick Actions</h2>
           <div className="flex flex-wrap gap-2">
             {data.quickActions.map((form: any) => (
               <Link key={form.id} href={`/forms/${form.slug}`} target="_blank"
-                className="flex items-center space-x-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all group">
+                className="flex items-center space-x-2 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all group">
                 <span className="text-lg">{form.tableIcon || '📋'}</span>
                 <div>
-                  <p className="text-sm font-medium text-gray-900 group-hover:text-blue-700">{form.name}</p>
-                  {form.description && <p className="text-[10px] text-gray-400 truncate max-w-[200px]">{form.description}</p>}
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-700">{form.name}</p>
+                  {form.description && <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate max-w-[200px]">{form.description}</p>}
                 </div>
-                <svg className="w-4 h-4 text-gray-300 group-hover:text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-gray-300 dark:text-gray-500 group-hover:text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
               </Link>
@@ -373,28 +373,28 @@ export function DashboardClient({ data }: { data: any }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Pending Approvals */}
           {hasApprovals && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+              <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <span className="text-base">⏳</span>
-                  <h3 className="text-sm font-semibold text-gray-900">Pending Approvals</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Pending Approvals</h3>
                   <span className="text-[10px] px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full font-semibold">{data.pendingApprovals.length}</span>
                 </div>
               </div>
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-gray-50 dark:divide-gray-800">
                 {data.pendingApprovals.slice(0, 5).map((approval: any) => (
                   <Link key={approval.id} href={`/tables/${approval.tableId}`}
-                    className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors">
+                    className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     <div className="flex items-center space-x-3 min-w-0">
                       <span className="text-lg flex-shrink-0">{approval.tableIcon || '📊'}</span>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{approval.workflowName}</p>
-                        <p className="text-[10px] text-gray-400">{approval.tableName} — {approval.stageName}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{approval.workflowName}</p>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500">{approval.tableName} — {approval.stageName}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 flex-shrink-0">
-                      <span className="text-[10px] text-gray-400">{timeAgo(approval.createdAt)}</span>
-                      <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500">{timeAgo(approval.createdAt)}</span>
+                      <svg className="w-4 h-4 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </div>
@@ -406,33 +406,33 @@ export function DashboardClient({ data }: { data: any }) {
 
           {/* Notifications */}
           {hasNotifications && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+              <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <span className="text-base">🔔</span>
-                  <h3 className="text-sm font-semibold text-gray-900">Recent Notifications</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Recent Notifications</h3>
                   {unreadCount > 0 && (
                     <span className="text-[10px] px-2 py-0.5 bg-red-100 text-red-700 rounded-full font-semibold">{unreadCount} new</span>
                   )}
                 </div>
                 <Link href="/notifications" className="text-[10px] text-blue-600 hover:text-blue-800 font-medium">View all</Link>
               </div>
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-gray-50 dark:divide-gray-800">
                 {visibleNotifications.map((notif: any) => (
                   <div key={notif.id} className={`px-5 py-3 ${notif.isRead ? '' : 'bg-blue-50/30'}`}>
                     <div className="flex items-start justify-between">
                       <div className="min-w-0">
-                        <p className={`text-sm ${notif.isRead ? 'text-gray-700' : 'text-gray-900 font-medium'} truncate`}>{notif.title}</p>
-                        <p className="text-[10px] text-gray-400 truncate mt-0.5">{notif.message}</p>
+                        <p className={`text-sm ${notif.isRead ? 'text-gray-700 dark:text-gray-300' : 'text-gray-900 dark:text-gray-100 font-medium'} truncate`}>{notif.title}</p>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate mt-0.5">{notif.message}</p>
                       </div>
-                      <span className="text-[10px] text-gray-400 flex-shrink-0 ml-3">{timeAgo(notif.createdAt)}</span>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 flex-shrink-0 ml-3">{timeAgo(notif.createdAt)}</span>
                     </div>
                   </div>
                 ))}
               </div>
               {data.notifications.length > 4 && (
                 <button onClick={() => setShowAllNotifications(!showAllNotifications)}
-                  className="w-full px-5 py-2 text-[10px] text-gray-500 hover:bg-gray-50 border-t border-gray-100">
+                  className="w-full px-5 py-2 text-[10px] text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 border-t border-gray-100 dark:border-gray-800">
                   {showAllNotifications ? 'Show less' : `Show ${data.notifications.length - 4} more`}
                 </button>
               )}
@@ -440,20 +440,20 @@ export function DashboardClient({ data }: { data: any }) {
           )}
 
           {!hasApprovals && hasNotifications && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-center p-8">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-center p-8">
               <div className="text-center">
                 <span className="text-3xl">✅</span>
-                <p className="text-sm font-medium text-gray-900 mt-2">All caught up!</p>
-                <p className="text-xs text-gray-400">No pending approvals</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-2">All caught up!</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">No pending approvals</p>
               </div>
             </div>
           )}
           {hasApprovals && !hasNotifications && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-center p-8">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-center p-8">
               <div className="text-center">
                 <span className="text-3xl">🔕</span>
-                <p className="text-sm font-medium text-gray-900 mt-2">No notifications</p>
-                <p className="text-xs text-gray-400">You're all clear</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-2">No notifications</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">You're all clear</p>
               </div>
             </div>
           )}
@@ -463,18 +463,18 @@ export function DashboardClient({ data }: { data: any }) {
       {/* Pinned Charts */}
       {hasCharts && (
         <div className="mb-8">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Dashboard Charts</h2>
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Dashboard Charts</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {data.pinnedCharts.map((chart: any) => (
               <div key={chart.id} onClick={() => setExpandedChart(chart)}
-                className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden group cursor-pointer">
-                <div className="px-4 py-3 border-b border-gray-100">
+                className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all overflow-hidden group cursor-pointer">
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <span className="text-sm">{chart.tableIcon || '📊'}</span>
-                      <h4 className="text-sm font-semibold text-gray-900">{chart.name}</h4>
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{chart.name}</h4>
                     </div>
-                    <span className="text-[10px] text-gray-400">{chart.tableName}</span>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500">{chart.tableName}</span>
                   </div>
                 </div>
                 <div className="p-4 h-44">
@@ -489,7 +489,7 @@ export function DashboardClient({ data }: { data: any }) {
       {/* Tables */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Your Tables</h2>
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Your Tables</h2>
           <Link href="/tables/new" className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center space-x-1">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             <span>New Table</span>
@@ -497,10 +497,10 @@ export function DashboardClient({ data }: { data: any }) {
         </div>
 
         {!hasTables ? (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-12 text-center">
             <div className="text-4xl mb-3">📊</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">Create your first table</h3>
-            <p className="text-sm text-gray-500 mb-4">Start organizing your data with a powerful database.</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Create your first table</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Start organizing your data with a powerful database.</p>
             <Link href="/tables/new"
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
               <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
@@ -512,16 +512,16 @@ export function DashboardClient({ data }: { data: any }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {visibleTables.map((table: any) => (
                 <Link key={table.id} href={`/tables/${table.id}`}
-                  className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all p-5 group">
+                  className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all p-5 group">
                   <div className="flex items-start justify-between mb-3">
                     <span className="text-2xl">{table.icon || '📊'}</span>
-                    <span className="text-[10px] text-gray-400">{table.rowCount} rows</span>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500">{table.rowCount} rows</span>
                   </div>
-                  <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 mb-1">{table.name}</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-700 mb-1">{table.name}</h3>
                   {table.description && (
-                    <p className="text-xs text-gray-500 line-clamp-2 mb-2">{table.description}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">{table.description}</p>
                   )}
-                  <div className="flex items-center justify-between text-[10px] text-gray-400">
+                  <div className="flex items-center justify-between text-[10px] text-gray-400 dark:text-gray-500">
                     <span>{table.columnCount} columns</span>
                     {table.workspace && (
                       <span className="flex items-center space-x-1">
@@ -535,7 +535,7 @@ export function DashboardClient({ data }: { data: any }) {
             </div>
             {data.tables.length > 6 && (
               <button onClick={() => setShowAllTables(!showAllTables)}
-                className="w-full mt-3 py-2 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                className="w-full mt-3 py-2 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
                 {showAllTables ? 'Show less' : `Show all ${data.tables.length} tables`}
               </button>
             )}
@@ -546,18 +546,18 @@ export function DashboardClient({ data }: { data: any }) {
       {/* Shared Tables */}
       {hasShared && (
         <div className="mb-8">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Shared with You</h2>
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Shared with You</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {data.sharedTables.map((table: any) => (
               <Link key={table.id} href={`/tables/${table.id}`}
-                className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all p-5 group">
+                className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all p-5 group">
                 <div className="flex items-start justify-between mb-3">
                   <span className="text-2xl">{table.icon || '📊'}</span>
-                  <span className="text-[10px] text-gray-400">{table.rowCount} rows</span>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500">{table.rowCount} rows</span>
                 </div>
-                <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 mb-1">{table.name}</h3>
-                {table.description && <p className="text-xs text-gray-500 line-clamp-2 mb-2">{table.description}</p>}
-                {table.sharedBy && <p className="text-[10px] text-gray-400">Shared by {table.sharedBy}</p>}
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-700 mb-1">{table.name}</h3>
+                {table.description && <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">{table.description}</p>}
+                {table.sharedBy && <p className="text-[10px] text-gray-400 dark:text-gray-500">Shared by {table.sharedBy}</p>}
               </Link>
             ))}
           </div>
@@ -567,21 +567,21 @@ export function DashboardClient({ data }: { data: any }) {
 	  {/* Expanded Chart Overlay */}
       {expandedChart && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-8" onClick={() => setExpandedChart(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <span className="text-lg">{expandedChart.tableIcon || '📊'}</span>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">{expandedChart.name}</h3>
-                  <p className="text-xs text-gray-400">{expandedChart.tableName}</p>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{expandedChart.name}</h3>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{expandedChart.tableName}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <Link href={`/tables/${expandedChart.tableId}`} className="text-xs text-blue-600 hover:text-blue-800 font-medium">
                   Open Table →
                 </Link>
-                <button onClick={() => setExpandedChart(null)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
-                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button onClick={() => setExpandedChart(null)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                  <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -602,8 +602,8 @@ export function DashboardClient({ data }: { data: any }) {
               <circle cx="256" cy="256" r="220" fill="#1E3A5F"/>
               <polygon points="256,100 360,380 300,380 276,310 236,310 212,380 152,380" fill="white"/>
             </svg>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Welcome to Agora</h2>
-            <p className="text-sm text-gray-500 mb-6">Your data management platform is ready. Create your first table to get started.</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Welcome to Agora</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Your data management platform is ready. Create your first table to get started.</p>
             <Link href="/tables/new"
               className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700">
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

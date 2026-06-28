@@ -141,15 +141,15 @@ export function ColumnPermissionsModal({
       <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
 
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Column Permissions</h2>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Column Permissions</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 Manage access for "{column.name}"
               </p>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -166,9 +166,9 @@ export function ColumnPermissionsModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Add access rule</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Add access rule</label>
 
-              <div className="flex space-x-1 mb-3 bg-gray-100 rounded-lg p-1">
+              <div className="flex space-x-1 mb-3 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
                 {([
                   { value: 'user', label: '👤 User' },
                   { value: 'group', label: '👥 Group' },
@@ -178,8 +178,8 @@ export function ColumnPermissionsModal({
                     onClick={() => { setTargetType(t.value); setSelectedId(''); }}
                     className={`flex-1 px-3 py-1.5 rounded-md text-sm transition-all ${
                       targetType === t.value
-                        ? 'bg-white text-gray-900 shadow-sm font-medium'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm font-medium'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                     }`}
                   >
                     {t.label}
@@ -190,7 +190,7 @@ export function ColumnPermissionsModal({
               <select
                 value={selectedId}
                 onChange={(e) => setSelectedId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3 dark:bg-gray-800 dark:text-gray-100"
               >
                 <option value="">Select a {targetType}...</option>
                 {targetType === 'user'
@@ -210,7 +210,7 @@ export function ColumnPermissionsModal({
                     }}
                     className="h-4 w-4 text-blue-600 border-gray-300 rounded"
                   />
-                  <span className="text-sm text-gray-700">Can View</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Can View</span>
                 </label>
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
@@ -222,7 +222,7 @@ export function ColumnPermissionsModal({
                     }}
                     className="h-4 w-4 text-blue-600 border-gray-300 rounded"
                   />
-                  <span className="text-sm text-gray-700">Can Edit</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Can Edit</span>
                 </label>
               </div>
 
@@ -236,20 +236,20 @@ export function ColumnPermissionsModal({
             </div>
 
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                 Access rules ({rules.length})
               </h3>
 
               {rules.length === 0 ? (
-                <div className="text-center py-6 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-500">No restrictions — everyone with table access can view and edit this column.</p>
+                <div className="text-center py-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No restrictions — everyone with table access can view and edit this column.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {rules.map((rule) => (
                     <div
                       key={rule.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg group"
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg group"
                     >
                       <div className="flex items-center space-x-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -261,8 +261,8 @@ export function ColumnPermissionsModal({
                         </div>
                         <div>
                           <div className="flex items-center space-x-2">
-                            <span className="text-sm font-medium text-gray-900">{getRuleName(rule)}</span>
-                            <span className="text-xs text-gray-400 bg-gray-200 px-1.5 py-0.5 rounded">
+                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{getRuleName(rule)}</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">
                               {getRuleType(rule)}
                             </span>
                           </div>
@@ -314,8 +314,8 @@ export function ColumnPermissionsModal({
             </div>
           </div>
 
-          <div className="px-6 py-4 border-t border-gray-200 flex justify-end flex-shrink-0">
-            <button onClick={onClose} className="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium text-sm">
+          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end flex-shrink-0">
+            <button onClick={onClose} className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium text-sm">
               Done
             </button>
           </div>

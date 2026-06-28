@@ -209,7 +209,7 @@ export function SharePointSyncModal({ tableId, tableName, columns, isOpen, onClo
               <span>SharePoint Sync</span>
               {enabled && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">ACTIVE</span>}
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">{tableName} → SharePoint List</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{tableName} → SharePoint List</p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -260,7 +260,7 @@ export function SharePointSyncModal({ tableId, tableName, columns, isOpen, onClo
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Field Mapping</h3>
-                      <p className="text-xs text-gray-400">{mappedCount} of {editableColumns.length} fields mapped</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">{mappedCount} of {editableColumns.length} fields mapped</p>
                     </div>
                     <button onClick={autoMap} className="px-3 py-1.5 text-xs font-medium text-purple-600 border border-purple-300 rounded-lg hover:bg-purple-50">Auto-Map</button>
                   </div>
@@ -282,9 +282,9 @@ export function SharePointSyncModal({ tableId, tableName, columns, isOpen, onClo
                           <div key={agoraCol.id} className={'grid grid-cols-[1fr,auto,1fr] gap-2 px-4 py-2.5 items-center ' + (mappedTo ? 'bg-green-50/50 dark:bg-green-900/5' : '')}>
                             <div>
                               <span className="text-sm text-gray-900 dark:text-gray-100">{agoraCol.name}</span>
-                              <span className="text-[10px] text-gray-400 ml-1.5">{getAgoraTypeLabel(agoraCol.type)}</span>
+                              <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-1.5">{getAgoraTypeLabel(agoraCol.type)}</span>
                             </div>
-                            <span className="text-gray-300 text-sm w-6 text-center">{mappedTo ? '→' : '·'}</span>
+                            <span className="text-gray-300 dark:text-gray-600 text-sm w-6 text-center">{mappedTo ? '→' : '·'}</span>
                             <select value={mappedTo} onChange={function(e) { handleMapField(agoraCol.id, e.target.value); }}
                               className={'w-full px-2 py-1.5 text-sm border rounded-lg bg-white dark:bg-gray-800 dark:text-gray-200 ' + (mappedTo ? 'border-green-300 dark:border-green-700' : 'border-gray-300 dark:border-gray-600')}>
                               <option value="">— Not mapped —</option>
@@ -328,7 +328,7 @@ export function SharePointSyncModal({ tableId, tableName, columns, isOpen, onClo
 
               {/* Loading columns */}
               {loadingColumns && (
-                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
                   <span>Loading SharePoint columns...</span>
                 </div>
@@ -338,13 +338,13 @@ export function SharePointSyncModal({ tableId, tableName, columns, isOpen, onClo
               {config?.lastSyncAt && (
                 <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-500">Last sync: {new Date(config.lastSyncAt).toLocaleString()}</span>
+                    <span className="text-gray-500 dark:text-gray-400">Last sync: {new Date(config.lastSyncAt).toLocaleString()}</span>
                     <span className={'font-semibold ' + (config.lastSyncStatus === 'success' ? 'text-green-600' : config.lastSyncStatus === 'error' ? 'text-red-600' : 'text-yellow-600')}>
                       {config.lastSyncStatus === 'success' ? '✓ Success' : config.lastSyncStatus === 'error' ? '✕ Error' : '⚠ Partial'}
                     </span>
                   </div>
                   {config.lastSyncStats && (
-                    <div className="text-[10px] text-gray-400 mt-1">
+                    <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
                       {config.lastSyncStats.synced} synced, {config.lastSyncStats.errors} errors
                     </div>
                   )}
@@ -381,7 +381,7 @@ export function SharePointSyncModal({ tableId, tableName, columns, isOpen, onClo
             )}
           </div>
           <div className="flex items-center space-x-2">
-            <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-100">Cancel</button>
+            <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">Cancel</button>
             <button onClick={handleSave} disabled={saving || !selectedListId}
               className="px-6 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
               {saving ? 'Saving...' : 'Save Config'}

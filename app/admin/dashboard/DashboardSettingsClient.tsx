@@ -38,8 +38,8 @@ export function DashboardSettingsClient() {
   return (
     <div className="p-8 max-w-2xl">
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-gray-900">Dashboard Settings</h1>
-        <p className="text-sm text-gray-500 mt-1">Choose which forms appear as Quick Actions on everyone's home dashboard.</p>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Dashboard Settings</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Choose which forms appear as Quick Actions on everyone's home dashboard.</p>
       </div>
 
       {loading ? (
@@ -47,29 +47,29 @@ export function DashboardSettingsClient() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto" />
         </div>
       ) : forms.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
           <div className="text-3xl mb-3">📋</div>
-          <p className="text-sm text-gray-500">No active forms found. Create a form on a table first.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No active forms found. Create a form on a table first.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Active Forms</span>
-            <span className="text-[10px] text-gray-400">{forms.filter(f => f.isFeatured).length} featured</span>
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Active Forms</span>
+            <span className="text-[10px] text-gray-400 dark:text-gray-500">{forms.filter(f => f.isFeatured).length} featured</span>
           </div>
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {forms.map(form => (
-              <div key={form.id} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors">
+              <div key={form.id} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 <div className="flex items-center space-x-3">
                   <span className="text-lg">{form.tableIcon || '📋'}</span>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{form.name}</p>
-                    <p className="text-[10px] text-gray-400">{form.tableName}{form.description ? ' — ' + form.description : ''}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{form.name}</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500">{form.tableName}{form.description ? ' — ' + form.description : ''}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => toggleForm(form.id)}
-                  className={`relative w-10 h-5 rounded-full transition-colors ${form.isFeatured ? 'bg-blue-600' : 'bg-gray-200'}`}
+                  className={`relative w-10 h-5 rounded-full transition-colors ${form.isFeatured ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'}`}
                 >
                   <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.isFeatured ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </button>

@@ -81,7 +81,7 @@ export function FormPreview({
                           <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(' + (field.columnsPerRow?.length || 1) + ', 1fr)' }}>
                             {(field.columnsPerRow || []).map((colName: string, ci: number) => (
                               <div key={ci}>
-                                <label className="block text-[9px] font-medium text-gray-500 mb-0.5">{colName}</label>
+                                <label className="block text-[9px] font-medium text-gray-500 dark:text-gray-400 mb-0.5">{colName}</label>
                                 <input type="text" disabled placeholder={colName} className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800 text-gray-400" />
                               </div>
                             ))}
@@ -105,14 +105,14 @@ export function FormPreview({
                         {field.label}
                         {field.required && <span className="text-red-500 ml-0.5">*</span>}
                       </label>
-                      {field.description && <p className="text-[10px] text-gray-400 mb-1">{field.description}</p>}
+                      {field.description && <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-1">{field.description}</p>}
                       {renderPreviewInput(field)}
                     </div>
                   );
                 })}
                 {isMultiPage && pi < pages.length - 1 && (
                   <div className="flex justify-between pt-4">
-                    {pi > 0 && <button className="px-4 py-2 text-xs text-gray-600 border border-gray-300 rounded-lg" disabled>← Back</button>}
+                    {pi > 0 && <button className="px-4 py-2 text-xs text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-lg" disabled>← Back</button>}
                     <button className="px-4 py-2 text-xs bg-blue-600 text-white rounded-lg ml-auto" disabled>Next →</button>
                   </div>
                 )}
@@ -157,7 +157,7 @@ function renderPreviewInput(field: any) {
       return (
         <label className="flex items-center space-x-2">
           <input type="checkbox" disabled className="w-4 h-4 rounded border-gray-300 text-blue-600" />
-          <span className="text-sm text-gray-400">{field.placeholder || 'Check this box'}</span>
+          <span className="text-sm text-gray-400 dark:text-gray-500">{field.placeholder || 'Check this box'}</span>
         </label>
       );
     case 'select':

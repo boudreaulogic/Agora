@@ -183,9 +183,9 @@ export function ApprovalsManager({ tableId, columns, isOpen, onClose }: { tableI
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
           <div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">✅ Approval Workflow</h2>
-            <p className="text-xs text-gray-500 mt-0.5">One workflow per table with sequential approval stages</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">One workflow per table with sequential approval stages</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -202,7 +202,7 @@ export function ApprovalsManager({ tableId, columns, isOpen, onClose }: { tableI
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-2">
                           <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100">{wf.name}</h4>
-                          <span className={`text-[9px] px-2 py-0.5 rounded-full font-semibold ${wf.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                          <span className={`text-[9px] px-2 py-0.5 rounded-full font-semibold ${wf.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
                             {wf.isActive ? 'Active' : 'Inactive'}
                           </span>
                           <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">
@@ -212,7 +212,7 @@ export function ApprovalsManager({ tableId, columns, isOpen, onClose }: { tableI
                         <div className="flex items-center space-x-1">
                           <button onClick={() => loadWorkflowForEdit(wf)} className="text-[10px] px-2.5 py-1 rounded-lg text-blue-600 hover:bg-blue-50 font-medium">Edit</button>
                           <button onClick={async () => { await fetch(`/api/tables/${tableId}/approvals/${wf.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isActive: !wf.isActive }) }); fetchWorkflows(); }}
-                            className="text-[10px] px-2.5 py-1 rounded-lg text-gray-500 hover:bg-gray-100 font-medium">{wf.isActive ? 'Disable' : 'Enable'}</button>
+                            className="text-[10px] px-2.5 py-1 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium">{wf.isActive ? 'Disable' : 'Enable'}</button>
                           <button onClick={async () => { if (confirm('Delete this workflow and its approval column?')) { await fetch(`/api/tables/${tableId}/approvals/${wf.id}`, { method: 'DELETE' }); fetchWorkflows(); window.location.reload(); } }}
                             className="text-[10px] px-2.5 py-1 rounded-lg text-red-500 hover:bg-red-50 font-medium">Delete</button>
                         </div>
@@ -238,7 +238,7 @@ export function ApprovalsManager({ tableId, columns, isOpen, onClose }: { tableI
                         ))}
                       </div>
 
-                      <div className="flex items-center space-x-4 text-xs text-gray-500">
+                      <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
                         <span>⏳ {getStatusCount(wf, 'pending')} pending</span>
                         <span>🔄 {getStatusCount(wf, 'in_progress')} in progress</span>
                         <span>✅ {getStatusCount(wf, 'approved')} approved</span>
@@ -262,7 +262,7 @@ export function ApprovalsManager({ tableId, columns, isOpen, onClose }: { tableI
                 <div className="text-center py-12">
                   <div className="text-5xl mb-4">✅</div>
                   <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">No approval workflow yet</h3>
-                  <p className="text-xs text-gray-500 mb-4">Create a workflow to require approvals before records are finalized.</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Create a workflow to require approvals before records are finalized.</p>
                   <button onClick={() => setShowCreate(true)} className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700">Create Workflow</button>
                 </div>
               )}
@@ -275,7 +275,7 @@ export function ApprovalsManager({ tableId, columns, isOpen, onClose }: { tableI
             <div className="space-y-5">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100">{editingWorkflowId ? 'Edit Workflow' : 'New Workflow'}</h4>
-                <button onClick={() => { setShowCreate(false); resetForm(); }} className="text-xs text-gray-500 hover:text-gray-700">← Back</button>
+                <button onClick={() => { setShowCreate(false); resetForm(); }} className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">← Back</button>
               </div>
 
               <div>
@@ -353,8 +353,8 @@ export function ApprovalsManager({ tableId, columns, isOpen, onClose }: { tableI
                         <div className="flex items-center space-x-1">
                           {stages.length > 1 && (
                             <>
-                              <button onClick={() => moveStage(stage.order, 'up')} disabled={idx === 0} className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30" title="Move up">↑</button>
-                              <button onClick={() => moveStage(stage.order, 'down')} disabled={idx === stages.length - 1} className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30" title="Move down">↓</button>
+                              <button onClick={() => moveStage(stage.order, 'up')} disabled={idx === 0} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30" title="Move up">↑</button>
+                              <button onClick={() => moveStage(stage.order, 'down')} disabled={idx === stages.length - 1} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30" title="Move down">↓</button>
                               <button onClick={() => removeStage(stage.order)} className="p-1 text-red-400 hover:text-red-600" title="Remove stage">✕</button>
                             </>
                           )}
@@ -362,7 +362,7 @@ export function ApprovalsManager({ tableId, columns, isOpen, onClose }: { tableI
                       </div>
 
                       <div className="mb-2">
-                        <label className="block text-[10px] font-medium text-gray-500 mb-1">Approvers (select users)</label>
+                        <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1">Approvers (select users)</label>
                         <div className="flex flex-wrap gap-1.5 mb-1.5">
                           {stage.approverUserIds.map(id => (
                             <span key={id} className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700">
@@ -379,7 +379,7 @@ export function ApprovalsManager({ tableId, columns, isOpen, onClose }: { tableI
                       </div>
 
                       <div className="mb-2">
-                        <label className="block text-[10px] font-medium text-gray-500 mb-1">Dynamic Approver (from column value)</label>
+                        <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1">Dynamic Approver (from column value)</label>
                         <select value={stage.dynamicApproverColumnId || ''} onChange={e => updateStage(stage.order, { dynamicApproverColumnId: e.target.value || null })}
                           className="w-full px-2 py-1.5 text-[11px] border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 dark:text-gray-200">
                           <option value="">None — use fixed approvers only</option>
@@ -438,13 +438,13 @@ export function ApprovalsManager({ tableId, columns, isOpen, onClose }: { tableI
                   <div className="flex items-center space-x-1">
                     <input type="number" value={reminderHours} onChange={e => setReminderHours(parseInt(e.target.value) || 24)} min="1"
                       className="w-14 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 dark:text-gray-200" />
-                    <span className="text-xs text-gray-500">hours</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">hours</span>
                   </div>
                 )}
               </div>
 
               <div className="flex items-center space-x-3 pt-3">
-                <button onClick={() => { setShowCreate(false); resetForm(); }} className="px-4 py-2.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                <button onClick={() => { setShowCreate(false); resetForm(); }} className="px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
                 <button onClick={saveWorkflow} disabled={creating || !name.trim() || !hasAnyApprovers}
                   className="px-6 py-2.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
                   {creating ? 'Saving...' : editingWorkflowId ? 'Save Changes' : 'Create Workflow'}

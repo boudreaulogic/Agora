@@ -199,7 +199,7 @@ export function NotificationsClient() {
                       </div>
                       <div className="flex items-center space-x-2">
                         {!n.isRead && <span className="w-2.5 h-2.5 bg-blue-500 rounded-full" />}
-                        <span className="text-xs text-gray-400 whitespace-nowrap">{formatTime(n.createdAt)}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">{formatTime(n.createdAt)}</span>
                       </div>
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">{n.message}</p>
@@ -227,14 +227,14 @@ export function NotificationsClient() {
                       <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={e => { e.stopPropagation(); toggleRead(n.id, n.isRead); }}
-                          className="px-2 py-1 text-[10px] text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          className="px-2 py-1 text-[10px] text-gray-500 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                           title={n.isRead ? 'Mark as unread' : 'Mark as read'}
                         >
                           {n.isRead ? '🔵 Unread' : '✓ Read'}
                         </button>
                         <button
                           onClick={e => { e.stopPropagation(); deleteNotification(n.id); }}
-                          className="px-2 py-1 text-[10px] text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          className="px-2 py-1 text-[10px] text-gray-400 dark:text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                           title="Delete notification"
                         >
                           ✕

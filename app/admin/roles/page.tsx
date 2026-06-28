@@ -29,14 +29,14 @@ export default async function RolesPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <div className="bg-white shadow">
+      <div className="bg-white dark:bg-gray-900 shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Roles & Permissions</h1>
-              <p className="mt-1 text-sm text-gray-500">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Roles & Permissions</h1>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Manage roles and what they can do
               </p>
             </div>
@@ -54,18 +54,18 @@ export default async function RolesPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600">Total Roles</p>
-            <p className="text-3xl font-bold text-gray-900">{roles.length}</p>
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Total Roles</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{roles.length}</p>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600">System Roles</p>
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+            <p className="text-sm text-gray-600 dark:text-gray-400">System Roles</p>
             <p className="text-3xl font-bold text-blue-600">
               {roles.filter(r => r.isSystem).length}
             </p>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600">Custom Roles</p>
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Custom Roles</p>
             <p className="text-3xl font-bold text-purple-600">
               {roles.filter(r => !r.isSystem).length}
             </p>
@@ -75,32 +75,32 @@ export default async function RolesPage() {
         {/* Roles Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {roles.map((role) => (
-            <div key={role.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
+            <div key={role.id} className="bg-white dark:bg-gray-900 rounded-lg shadow hover:shadow-lg transition-shadow">
               {/* Role Header */}
-              <div className="p-6 border-b border-gray-200">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-xl font-semibold text-gray-900">{role.name}</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{role.name}</h3>
                   {role.isSystem && (
                     <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
                       System
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-gray-600">{role.description}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{role.description}</p>
               </div>
 
               {/* Stats */}
-              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between text-sm">
                   <div>
-                    <span className="text-gray-600">Permissions:</span>
-                    <span className="ml-2 font-semibold text-gray-900">
+                    <span className="text-gray-600 dark:text-gray-400">Permissions:</span>
+                    <span className="ml-2 font-semibold text-gray-900 dark:text-gray-100">
                       {role.permissions.length}
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Users:</span>
-                    <span className="ml-2 font-semibold text-gray-900">
+                    <span className="text-gray-600 dark:text-gray-400">Users:</span>
+                    <span className="ml-2 font-semibold text-gray-900 dark:text-gray-100">
                       {role._count.users}
                     </span>
                   </div>
@@ -109,7 +109,7 @@ export default async function RolesPage() {
 
               {/* Permissions Preview */}
               <div className="p-6">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
                   Permissions
                 </p>
                 {role.permissions.length > 0 ? (
@@ -117,22 +117,22 @@ export default async function RolesPage() {
                     {role.permissions.slice(0, 5).map((rp) => (
                       <div key={rp.id} className="flex items-center text-sm">
                         <span className="text-green-600 mr-2">✓</span>
-                        <span className="text-gray-700">{rp.permission.name}</span>
+                        <span className="text-gray-700 dark:text-gray-300">{rp.permission.name}</span>
                       </div>
                     ))}
                     {role.permissions.length > 5 && (
-                      <p className="text-xs text-gray-500 mt-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                         + {role.permissions.length - 5} more...
                       </p>
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 italic">No permissions assigned</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">No permissions assigned</p>
                 )}
               </div>
 
               {/* Actions */}
-              <div className="px-6 py-4 bg-gray-50 flex items-center justify-between">
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-between">
                 <Link
                   href={`/admin/roles/${role.id}`}
                   className="text-blue-600 hover:text-blue-800 font-medium text-sm"

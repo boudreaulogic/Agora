@@ -148,10 +148,10 @@ export function NewRowPanel({
   function renderField(column: any) {
     const value = formData[column.id] || '';
     const hasError = errors[column.id] && touched.has(column.id);
-    const inputClass = `w-full px-3 py-2 text-sm border rounded-lg transition-colors focus:ring-2 focus:outline-none ${
+    const inputClass = `w-full px-3 py-2 text-sm border rounded-lg transition-colors focus:ring-2 focus:outline-none dark:text-gray-100 ${
       hasError
-        ? 'border-red-300 focus:ring-red-500 bg-red-50'
-        : 'border-gray-300 focus:ring-blue-500 bg-white'
+        ? 'border-red-300 focus:ring-red-500 bg-red-50 dark:bg-red-900/20'
+        : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 bg-white dark:bg-gray-800'
     }`;
 
     switch (column.type) {
@@ -170,7 +170,7 @@ export function NewRowPanel({
       case 'currency':
         return (
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm">$</span>
             <input type="number" step="0.01" value={value} onChange={e => updateField(column.id, e.target.value)} className={inputClass + ' pl-7'} placeholder="0.00" />
           </div>
         );
@@ -179,7 +179,7 @@ export function NewRowPanel({
         return (
           <div className="relative">
             <input type="number" step="0.1" value={value} onChange={e => updateField(column.id, e.target.value)} className={inputClass + ' pr-8'} placeholder="0" />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm">%</span>
           </div>
         );
 
@@ -200,7 +200,7 @@ export function NewRowPanel({
           <label className="flex items-center space-x-3 cursor-pointer py-1">
             <input type="checkbox" checked={value === 'true' || value === true} onChange={e => updateField(column.id, e.target.checked ? 'true' : 'false')}
               className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-            <span className="text-sm text-gray-700">{value === 'true' ? 'Yes' : 'No'}</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">{value === 'true' ? 'Yes' : 'No'}</span>
           </label>
         );
 
@@ -244,11 +244,11 @@ export function NewRowPanel({
           <div className="flex items-center space-x-1 py-1">
             {[1, 2, 3, 4, 5].map(n => (
               <button key={n} type="button" onClick={() => updateField(column.id, numValue === n ? '' : String(n))}
-                className={`text-2xl transition-transform hover:scale-110 ${n <= numValue ? 'text-yellow-400' : 'text-gray-300'}`}>
+                className={`text-2xl transition-transform hover:scale-110 ${n <= numValue ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}>
                 ★
               </button>
             ))}
-            {numValue > 0 && <span className="text-xs text-gray-400 ml-2">{numValue}/5</span>}
+            {numValue > 0 && <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">{numValue}/5</span>}
           </div>
         );
 
@@ -256,9 +256,9 @@ export function NewRowPanel({
         return (
           <div className="space-y-1.5">
             <input type="range" min="0" max="100" value={value || 0} onChange={e => updateField(column.id, e.target.value)} className="w-full" />
-            <div className="flex justify-between text-xs text-gray-400">
+            <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500">
               <span>0%</span>
-              <span className="font-medium text-gray-700">{value || 0}%</span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">{value || 0}%</span>
               <span>100%</span>
             </div>
           </div>
@@ -277,7 +277,7 @@ export function NewRowPanel({
 
       case 'attachment':
         return (
-          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-500">
+          <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
             📎 Files can be attached after the row is created.
           </div>
         );
@@ -308,20 +308,20 @@ export function NewRowPanel({
       <div className="fixed inset-0 bg-black bg-opacity-20 z-30" onClick={onClose} />
 
       {/* Panel */}
-      <div className="fixed right-0 top-0 h-full w-[480px] bg-white shadow-2xl z-40 flex flex-col">
+      <div className="fixed right-0 top-0 h-full w-[480px] bg-white dark:bg-gray-900 shadow-2xl z-40 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
           <div>
-            <h2 className="text-base font-bold text-gray-900">New Row</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">New Row</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               {requiredCount > 0
                 ? `${filledRequired} of ${requiredCount} required fields filled`
                 : 'Fill in the fields below'
               }
             </p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-lg transition-colors" title="Close (Esc)">
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors" title="Close (Esc)">
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -344,8 +344,8 @@ export function NewRowPanel({
               return (
                 <div key={column.id}>
                   <label className="flex items-center space-x-1.5 mb-1.5">
-                    <span className="text-sm text-gray-400">{getColumnIcon(column.type)}</span>
-                    <span className="text-xs font-semibold text-gray-600 uppercase tracking-wider">{column.name}</span>
+                    <span className="text-sm text-gray-400 dark:text-gray-500">{getColumnIcon(column.type)}</span>
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">{column.name}</span>
                     {column.required && <span className="text-red-500 font-bold">*</span>}
                   </label>
                   {renderField(column)}
@@ -362,8 +362,8 @@ export function NewRowPanel({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between flex-shrink-0">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-between flex-shrink-0">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
             Cancel
           </button>
           <button

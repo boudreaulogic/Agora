@@ -358,24 +358,24 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
       <div className="mb-8">
         <div className="flex items-center space-x-3 mb-2">
           <span className="text-3xl">📦</span>
-          <h1 className="text-2xl font-bold text-gray-900">Agora Marketplace</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Agora Marketplace</h1>
         </div>
-        <p className="text-sm text-gray-500">Add features, solutions, and connectors to your tables.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Add features, solutions, and connectors to your tables.</p>
       </div>
 
       <div className="flex items-center space-x-4 mb-6">
         <div className="relative flex-1 max-w-sm">
           <input type="text" value={searchQuery} onChange={function(e) { setSearchQuery(e.target.value); }}
             placeholder="Search add-ons..."
-            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900" />
-          <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
+          <svg className="w-4 h-4 text-gray-400 dark:text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
-        <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+        <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
           {CATEGORIES.map(function(cat) {
             return (<button key={cat.id} onClick={function() { setSelectedCategory(cat.id); }}
-              className={'px-3 py-1.5 text-xs rounded-md transition-all font-medium ' + (selectedCategory === cat.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+              className={'px-3 py-1.5 text-xs rounded-md transition-all font-medium ' + (selectedCategory === cat.id ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200')}>
               <span className="mr-1">{cat.icon}</span>{cat.label}
             </button>);
           })}
@@ -388,8 +388,8 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
           return (
             <div key={addon.id}
               onClick={function() { if (!isComingSoon) { setSelectedAddOn(addon); setSelectedTableId(''); setInstallResult(null); setBookingStartName('Start Date/Time'); setBookingEndName('End Date/Time'); setBookingResourceName('Resource'); setBookingResources(''); } }}
-              className={'relative border rounded-xl p-5 transition-all ' + (isComingSoon ? 'border-gray-200 bg-gray-50 opacity-60 cursor-default' : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md cursor-pointer')}>
-              {isComingSoon && (<span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-wider bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">Coming Soon</span>)}
+              className={'relative border rounded-xl p-5 transition-all ' + (isComingSoon ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 opacity-60 cursor-default' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md cursor-pointer')}>
+              {isComingSoon && (<span className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-wider bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">Coming Soon</span>)}
               {!isComingSoon && (
                 <span className={'absolute top-3 right-3 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ' +
                   (addon.type === 'data_source' ? 'bg-amber-100 text-amber-700' :
@@ -405,10 +405,10 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
               <div className="flex items-start space-x-3">
                 <span className="text-2xl">{addon.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-bold text-gray-900">{addon.name}</h3>
-                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">{addon.description}</p>
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{addon.name}</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{addon.description}</p>
                   <div className="flex flex-wrap gap-1 mt-3">
-                    {addon.tags.slice(0, 3).map(function(tag) { return (<span key={tag} className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{tag}</span>); })}
+                    {addon.tags.slice(0, 3).map(function(tag) { return (<span key={tag} className="text-[9px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded-full">{tag}</span>); })}
                   </div>
                 </div>
               </div>
@@ -417,18 +417,18 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
         })}
       </div>
 
-      {filteredAddons.length === 0 && (<div className="text-center py-12"><p className="text-gray-400 text-sm">No add-ons match your search.</p></div>)}
+      {filteredAddons.length === 0 && (<div className="text-center py-12"><p className="text-gray-400 dark:text-gray-500 text-sm">No add-ons match your search.</p></div>)}
 
       {/* Add-on Detail Modal */}
       {selectedAddOn && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={function() { setSelectedAddOn(null); }}>
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden max-h-[90vh] overflow-y-auto" onClick={function(e) { e.stopPropagation(); }}>
-            <div className="px-6 py-5 border-b border-gray-200">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden max-h-[90vh] overflow-y-auto" onClick={function(e) { e.stopPropagation(); }}>
+            <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <span className="text-3xl">{selectedAddOn.icon}</span>
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900">{selectedAddOn.name}</h2>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{selectedAddOn.name}</h2>
                     <span className={'text-[10px] font-medium px-2 py-0.5 rounded-full ' +
                       (selectedAddOn.type === 'data_source' ? 'bg-amber-100 text-amber-700' :
                        selectedAddOn.type === 'feature' ? 'bg-blue-100 text-blue-700' :
@@ -441,24 +441,24 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
                     </span>
                   </div>
                 </div>
-                <button onClick={function() { setSelectedAddOn(null); }} className="text-gray-400 hover:text-gray-600">
+                <button onClick={function() { setSelectedAddOn(null); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
             </div>
 
             <div className="px-6 py-5 space-y-4">
-              <p className="text-sm text-gray-600 leading-relaxed">{selectedAddOn.longDescription}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{selectedAddOn.longDescription}</p>
               <div className="flex flex-wrap gap-1.5">
-                {selectedAddOn.tags.map(function(tag) { return <span key={tag} className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{tag}</span>; })}
+                {selectedAddOn.tags.map(function(tag) { return <span key={tag} className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">{tag}</span>; })}
               </div>
 
               {/* Install section for features (including booking) */}
               {selectedAddOn.featureKey && selectedAddOn.status === 'available' && (
-                <div className="border-t border-gray-200 pt-4">
-                  <label className="block text-xs font-semibold text-gray-700 mb-2">Select a table to install on:</label>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Select a table to install on:</label>
                   <select value={selectedTableId} onChange={function(e) { setSelectedTableId(e.target.value); setInstallResult(null); }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <option value="">Choose a table...</option>
                     {tables.map(function(t) {
                       var installed = isFeatureInstalled(selectedAddOn!.featureKey!, t.id);
@@ -468,32 +468,32 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
 
                   {/* Booking System custom config */}
                   {selectedAddOn.customInstall && selectedTableId && !isFeatureInstalled(selectedAddOn.featureKey, selectedTableId) && (
-                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
-                      <h4 className="text-xs font-bold text-blue-900 uppercase">Configure Booking Columns</h4>
-                      <p className="text-[10px] text-blue-700">These system columns will be added to your table. You can rename them.</p>
+                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg space-y-3">
+                      <h4 className="text-xs font-bold text-blue-900 dark:text-blue-200 uppercase">Configure Booking Columns</h4>
+                      <p className="text-[10px] text-blue-700 dark:text-blue-400">These system columns will be added to your table. You can rename them.</p>
                       <div className="grid grid-cols-3 gap-2">
                         <div>
-                          <label className="block text-[10px] font-medium text-blue-800 mb-1">Start Column</label>
+                          <label className="block text-[10px] font-medium text-blue-800 dark:text-blue-300 mb-1">Start Column</label>
                           <input type="text" value={bookingStartName} onChange={function(e) { setBookingStartName(e.target.value); }}
-                            className="w-full px-2 py-1.5 text-xs border border-blue-300 rounded bg-white text-gray-900 focus:ring-1 focus:ring-blue-500" />
+                            className="w-full px-2 py-1.5 text-xs border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-blue-500" />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-medium text-blue-800 mb-1">End Column</label>
+                          <label className="block text-[10px] font-medium text-blue-800 dark:text-blue-300 mb-1">End Column</label>
                           <input type="text" value={bookingEndName} onChange={function(e) { setBookingEndName(e.target.value); }}
-                            className="w-full px-2 py-1.5 text-xs border border-blue-300 rounded bg-white text-gray-900 focus:ring-1 focus:ring-blue-500" />
+                            className="w-full px-2 py-1.5 text-xs border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-blue-500" />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-medium text-blue-800 mb-1">Resource Column</label>
+                          <label className="block text-[10px] font-medium text-blue-800 dark:text-blue-300 mb-1">Resource Column</label>
                           <input type="text" value={bookingResourceName} onChange={function(e) { setBookingResourceName(e.target.value); }}
-                            className="w-full px-2 py-1.5 text-xs border border-blue-300 rounded bg-white text-gray-900 focus:ring-1 focus:ring-blue-500" />
+                            className="w-full px-2 py-1.5 text-xs border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-blue-500" />
                         </div>
                       </div>
                       <div>
-                        <label className="block text-[10px] font-medium text-blue-800 mb-1">Resources (comma-separated)</label>
+                        <label className="block text-[10px] font-medium text-blue-800 dark:text-blue-300 mb-1">Resources (comma-separated)</label>
                         <input type="text" value={bookingResources} onChange={function(e) { setBookingResources(e.target.value); }}
                           placeholder="e.g., Conference Room A, Gym, Auditorium, Vehicle 1"
-                          className="w-full px-2 py-1.5 text-xs border border-blue-300 rounded bg-white text-gray-900 focus:ring-1 focus:ring-blue-500" />
-                        <p className="text-[9px] text-blue-600 mt-0.5">You can add more resources later through the column settings.</p>
+                          className="w-full px-2 py-1.5 text-xs border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-blue-500" />
+                        <p className="text-[9px] text-blue-600 dark:text-blue-400 mt-0.5">You can add more resources later through the column settings.</p>
                       </div>
                     </div>
                   )}
@@ -516,7 +516,7 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
 
                   {installResult && (
                     <div className={'mt-3 px-3 py-2 rounded-lg text-xs ' +
-                      (installResult.success ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200')}>
+                      (installResult.success ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800')}>
                       {installResult.message}
                     </div>
                   )}
@@ -525,7 +525,7 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
 
               {/* Data source — navigates to its own setup page */}
               {selectedAddOn.type === 'data_source' && selectedAddOn.status === 'available' && selectedAddOn.setupUrl && (
-                <div className="border-t border-gray-200 pt-4 space-y-3">
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3">
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                     <p className="text-xs text-amber-800">
                       <span className="font-bold">Heads up:</span> this creates a new table in a workspace you choose. It doesn't install onto an existing table.
@@ -540,10 +540,10 @@ export function MarketplaceClient({ tables }: { tables: any[] }) {
 
               {/* Coming soon */}
               {selectedAddOn.status === 'coming_soon' && (
-                <div className="border-t border-gray-200 pt-4">
-                  <div className="bg-gray-50 rounded-lg p-4 text-center">
-                    <p className="text-sm text-gray-500">This {selectedAddOn.type === 'data_source' ? 'data source' : selectedAddOn.type} is coming soon.</p>
-                    <p className="text-xs text-gray-400 mt-1">It will be available in a future update.</p>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-center">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">This {selectedAddOn.type === 'data_source' ? 'data source' : selectedAddOn.type} is coming soon.</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">It will be available in a future update.</p>
                   </div>
                 </div>
               )}

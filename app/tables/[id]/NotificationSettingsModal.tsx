@@ -131,7 +131,7 @@ export function NotificationSettingsModal({ tableId, isOpen, onClose, isAdmin = 
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">🔔 Notification Settings</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -140,11 +140,11 @@ export function NotificationSettingsModal({ tableId, isOpen, onClose, isAdmin = 
         {isAdmin && (
           <div className="flex border-b border-gray-200 dark:border-gray-700 px-6 flex-shrink-0">
             <button onClick={() => setActiveTab('manage')}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === 'manage' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === 'manage' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
               Manage Recipients
             </button>
             <button onClick={() => setActiveTab('personal')}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === 'personal' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === 'personal' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
               My Preferences
             </button>
           </div>
@@ -180,7 +180,7 @@ export function NotificationSettingsModal({ tableId, isOpen, onClose, isAdmin = 
                     <span className="text-lg">📧</span>
                     <div>
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Email notifications</span>
-                      <p className="text-xs text-gray-400">Receive emails in addition to in-app</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">Receive emails in addition to in-app</p>
                     </div>
                   </div>
                   <div className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${settings.emailEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'}`}
@@ -235,7 +235,7 @@ export function NotificationSettingsModal({ tableId, isOpen, onClose, isAdmin = 
                                 <div className="flex items-center space-x-2">
                                   <span className="text-xs">{r.type === 'user' ? '👤' : r.type === 'group' ? '👥' : '🛡'}</span>
                                   <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{r.name}</span>
-                                  <span className="text-[9px] text-gray-400 bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">{r.type}</span>
+                                  <span className="text-[9px] text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">{r.type}</span>
                                 </div>
                                 <button onClick={() => removeRecipient(s.key, i)}
                                   className="p-0.5 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
@@ -245,7 +245,7 @@ export function NotificationSettingsModal({ tableId, isOpen, onClose, isAdmin = 
                             ))}
                           </div>
                         ) : (
-                          <p className="text-xs text-gray-400 text-center py-2">No specific recipients — only users who self-subscribe will be notified</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-2">No specific recipients — only users who self-subscribe will be notified</p>
                         )}
 
                         {/* Add recipient */}
@@ -279,7 +279,7 @@ export function NotificationSettingsModal({ tableId, isOpen, onClose, isAdmin = 
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3 flex-shrink-0">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
           <button onClick={activeTab === 'personal' ? savePersonal : saveTargets} disabled={saving}
             className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
             {saving ? 'Saving...' : 'Save Settings'}

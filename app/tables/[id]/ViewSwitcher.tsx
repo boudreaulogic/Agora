@@ -193,25 +193,25 @@ export function ViewSwitcher({
       <div className="relative">
         <button
           onClick={() => setShowDropdown(!showDropdown)}
-          className={`flex items-center space-x-2 px-3 py-1.5 border rounded-lg text-sm bg-white transition-colors ${
-            hasUnsavedChanges ? 'border-amber-300 hover:bg-amber-50' : 'border-gray-300 hover:bg-gray-50'
+          className={`flex items-center space-x-2 px-3 py-1.5 border rounded-lg text-sm bg-white dark:bg-gray-800 transition-colors ${
+            hasUnsavedChanges ? 'border-amber-300 hover:bg-amber-50' : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
           }`}
         >
-          <span className="text-gray-500">{getViewIcon(currentView?.type)}</span>
-          <span className="font-medium text-gray-700">{currentView?.name || 'All Items'}</span>
+          <span className="text-gray-500 dark:text-gray-400">{getViewIcon(currentView?.type)}</span>
+          <span className="font-medium text-gray-700 dark:text-gray-300">{currentView?.name || 'All Items'}</span>
           {currentView?.type === 'kanban' && (<span className="text-xs text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">Board</span>)}
           {currentView?.type === 'calendar' && (<span className="text-xs text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">Calendar</span>)}
           {currentView?.type === 'gallery' && (<span className="text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Gallery</span>)}
           {currentView?.type === 'gantt' && (<span className="text-xs text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">Gantt</span>)}
           {hasUnsavedChanges && (<span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" title="Unsaved changes" />)}
           {!hasUnsavedChanges && currentView?.isDefault && (<span className="text-yellow-500 text-xs">★</span>)}
-          <svg className={`w-3 h-3 text-gray-400 transition-transform ${showDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={`w-3 h-3 text-gray-400 dark:text-gray-500 transition-transform ${showDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
 
         {showDropdown && (
-          <div className="absolute left-0 top-10 z-20 bg-white rounded-lg shadow-lg border border-gray-200 w-72">
+          <div className="absolute left-0 top-10 z-20 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 w-72">
             {hasUnsavedChanges && onSaveView && (
               <div className="px-3 py-2 border-b border-amber-100 bg-amber-50">
                 <button onClick={handleSaveView} disabled={isSaving}
@@ -228,13 +228,13 @@ export function ViewSwitcher({
             <div className="py-2 max-h-64 overflow-y-auto">
               {views.map((view) => (
                 <div key={view.id}
-                  className={`flex items-center justify-between px-3 py-2 cursor-pointer group ${view.id === currentView?.id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                  className={`flex items-center justify-between px-3 py-2 cursor-pointer group ${view.id === currentView?.id ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                   onMouseEnter={() => setHoveredViewId(view.id)}
                   onMouseLeave={() => setHoveredViewId(null)}
                   onClick={() => switchView(view.id)}>
                   <div className="flex items-center space-x-2 flex-1 min-w-0">
-                    <span className="text-gray-400 flex-shrink-0">{getViewIcon(view.type)}</span>
-                    <span className={`text-sm truncate ${view.id === currentView?.id ? 'text-blue-700 font-medium' : 'text-gray-700'}`}>{view.name}</span>
+                    <span className="text-gray-400 dark:text-gray-500 flex-shrink-0">{getViewIcon(view.type)}</span>
+                    <span className={`text-sm truncate ${view.id === currentView?.id ? 'text-blue-700 font-medium' : 'text-gray-700 dark:text-gray-300'}`}>{view.name}</span>
                     {view.type === 'kanban' && (<span className="text-xs text-purple-600 bg-purple-50 px-1 py-0.5 rounded flex-shrink-0">Board</span>)}
                     {view.type === 'calendar' && (<span className="text-xs text-orange-600 bg-orange-50 px-1 py-0.5 rounded flex-shrink-0">Calendar</span>)}
                     {view.type === 'gallery' && (<span className="text-xs text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded flex-shrink-0">Gallery</span>)}
@@ -259,10 +259,10 @@ export function ViewSwitcher({
               ))}
             </div>
 
-            <div className="border-t border-gray-200 p-2">
+            <div className="border-t border-gray-200 dark:border-gray-700 p-2">
               {!isCreating ? (
                 <button onClick={() => setIsCreating(true)}
-                  className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                  className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                   <span>Create new view</span>
                 </button>
@@ -270,7 +270,7 @@ export function ViewSwitcher({
                 <div className="space-y-3 px-1 py-1">
                   <input type="text" value={newViewName} onChange={(e) => setNewViewName(e.target.value)}
                     placeholder="View name..."
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
                     autoFocus
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && (newViewType === 'grid' || newViewType === 'gallery')) createView();
@@ -291,7 +291,7 @@ export function ViewSwitcher({
                           }
                         }}
                         className={`flex items-center justify-center space-x-1.5 px-3 py-2 border-2 rounded-lg text-xs transition-all ${
-                          newViewType === vt.value ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                          newViewType === vt.value ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-600 dark:text-gray-400'
                         }`}>
                         <span>{vt.icon}</span>
                         <span className="font-medium">{vt.label}</span>
@@ -301,14 +301,14 @@ export function ViewSwitcher({
 
                   {newViewType === 'kanban' && (
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Group by column</label>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Group by column</label>
                       {groupableColumns.length === 0 ? (
                         <div className="p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
                           <p className="text-xs text-yellow-800">No select columns found. Create a Single Select column first to use kanban view.</p>
                         </div>
                       ) : (
                         <select value={kanbanColumnId} onChange={(e) => setKanbanColumnId(e.target.value)}
-                          className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                          className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100">
                           <option value="">Select a column...</option>
                           {groupableColumns.map((col: any) => (<option key={col.id} value={col.id}>{col.name}</option>))}
                         </select>
@@ -329,14 +329,14 @@ export function ViewSwitcher({
                         </div>
                       ) : (
                         <>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">Date column</label>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date column</label>
                           {dateColumns.length === 0 ? (
                             <div className="p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
                               <p className="text-xs text-yellow-800">No date columns found. Create a Date column first to use calendar view.</p>
                             </div>
                           ) : (
                             <select value={kanbanColumnId} onChange={function(e) { setKanbanColumnId(e.target.value); }}
-                              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                              className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100">
                               <option value="">Select a date column...</option>
                               {dateColumns.map(function(col: any) { return (<option key={col.id} value={col.id}>{col.name}</option>); })}
                             </select>
@@ -356,7 +356,7 @@ export function ViewSwitcher({
                           </div>
                         ) : (
                           <select value={kanbanColumnId} onChange={(e) => setKanbanColumnId(e.target.value)}
-                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100">
                             <option value="">Select start date...</option>
                             {dateColumns.map((col: any) => (<option key={col.id} value={col.id}>{col.name}</option>))}
                           </select>
@@ -365,7 +365,7 @@ export function ViewSwitcher({
                       <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">End date column (optional)</label>
                         <select value={ganttEndColumnId} onChange={(e) => setGanttEndColumnId(e.target.value)}
-                          className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                          className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100">
                           <option value="">No end date (1-day bars)</option>
                           {dateColumns.filter((c: any) => c.id !== kanbanColumnId).map((col: any) => (<option key={col.id} value={col.id}>{col.name}</option>))}
                         </select>
@@ -380,7 +380,7 @@ export function ViewSwitcher({
                       Create
                     </button>
                     <button onClick={resetCreateForm}
-                      className="flex-1 px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+                      className="flex-1 px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                       Cancel
                     </button>
                   </div>

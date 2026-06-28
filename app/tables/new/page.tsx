@@ -125,17 +125,17 @@ export default async function NewTablePage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Create New Table</h1>
-              <p className="mt-1 text-sm text-gray-500">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Create New Table</h1>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Build a custom database for your data
               </p>
             </div>
-            <Link href="/" className="text-gray-600 hover:text-gray-900">
+            <Link href="/" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
               ← Back
             </Link>
           </div>
@@ -143,9 +143,9 @@ export default async function NewTablePage({
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <form action={createTable} className="bg-white rounded-lg shadow-lg p-8 space-y-8">
+        <form action={createTable} className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 space-y-8">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Table Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -153,10 +153,10 @@ export default async function NewTablePage({
               id="name"
               name="name"
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg dark:bg-gray-800 dark:text-gray-100"
               placeholder="e.g., Inventory, Projects, Contacts"
             />
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
               Give your table a clear, descriptive name
             </p>
           </div>
@@ -164,14 +164,14 @@ export default async function NewTablePage({
           <EmojiPicker />
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Description (Optional)
             </label>
             <textarea
               id="description"
               name="description"
               rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
               placeholder="What will you use this table for?"
             />
           </div>
@@ -181,9 +181,9 @@ export default async function NewTablePage({
             defaultWorkspaceId={searchParams.workspace || ''}
           />
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h3 className="text-sm font-semibold text-blue-900 mb-2">📚 What happens next?</h3>
-            <ul className="text-sm text-blue-800 space-y-2">
+          <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+            <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2">📚 What happens next?</h3>
+            <ul className="text-sm text-blue-800 dark:text-blue-400 space-y-2">
               <li className="flex items-start">
                 <span className="mr-2">✓</span>
                 <span>Your table will be created with 3 default columns (Name, Status, Created)</span>
@@ -199,10 +199,10 @@ export default async function NewTablePage({
             </ul>
           </div>
 
-          <div className="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <Link
               href="/"
-              className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               Cancel
             </Link>

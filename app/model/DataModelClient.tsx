@@ -246,7 +246,7 @@ export function DataModelClient() {
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
-          <p className="text-sm text-gray-500">Loading data model...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading data model...</p>
         </div>
       </div>
     );
@@ -257,8 +257,8 @@ export function DataModelClient() {
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <div className="text-4xl mb-3">🗂️</div>
-          <h2 className="text-lg font-bold text-gray-900 mb-1">No Tables Yet</h2>
-          <p className="text-sm text-gray-500 mb-4">Create some tables to see your data model.</p>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">No Tables Yet</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Create some tables to see your data model.</p>
           <Link href="/tables/new" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
             Create Table
           </Link>
@@ -270,10 +270,10 @@ export function DataModelClient() {
   return (
     <div className="h-full flex flex-col">
       {/* Toolbar */}
-      <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between flex-shrink-0">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-2 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center space-x-3">
-          <h1 className="text-sm font-bold text-gray-900">Data Model</h1>
-          <span className="text-xs text-gray-400">{tables.length} tables · {edges.length} relationships</span>
+          <h1 className="text-sm font-bold text-gray-900 dark:text-gray-100">Data Model</h1>
+          <span className="text-xs text-gray-400 dark:text-gray-500">{tables.length} tables · {edges.length} relationships</span>
         </div>
         <div className="flex items-center space-x-2">
           <div className="relative">
@@ -282,51 +282,51 @@ export function DataModelClient() {
               value={searchQuery}
               onChange={function(e) { setSearchQuery(e.target.value); }}
               placeholder="Search tables or columns..."
-              className="w-48 pl-7 pr-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+              className="w-48 pl-7 pr-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             />
-            <svg className="w-3.5 h-3.5 text-gray-400 absolute left-2 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 absolute left-2 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+          <div className="flex items-center border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
             <button onClick={function() { setZoom(function(z) { return Math.min(2, z * 1.2); }); }}
-              className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100" title="Zoom in">+</button>
-            <span className="px-2 py-1 text-[10px] text-gray-400 border-x border-gray-200 min-w-[40px] text-center">
+              className="px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800" title="Zoom in">+</button>
+            <span className="px-2 py-1 text-[10px] text-gray-400 dark:text-gray-500 border-x border-gray-200 dark:border-gray-700 min-w-[40px] text-center">
               {Math.round(zoom * 100)}%
             </span>
             <button onClick={function() { setZoom(function(z) { return Math.max(0.3, z * 0.8); }); }}
-              className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100" title="Zoom out">−</button>
+              className="px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800" title="Zoom out">−</button>
           </div>
-          <button onClick={fitToScreen} className="px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100 border border-gray-200 rounded-lg" title="Fit to screen">
+          <button onClick={fitToScreen} className="px-2 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg" title="Fit to screen">
             Fit
           </button>
-          <button onClick={resetView} className="px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100 border border-gray-200 rounded-lg" title="Reset view">
+          <button onClick={resetView} className="px-2 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg" title="Reset view">
             Reset
           </button>
         </div>
       </div>
 
       {/* Legend */}
-      <div className="bg-white border-b border-gray-200 px-4 py-1.5 flex items-center space-x-4 flex-shrink-0">
-        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Relationships:</span>
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-1.5 flex items-center space-x-4 flex-shrink-0">
+        <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Relationships:</span>
         <div className="flex items-center space-x-1.5">
           <div className="w-4 h-0.5 rounded" style={{ backgroundColor: EDGE_COLORS.linked_record }}></div>
-          <span className="text-[10px] text-gray-500">Linked Record</span>
+          <span className="text-[10px] text-gray-500 dark:text-gray-400">Linked Record</span>
         </div>
         <div className="flex items-center space-x-1.5">
           <div className="w-4 h-0.5 rounded" style={{ backgroundColor: EDGE_COLORS.lookup }}></div>
-          <span className="text-[10px] text-gray-500">Lookup</span>
+          <span className="text-[10px] text-gray-500 dark:text-gray-400">Lookup</span>
         </div>
         <div className="flex items-center space-x-1.5">
           <div className="w-4 h-0.5 rounded" style={{ backgroundColor: EDGE_COLORS.rollup }}></div>
-          <span className="text-[10px] text-gray-500">Rollup</span>
+          <span className="text-[10px] text-gray-500 dark:text-gray-400">Rollup</span>
         </div>
       </div>
 
       {/* Canvas */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-hidden relative bg-gray-50"
+        className="flex-1 overflow-hidden relative bg-gray-50 dark:bg-gray-950"
         style={{ cursor: isPanning ? 'grabbing' : dragging ? 'grabbing' : 'grab' }}
         onMouseDown={handleCanvasMouseDown}
         onMouseMove={handleMouseMove}
@@ -374,7 +374,7 @@ export function DataModelClient() {
                   {isHighlighted && (
                     <g>
                       <rect x={edgePath.labelPos.x - 40} y={edgePath.labelPos.y - 8} width="80" height="16"
-                        rx="4" fill="white" stroke={color} strokeWidth="1" />
+                        rx="4" fill="currentColor" className="text-white dark:text-gray-900" stroke={color} strokeWidth="1" />
                       <text x={edgePath.labelPos.x} y={edgePath.labelPos.y + 3}
                         textAnchor="middle" fontSize="9" fontWeight="600" fill={color}>
                         {edge.label}
@@ -420,26 +420,26 @@ export function DataModelClient() {
                     setSelectedTable(function(prev) { return prev === table.id ? null : table.id; });
                   }}
                 >
-                  <div className={'rounded-lg border-2 overflow-hidden bg-white ' +
+                  <div className={'rounded-lg border-2 overflow-hidden bg-white dark:bg-gray-900 ' +
                     (isSelected ? 'border-blue-500 shadow-lg shadow-blue-500/20' :
-                    'border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300')}>
+                    'border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600')}>
 
                     {/* Table header */}
                     <div className={'px-3 py-2.5 flex items-center justify-between ' +
-                      (isSelected ? 'bg-blue-50' : 'bg-gray-50')} style={{ cursor: 'grab' }}>
+                      (isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-gray-50 dark:bg-gray-800/50')} style={{ cursor: 'grab' }}>
                       <div className="flex items-center space-x-2 min-w-0">
                         <span className="text-base flex-shrink-0">{table.icon || '📊'}</span>
                         <div className="min-w-0">
-                          <h3 className="text-xs font-bold text-gray-900 truncate">{table.name}</h3>
+                          <h3 className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">{table.name}</h3>
                           <div className="flex items-center space-x-1.5">
-                            <span className="text-[9px] text-gray-400">{table.rowCount} rows</span>
-                            <span className="text-[9px] text-gray-300">·</span>
-                            <span className="text-[9px] text-gray-400">{table.columns.length} cols</span>
+                            <span className="text-[9px] text-gray-400 dark:text-gray-500">{table.rowCount} rows</span>
+                            <span className="text-[9px] text-gray-300 dark:text-gray-600">·</span>
+                            <span className="text-[9px] text-gray-400 dark:text-gray-500">{table.columns.length} cols</span>
                           </div>
                         </div>
                       </div>
                       <Link href={'/tables/' + table.id}
-                        className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                         title="Open table"
                         onClick={function(e) { e.stopPropagation(); }}>
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -449,7 +449,7 @@ export function DataModelClient() {
                     </div>
 
                     {/* Columns */}
-                    <div className="divide-y divide-gray-100">
+                    <div className="divide-y divide-gray-100 dark:divide-gray-800">
                       {displayCols.map(function(col) {
                         var isRelEdge = edges.some(function(e) {
                           return e.fromColumn === col.id || e.toColumn === col.id;
@@ -459,23 +459,23 @@ export function DataModelClient() {
                         return (
                           <div key={col.id}
                             className={'flex items-center px-3 py-1.5 text-[11px] ' +
-                              (isRelEdge ? 'bg-blue-50/40' : 'hover:bg-gray-50')}>
+                              (isRelEdge ? 'bg-blue-50/40 dark:bg-blue-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50')}>
                             <span className={'w-5 h-4 flex items-center justify-center rounded text-[8px] font-bold mr-2 flex-shrink-0 ' +
-                              (col.isRelational ? 'text-white' : 'text-gray-400 bg-gray-100')}
+                              (col.isRelational ? 'text-white' : 'text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800')}
                               style={col.isRelational ? { backgroundColor: typeColor } : undefined}>
                               {TYPE_ICONS[col.type] || 'T'}
                             </span>
-                            <span className={'truncate ' + (col.isRelational ? 'font-semibold text-gray-800' : 'text-gray-600')}>
+                            <span className={'truncate ' + (col.isRelational ? 'font-semibold text-gray-800 dark:text-gray-200' : 'text-gray-600 dark:text-gray-400')}>
                               {col.name}
                             </span>
-                            <span className="ml-auto text-[9px] text-gray-300 flex-shrink-0 pl-2">
+                            <span className="ml-auto text-[9px] text-gray-300 dark:text-gray-600 flex-shrink-0 pl-2">
                               {col.type.replace('_', ' ')}
                             </span>
                           </div>
                         );
                       })}
                       {hiddenCount > 0 && (
-                        <div className="px-3 py-1.5 text-[10px] text-gray-400 text-center">
+                        <div className="px-3 py-1.5 text-[10px] text-gray-400 dark:text-gray-500 text-center">
                           + {hiddenCount} more columns
                         </div>
                       )}
@@ -483,8 +483,8 @@ export function DataModelClient() {
 
                     {/* Workspace badge */}
                     {table.workspace && (
-                      <div className="px-3 py-1.5 bg-gray-50 border-t border-gray-100">
-                        <span className="text-[9px] text-gray-400">
+                      <div className="px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-800">
+                        <span className="text-[9px] text-gray-400 dark:text-gray-500">
                           {table.workspace.icon || '📁'} {table.workspace.name}
                         </span>
                       </div>

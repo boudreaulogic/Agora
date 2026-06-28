@@ -273,14 +273,14 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
 
   return (
     <>
-      <button onClick={() => setIsOpen(true)} className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">+ Add Column</button>
+      <button onClick={() => setIsOpen(true)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">+ Add Column</button>
 
       {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Add Column</h2>
-              <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Add Column</h2>
+              <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -288,23 +288,23 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
             <div className="p-6 overflow-y-auto flex-1">
               {/* Column Name */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Column Name <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Column Name <span className="text-red-500">*</span></label>
                 <input type="text" value={columnName} onChange={(e) => setColumnName(e.target.value)} placeholder="e.g., Project Status"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100" />
               </div>
 
               {/* Column Description */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <input type="text" value={columnDescription} onChange={(e) => setColumnDescription(e.target.value)} placeholder="Help text shown to users (e.g. 'Enter your work email')" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                <p className="text-xs text-gray-400 mt-1">Shown as a tooltip on column headers and in forms</p>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                <input type="text" value={columnDescription} onChange={(e) => setColumnDescription(e.target.value)} placeholder="Help text shown to users (e.g. 'Enter your work email')" className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100" />
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Shown as a tooltip on column headers and in forms</p>
               </div>
 
               {/* Required Field Toggle */}
               {!['formula', 'lookup', 'rollup', 'approval_status'].includes(selectedType) && (
-                <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between">
-                    <div><h4 className="text-sm font-medium text-gray-900">Required Field</h4><p className="text-xs text-gray-500 mt-0.5">Must have a value when creating rows</p></div>
+                    <div><h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Required Field</h4><p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Must have a value when creating rows</p></div>
                     <button type="button" onClick={() => setIsRequired(!isRequired)} className={`relative w-11 h-6 rounded-full transition-colors ${isRequired ? 'bg-red-500' : 'bg-gray-300'}`}>
                       <div className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform" style={{ transform: isRequired ? 'translateX(22px)' : 'translateX(2px)' }} />
                     </button>
@@ -314,9 +314,9 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
 
               {/* Show in New Row Toggle */}
               {!['formula', 'lookup', 'rollup', 'approval_status'].includes(selectedType) && (
-                <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between">
-                    <div><h4 className="text-sm font-medium text-gray-900">Show in New Row Panel</h4><p className="text-xs text-gray-500 mt-0.5">When disabled, this field won't appear when users click "+ New"</p></div>
+                    <div><h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Show in New Row Panel</h4><p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">When disabled, this field won't appear when users click "+ New"</p></div>
                     <button type="button" onClick={() => setShowInNewRow(!showInNewRow)} className={`relative w-11 h-6 rounded-full transition-colors ${showInNewRow ? 'bg-blue-500' : 'bg-gray-300'}`}>
                       <div className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform" style={{ transform: showInNewRow ? 'translateX(22px)' : 'translateX(2px)' }} />
                     </button>
@@ -328,8 +328,8 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
               <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900">Agora Only</h4>
-                    <p className="text-xs text-gray-500 mt-0.5">When enabled, this column will NOT be pushed to SharePoint. Use for internal tracking, automation triggers, or temporary data.</p>
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Agora Only</h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">When enabled, this column will NOT be pushed to SharePoint. Use for internal tracking, automation triggers, or temporary data.</p>
                   </div>
                   <button type="button" onClick={() => setAgoraOnly(!agoraOnly)} className={`relative w-11 h-6 rounded-full transition-colors ${agoraOnly ? 'bg-blue-500' : 'bg-gray-300'}`}>
                     <div className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform" style={{ transform: agoraOnly ? 'translateX(22px)' : 'translateX(2px)' }} />
@@ -339,13 +339,13 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
 
               {/* Column Type */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">Column Type</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Column Type</label>
                 <div className="grid grid-cols-2 gap-3">
                   {COLUMN_TYPES.map((type) => (
                     <button key={type.value} type="button" onClick={() => { setSelectedType(type.value); setDefaultValue(''); }}
-                      className={`flex items-start p-3 border-2 rounded-lg text-left transition-all ${selectedType === type.value ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                      className={`flex items-start p-3 border-2 rounded-lg text-left transition-all ${selectedType === type.value ? 'border-blue-500 bg-blue-50' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}`}>
                       <span className="text-2xl mr-3">{type.icon}</span>
-                      <div className="flex-1 min-w-0"><div className="font-medium text-sm text-gray-900">{type.label}</div><div className="text-xs text-gray-500 mt-0.5">{type.description}</div></div>
+                      <div className="flex-1 min-w-0"><div className="font-medium text-sm text-gray-900 dark:text-gray-100">{type.label}</div><div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{type.description}</div></div>
                     </button>
                   ))}
                 </div>
@@ -354,25 +354,25 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
               {/* Default Value — after type selection so options are available */}
               {!['formula', 'lookup', 'rollup', 'linked_record'].includes(selectedType) && (
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Default Value</label>
-                  <p className="text-xs text-gray-400 mb-2">Automatically applied when new rows are created</p>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Default Value</label>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">Automatically applied when new rows are created</p>
                   {selectedType === 'checkbox' ? (
-                    <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" checked={defaultValue === 'true'} onChange={(e) => setDefaultValue(e.target.checked ? 'true' : '')} className="w-5 h-5 rounded border-gray-300 text-blue-600" /><span className="text-sm text-gray-700">Checked by default</span></label>
+                    <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" checked={defaultValue === 'true'} onChange={(e) => setDefaultValue(e.target.checked ? 'true' : '')} className="w-5 h-5 rounded border-gray-300 text-blue-600" /><span className="text-sm text-gray-700 dark:text-gray-300">Checked by default</span></label>
                   ) : selectedType === 'select' ? (
-                    <select value={defaultValue || ''} onChange={(e) => setDefaultValue(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <select value={defaultValue || ''} onChange={(e) => setDefaultValue(e.target.value)} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100">
                       <option value="">No default</option>{options.map((opt) => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
                     </select>
                   ) : ['number', 'currency', 'percent'].includes(selectedType) ? (
-                    <input type="number" value={defaultValue || ''} onChange={(e) => setDefaultValue(e.target.value)} placeholder="Enter default number..." className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    <input type="number" value={defaultValue || ''} onChange={(e) => setDefaultValue(e.target.value)} placeholder="Enter default number..." className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100" />
                   ) : selectedType === 'date' || selectedType === 'datetime' ? (
                     <div className="space-y-2">
-                      <select value={defaultValue === '__today' ? '__today' : ''} onChange={(e) => setDefaultValue(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                      <select value={defaultValue === '__today' ? '__today' : ''} onChange={(e) => setDefaultValue(e.target.value)} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100">
                         <option value="">No default</option>
                         <option value="__today">Today's date</option>
                       </select>
                     </div>
                   ) : (
-                    <input type="text" value={defaultValue || ''} onChange={(e) => setDefaultValue(e.target.value)} placeholder="Enter default value..." className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    <input type="text" value={defaultValue || ''} onChange={(e) => setDefaultValue(e.target.value)} placeholder="Enter default value..." className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100" />
                   )}
                 </div>
               )}
@@ -381,25 +381,25 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
               {selectedType === 'lookup' && (
                 <div className="mb-6 space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Step 1: Select Linked Record Column <span className="text-red-500">*</span></label>
-                    {loadingLinkedColumns ? (<div className="text-sm text-gray-500">Loading columns...</div>)
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Step 1: Select Linked Record Column <span className="text-red-500">*</span></label>
+                    {loadingLinkedColumns ? (<div className="text-sm text-gray-500 dark:text-gray-400">Loading columns...</div>)
                     : linkedRecordColumns.length === 0 ? (<div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg"><p className="text-sm text-yellow-800">No linked record columns found. Create a Linked Record column first to use lookups.</p></div>)
-                    : (<select value={lookupLinkedColumnId} onChange={(e) => setLookupLinkedColumnId(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    : (<select value={lookupLinkedColumnId} onChange={(e) => setLookupLinkedColumnId(e.target.value)} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100">
                         <option value="">Select a linked record column...</option>
                         {linkedRecordColumns.map((col) => (<option key={col.id} value={col.id}>🔗 {col.name} → {col.linkedTable?.name || 'Unknown table'}</option>))}
                       </select>)}
-                    <p className="mt-1 text-xs text-gray-500">Choose which linked record relationship to follow</p>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Choose which linked record relationship to follow</p>
                   </div>
                   {lookupLinkedColumnId && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Step 2: Select Field to Display <span className="text-red-500">*</span></label>
-                      {loadingFieldColumns ? (<div className="text-sm text-gray-500">Loading fields...</div>)
-                      : linkedTableColumns.length === 0 ? (<div className="text-sm text-gray-500">No fields available in the linked table</div>)
-                      : (<select value={lookupFieldId} onChange={(e) => setLookupFieldId(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Step 2: Select Field to Display <span className="text-red-500">*</span></label>
+                      {loadingFieldColumns ? (<div className="text-sm text-gray-500 dark:text-gray-400">Loading fields...</div>)
+                      : linkedTableColumns.length === 0 ? (<div className="text-sm text-gray-500 dark:text-gray-400">No fields available in the linked table</div>)
+                      : (<select value={lookupFieldId} onChange={(e) => setLookupFieldId(e.target.value)} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100">
                           <option value="">Select a field...</option>
                           {linkedTableColumns.map((col) => (<option key={col.id} value={col.id}>{getTypeIcon(col.type)} {col.name}</option>))}
                         </select>)}
-                      <p className="mt-1 text-xs text-gray-500">This field's value will be pulled from linked records</p>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">This field's value will be pulled from linked records</p>
                     </div>
                   )}
                   {lookupLinkedColumnId && lookupFieldId && (
@@ -414,10 +414,10 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
               {selectedType === 'rollup' && (
                 <div className="mb-6 space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Step 1: Select Linked Record Column <span className="text-red-500">*</span></label>
-                    {loadingLinkedColumns ? (<div className="text-sm text-gray-500">Loading columns...</div>)
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Step 1: Select Linked Record Column <span className="text-red-500">*</span></label>
+                    {loadingLinkedColumns ? (<div className="text-sm text-gray-500 dark:text-gray-400">Loading columns...</div>)
                     : linkedRecordColumns.length === 0 ? (<div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg"><p className="text-sm text-yellow-800">No linked record columns found. Create a Linked Record column first to use rollups.</p></div>)
-                    : (<select value={rollupLinkedColumnId} onChange={(e) => setRollupLinkedColumnId(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    : (<select value={rollupLinkedColumnId} onChange={(e) => setRollupLinkedColumnId(e.target.value)} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100">
                         <option value="">Select a linked record column...</option>
                         {linkedRecordColumns.map((col) => (<option key={col.id} value={col.id}>🔗 {col.name} → {col.linkedTable?.name || 'Unknown table'}</option>))}
                       </select>)}
@@ -435,8 +435,8 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
                           { value: 'COUNTA', label: 'Count Values', desc: 'Non-empty field count', icon: '🔢' },
                         ].map((fn) => (
                           <button key={fn.value} type="button" onClick={() => setRollupFunction(fn.value)}
-                            className={`p-3 border-2 rounded-lg text-left transition-all ${rollupFunction === fn.value ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                            <div className="text-lg mb-1">{fn.icon}</div><div className="font-medium text-sm text-gray-900">{fn.label}</div><div className="text-xs text-gray-500">{fn.desc}</div>
+                            className={`p-3 border-2 rounded-lg text-left transition-all ${rollupFunction === fn.value ? 'border-green-500 bg-green-50' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}`}>
+                            <div className="text-lg mb-1">{fn.icon}</div><div className="font-medium text-sm text-gray-900 dark:text-gray-100">{fn.label}</div><div className="text-xs text-gray-500 dark:text-gray-400">{fn.desc}</div>
                           </button>
                         ))}
                       </div>
@@ -444,10 +444,10 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
                   )}
                   {rollupLinkedColumnId && rollupFunction && rollupFunction !== 'COUNT' && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Step 3: Select Field to Aggregate <span className="text-red-500">*</span></label>
-                      {loadingRollupFieldColumns ? (<div className="text-sm text-gray-500">Loading fields...</div>)
-                      : rollupLinkedTableColumns.length === 0 ? (<div className="text-sm text-gray-500">No fields available</div>)
-                      : (<select value={rollupFieldId} onChange={(e) => setRollupFieldId(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Step 3: Select Field to Aggregate <span className="text-red-500">*</span></label>
+                      {loadingRollupFieldColumns ? (<div className="text-sm text-gray-500 dark:text-gray-400">Loading fields...</div>)
+                      : rollupLinkedTableColumns.length === 0 ? (<div className="text-sm text-gray-500 dark:text-gray-400">No fields available</div>)
+                      : (<select value={rollupFieldId} onChange={(e) => setRollupFieldId(e.target.value)} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100">
                           <option value="">Select a field...</option>
                           {rollupLinkedTableColumns.map((col) => (<option key={col.id} value={col.id}>{getTypeIcon(col.type)} {col.name}</option>))}
                         </select>)}
@@ -468,23 +468,23 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
               {/* Linked Record Table Selector */}
               {selectedType === 'linked_record' && (
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Link to Table <span className="text-red-500">*</span></label>
-                  {loadingTables ? (<div className="text-sm text-gray-500">Loading tables...</div>)
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Link to Table <span className="text-red-500">*</span></label>
+                  {loadingTables ? (<div className="text-sm text-gray-500 dark:text-gray-400">Loading tables...</div>)
                   : availableTables.length === 0 ? (<div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg"><p className="text-sm text-yellow-800">No other tables available. Create another table first to link records.</p></div>)
-                  : (<select value={linkedTableId} onChange={(e) => setLinkedTableId(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                  : (<select value={linkedTableId} onChange={(e) => setLinkedTableId(e.target.value)} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100">
                       <option value="">Select a table...</option>
                       {availableTables.map((table) => (<option key={table.id} value={table.id}>{table.icon} {table.name}</option>))}
                     </select>)}
-                  <p className="mt-2 text-xs text-gray-500">💡 This column will link to records in the selected table</p>
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">💡 This column will link to records in the selected table</p>
                   {linkedTableId && (
                     <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Display Column <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Display Column <span className="text-red-500">*</span></label>
                       <select value={linkedDisplayColumnId} onChange={(e) => setLinkedDisplayColumnId(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100">
                         <option value="">Select which field to show...</option>
                         {linkedTableColumnsForDisplay.map((col: any) => (<option key={col.id} value={col.id}>{col.name}</option>))}
                       </select>
-                      <p className="mt-1 text-xs text-gray-500">This column's values will appear in the dropdown when users pick a record</p>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">This column's values will appear in the dropdown when users pick a record</p>
                     </div>
                   )}
                 </div>
@@ -494,13 +494,13 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
               {selectedType === 'formula' && (
                 <>
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Formula <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Formula <span className="text-red-500">*</span></label>
                     <textarea id="formula-editor" value={formula} onChange={(e) => setFormula(e.target.value)} placeholder="e.g., {Price} * {Quantity}" rows={4}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm" />
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm dark:bg-gray-800 dark:text-gray-100" />
 
-                    <div className="mt-3 border border-gray-200 rounded-lg overflow-hidden">
-                      <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
-                        <span className="text-xs font-bold text-gray-500 uppercase">Insert Dynamic Content</span>
+                    <div className="mt-3 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                      <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                        <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Insert Dynamic Content</span>
                       </div>
                       <div className="p-3">
                         <div className="flex flex-wrap gap-1.5 mb-3">
@@ -538,13 +538,13 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
                   </div>
 
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-3">Number Format</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Number Format</label>
                     <div className="grid grid-cols-2 gap-3">
                       {FORMULA_FORMATS.map((format) => (
                         <button key={format.value} type="button" onClick={() => setFormulaFormat(format.value)}
-                          className={`flex items-start p-3 border-2 rounded-lg text-left transition-all ${formulaFormat === format.value ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                          className={`flex items-start p-3 border-2 rounded-lg text-left transition-all ${formulaFormat === format.value ? 'border-blue-500 bg-blue-50' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}`}>
                           <span className="text-2xl mr-3">{format.icon}</span>
-                          <div className="flex-1 min-w-0"><div className="font-medium text-sm text-gray-900">{format.label}</div><div className="text-xs text-gray-500 mt-0.5">{format.description}</div></div>
+                          <div className="flex-1 min-w-0"><div className="font-medium text-sm text-gray-900 dark:text-gray-100">{format.label}</div><div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{format.description}</div></div>
                         </button>
                       ))}
                     </div>
@@ -555,19 +555,19 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
               {/* Options for Select/Multi-Select */}
               {(selectedType === 'select' || selectedType === 'multi_select') && (
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Options</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Options</label>
                   <div className="space-y-2">
                     {options.map((option, index) => (
                       <div key={index} className="flex items-center space-x-2">
                         <div className="relative">
-                          <button type="button" onClick={(e) => { var el = e.currentTarget.nextElementSibling; if (el) (el as HTMLElement).style.display = (el as HTMLElement).style.display === 'none' ? 'flex' : 'none'; }} className="w-10 h-10 rounded-lg border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors" style={{ backgroundColor: option.color }} />
-                          <div style={{ display: 'none' }} className="absolute left-0 top-12 z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-2 flex flex-wrap gap-1.5 w-[168px]">
+                          <button type="button" onClick={(e) => { var el = e.currentTarget.nextElementSibling; if (el) (el as HTMLElement).style.display = (el as HTMLElement).style.display === 'none' ? 'flex' : 'none'; }} className="w-10 h-10 rounded-lg border-2 border-gray-200 dark:border-gray-700 cursor-pointer hover:border-gray-400 transition-colors" style={{ backgroundColor: option.color }} />
+                          <div style={{ display: 'none' }} className="absolute left-0 top-12 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2 flex flex-wrap gap-1.5 w-[168px]">
                             {['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#06B6D4','#84CC16','#F97316','#6366F1','#14B8A6','#A855F7'].map((c) => (
                               <button key={c} type="button" onClick={(e) => { updateOption(index, 'color', c); var panel = (e.currentTarget.parentElement as HTMLElement); if (panel) panel.style.display = 'none'; }} className={'w-8 h-8 rounded-md cursor-pointer transition-all hover:scale-110 ' + (option.color === c ? 'ring-2 ring-offset-2 ring-gray-800' : 'hover:ring-2 hover:ring-offset-1 hover:ring-gray-300')} style={{ backgroundColor: c }} />
                             ))}
                           </div>
                         </div>
-                        <input type="text" value={option.label} onChange={(e) => updateOption(index, 'label', e.target.value)} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg" placeholder="Option name" />
+                        <input type="text" value={option.label} onChange={(e) => updateOption(index, 'label', e.target.value)} className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-gray-100" placeholder="Option name" />
                         {options.length > 1 && (
                           <button type="button" onClick={() => removeOption(index)} className="text-red-600 hover:text-red-800">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -581,8 +581,8 @@ export function AddColumnModal({ tableId }: { tableId: string }) {
               )}
             </div>
 
-            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end space-x-3">
-              <button onClick={() => setIsOpen(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end space-x-3">
+              <button onClick={() => setIsOpen(false)} className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
               <button onClick={handleCreate}
                 disabled={isCreating || !columnName.trim() || (selectedType === 'formula' && !formula.trim()) || (selectedType === 'linked_record' && !linkedTableId) || (selectedType === 'lookup' && (!lookupLinkedColumnId || !lookupFieldId)) || (selectedType === 'rollup' && (!rollupLinkedColumnId || !rollupFunction || (rollupFunction !== 'COUNT' && !rollupFieldId)))}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">

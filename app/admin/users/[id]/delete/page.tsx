@@ -53,12 +53,12 @@ export default async function DeleteUserPage({ params }: { params: { id: string 
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <div className="bg-white shadow">
+      <div className="bg-white dark:bg-gray-900 shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <h1 className="text-3xl font-bold text-red-600">Delete User</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Permanently remove this user from the system
           </p>
         </div>
@@ -88,7 +88,7 @@ export default async function DeleteUserPage({ params }: { params: { id: string 
             <div className="mt-6">
               <Link
                 href="/admin/users"
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 inline-block"
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 inline-block"
               >
                 ← Back to Users
               </Link>
@@ -96,7 +96,7 @@ export default async function DeleteUserPage({ params }: { params: { id: string 
           </div>
         ) : (
           // Delete confirmation
-          <div className="bg-white rounded-lg shadow">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow">
             {/* Warning */}
             <div className="bg-yellow-50 border-b border-yellow-200 p-6">
               <div className="flex items-start">
@@ -116,22 +116,22 @@ export default async function DeleteUserPage({ params }: { params: { id: string 
 
             {/* User Details */}
             <div className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 You are about to delete:
               </h3>
-              
-              <div className="bg-gray-50 rounded-lg p-4 space-y-2 mb-6">
+
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 space-y-2 mb-6">
                 <div className="flex items-center space-x-3">
                   <div className="h-12 w-12 rounded-full bg-red-600 flex items-center justify-center text-white font-semibold text-lg">
                     {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{user.name || 'No name'}</p>
-                    <p className="text-sm text-gray-600">{user.email}</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">{user.name || 'No name'}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{user.email}</p>
                   </div>
                 </div>
                 
-                <div className="pt-4 border-t border-gray-200 text-sm text-gray-600 space-y-1">
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400 space-y-1">
                   <p><strong>User ID:</strong> {user.id}</p>
                   <p><strong>Created:</strong> {new Date(user.createdAt).toLocaleString()}</p>
                   <p><strong>Last Login:</strong> {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : 'Never'}</p>
@@ -153,7 +153,7 @@ export default async function DeleteUserPage({ params }: { params: { id: string 
               <form action={deleteUser} className="flex items-center justify-end space-x-4">
                 <Link
                   href="/admin/users"
-                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                   Cancel
                 </Link>

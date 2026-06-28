@@ -47,14 +47,14 @@ export function FormFieldSettings({
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {/* Label */}
         <div>
-          <label className="block text-[9px] font-bold text-gray-400 uppercase mb-0.5">Label</label>
+          <label className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase mb-0.5">Label</label>
           <input type="text" value={field.label} onChange={e => update({ label: e.target.value })}
             className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-800 dark:text-gray-200" />
         </div>
 
         {/* Help Text */}
         <div>
-          <label className="block text-[9px] font-bold text-gray-400 uppercase mb-0.5">Help Text</label>
+          <label className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase mb-0.5">Help Text</label>
           <input type="text" value={field.description || ''} onChange={e => update({ description: e.target.value })}
             placeholder="Shown below the field..."
             className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-800 dark:text-gray-200" />
@@ -63,7 +63,7 @@ export function FormFieldSettings({
         {/* Placeholder */}
         {field.type !== 'section_header' && !isCalculated && (
           <div>
-            <label className="block text-[9px] font-bold text-gray-400 uppercase mb-0.5">Placeholder</label>
+            <label className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase mb-0.5">Placeholder</label>
             <input type="text" value={field.placeholder || ''} onChange={e => update({ placeholder: e.target.value })}
               className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-800 dark:text-gray-200" />
           </div>
@@ -120,7 +120,7 @@ export function FormFieldSettings({
                 {/* Visual formula display */}
                 <div className="min-h-[36px] px-2 py-1.5 bg-white dark:bg-gray-800 border-2 border-orange-300 dark:border-orange-700 rounded-lg flex flex-wrap items-center gap-1">
                   {(field.formula?.operations || []).length === 0 && (
-                    <span className="text-[10px] text-gray-400 italic">Click columns below to build formula...</span>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 italic">Click columns below to build formula...</span>
                   )}
                   {(field.formula?.operations || []).map((op: any, oi: number) => {
                     const isRgAgg = op.type === 'rg_aggregate';
@@ -194,7 +194,7 @@ export function FormFieldSettings({
 
                 {/* Operator buttons */}
                 <div className="flex items-center space-x-1">
-                  <span className="text-[8px] text-gray-400 mr-1">Operators:</span>
+                  <span className="text-[8px] text-gray-400 dark:text-gray-500 mr-1">Operators:</span>
                   {[{ label: '+', value: '+' }, { label: '−', value: '-' }, { label: '×', value: '*' }, { label: '÷', value: '/' }].map(op => (
                     <button key={op.value} onClick={() => {
                       const ops = [...(field.formula?.operations || [])];
@@ -217,7 +217,7 @@ export function FormFieldSettings({
 
                 {/* Dynamic content — clickable columns */}
                 <div>
-                  <span className="text-[8px] font-bold text-gray-400 uppercase">Dynamic Content</span>
+                  <span className="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase">Dynamic Content</span>
                   <div className="mt-1 flex flex-wrap gap-1 max-h-28 overflow-y-auto">
                     {allFields
                       .filter(f => f.columnId !== field.columnId && ['number', 'currency', 'percent', 'rating'].includes(f.columnType || ''))
@@ -314,18 +314,18 @@ export function FormFieldSettings({
         {/* Validation */}
         {field.type !== 'section_header' && !isCalculated && (
           <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-            <h5 className="text-[9px] font-bold text-gray-400 uppercase mb-2">Validation</h5>
+            <h5 className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase mb-2">Validation</h5>
 
             {['text', 'textarea', 'email', 'url', 'phone'].includes(field.columnType) && (
               <div className="space-y-2">
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[9px] text-gray-400 mb-0.5">Min Length</label>
+                    <label className="block text-[9px] text-gray-400 dark:text-gray-500 mb-0.5">Min Length</label>
                     <input type="number" value={field.validation?.minLength || ''} onChange={e => update({ validation: { ...field.validation, minLength: e.target.value ? parseInt(e.target.value) : undefined } })}
                       className="w-full px-2 py-1 text-[10px] border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 dark:text-gray-200" />
                   </div>
                   <div>
-                    <label className="block text-[9px] text-gray-400 mb-0.5">Max Length</label>
+                    <label className="block text-[9px] text-gray-400 dark:text-gray-500 mb-0.5">Max Length</label>
                     <input type="number" value={field.validation?.maxLength || ''} onChange={e => update({ validation: { ...field.validation, maxLength: e.target.value ? parseInt(e.target.value) : undefined } })}
                       className="w-full px-2 py-1 text-[10px] border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 dark:text-gray-200" />
                   </div>
@@ -362,7 +362,7 @@ export function FormFieldSettings({
                 )}
                 {field.columnType === 'text' && (
                   <div>
-                    <label className="block text-[9px] text-gray-400 mb-0.5">Pattern</label>
+                    <label className="block text-[9px] text-gray-400 dark:text-gray-500 mb-0.5">Pattern</label>
                     <select value={field.validation?.pattern || 'none'} onChange={e => update({ validation: { ...field.validation, pattern: e.target.value } })}
                       className="w-full px-2 py-1 text-[10px] border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 dark:text-gray-200">
                       <option value="none">None</option>
@@ -387,12 +387,12 @@ export function FormFieldSettings({
             {['number', 'currency', 'percent', 'rating'].includes(field.columnType) && (
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[9px] text-gray-400 mb-0.5">Min Value</label>
+                  <label className="block text-[9px] text-gray-400 dark:text-gray-500 mb-0.5">Min Value</label>
                   <input type="number" value={field.validation?.min || ''} onChange={e => update({ validation: { ...field.validation, min: e.target.value ? parseFloat(e.target.value) : undefined } })}
                     className="w-full px-2 py-1 text-[10px] border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 dark:text-gray-200" />
                 </div>
                 <div>
-                  <label className="block text-[9px] text-gray-400 mb-0.5">Max Value</label>
+                  <label className="block text-[9px] text-gray-400 dark:text-gray-500 mb-0.5">Max Value</label>
                   <input type="number" value={field.validation?.max || ''} onChange={e => update({ validation: { ...field.validation, max: e.target.value ? parseFloat(e.target.value) : undefined } })}
                     className="w-full px-2 py-1 text-[10px] border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 dark:text-gray-200" />
                 </div>
@@ -400,7 +400,7 @@ export function FormFieldSettings({
             )}
 
             <div className="mt-2">
-              <label className="block text-[9px] text-gray-400 mb-0.5">Error Message</label>
+              <label className="block text-[9px] text-gray-400 dark:text-gray-500 mb-0.5">Error Message</label>
               <input type="text" value={field.validation?.errorMessage || ''} onChange={e => update({ validation: { ...field.validation, errorMessage: e.target.value } })}
                 placeholder="Custom error text..."
                 className="w-full px-2 py-1 text-[10px] border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 dark:text-gray-200" />

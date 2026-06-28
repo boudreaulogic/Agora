@@ -103,14 +103,14 @@ export function ColumnFilterMenu({
         <div className="p-2 max-h-64 overflow-y-auto">
           <div className="space-y-1">
             {uniqueValues.map(value => (
-              <label key={value} className="flex items-center px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer">
+              <label key={value} className="flex items-center px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
                 <input
                   type="checkbox"
                   checked={selectedValues.includes(value)}
                   onChange={() => handleSelectFilter(value)}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <span className="ml-2 text-sm text-gray-700">{getOptionLabel(value)}</span>
+                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">{getOptionLabel(value)}</span>
               </label>
             ))}
           </div>
@@ -126,7 +126,7 @@ export function ColumnFilterMenu({
             placeholder="Search..."
             defaultValue={currentFilter?.value || ''}
             onChange={(e) => handleTextFilter(e.target.value, 'contains')}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
           />
         </div>
       );
@@ -140,14 +140,14 @@ export function ColumnFilterMenu({
             placeholder="Min"
             defaultValue={currentFilter?.min || ''}
             onChange={(e) => handleNumberFilter(e.target.value, currentFilter?.max)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
           />
           <input
             type="number"
             placeholder="Max"
             defaultValue={currentFilter?.max || ''}
             onChange={(e) => handleNumberFilter(currentFilter?.min, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
           />
         </div>
       );
@@ -160,13 +160,13 @@ export function ColumnFilterMenu({
             type="date"
             defaultValue={currentFilter?.min || ''}
             onChange={(e) => handleNumberFilter(e.target.value, currentFilter?.max)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
           />
           <input
             type="date"
             defaultValue={currentFilter?.max || ''}
             onChange={(e) => handleNumberFilter(currentFilter?.min, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
           />
         </div>
       );
@@ -175,20 +175,20 @@ export function ColumnFilterMenu({
     if (column.type === 'checkbox') {
       return (
         <div className="p-2">
-          <label className="flex items-center px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer">
+          <label className="flex items-center px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
             <input
               type="checkbox"
               checked={currentFilter?.value === 'true'}
               onChange={(e) => onFilterChange(column.id, e.target.checked ? { type: 'checkbox', value: 'true' } : {})}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <span className="ml-2 text-sm text-gray-700">Show checked only</span>
+            <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Show checked only</span>
           </label>
         </div>
       );
     }
 
-    return <div className="p-3 text-sm text-gray-500">No filter available for this type</div>;
+    return <div className="p-3 text-sm text-gray-500 dark:text-gray-400">No filter available for this type</div>;
   }
 
   return (
@@ -211,9 +211,9 @@ export function ColumnFilterMenu({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-          <div className="px-3 py-2 border-b border-gray-200 flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Filter {column.name}</span>
+        <div className="absolute left-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+          <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter {column.name}</span>
             {hasFilter && (
               <button
                 onClick={() => {

@@ -184,25 +184,25 @@ export function SharePointImportClient({ workspaces }: { workspaces: any[] }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4" />
-          <p className="text-sm text-gray-500">Connecting to SharePoint...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Connecting to SharePoint...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Import from SharePoint</h1>
-              <p className="mt-1 text-sm text-gray-500">Create a table backed by a SharePoint list</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Import from SharePoint</h1>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Create a table backed by a SharePoint list</p>
             </div>
-            <a href="/" className="text-gray-600 hover:text-gray-900 text-sm">← Back</a>
+            <a href="/" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-sm">← Back</a>
           </div>
         </div>
       </div>
@@ -221,7 +221,7 @@ export function SharePointImportClient({ workspaces }: { workspaces: any[] }) {
                 className={'inline-flex items-center space-x-1.5 px-4 py-2 rounded-full text-sm transition-colors ' +
                   (s.n === step ? 'bg-blue-600 text-white shadow-sm' :
                     s.n < step ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 cursor-pointer' :
-                      'bg-gray-100 text-gray-400 cursor-not-allowed')}>
+                      'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed')}>
                 <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold bg-white/20">
                   {s.n < step ? '✓' : s.n}
                 </span>
@@ -242,13 +242,13 @@ export function SharePointImportClient({ workspaces }: { workspaces: any[] }) {
 
         {/* Step 1: Choose List */}
         {step === 1 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Choose a SharePoint List</h2>
-            <p className="text-sm text-gray-500 mb-6">These are the SharePoint lists you have been granted access to. Select one to connect it to Agora.</p>
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Choose a SharePoint List</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">These are the SharePoint lists you have been granted access to. Select one to connect it to Agora.</p>
 
             {spLists.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-500">No SharePoint lists are available to you. An admin can register lists and grant access in Admin → SharePoint Settings.</p>
+                <p className="text-gray-500 dark:text-gray-400">No SharePoint lists are available to you. An admin can register lists and grant access in Admin → SharePoint Settings.</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -257,11 +257,11 @@ export function SharePointImportClient({ workspaces }: { workspaces: any[] }) {
                   return (
                     <button key={list.id} onClick={function() { handleListSelect(list.id); }}
                       className={'w-full text-left px-4 py-3 rounded-lg border-2 transition-colors ' +
-                        (isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50')}>
+                        (isSelected ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800')}>
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className={'font-medium ' + (isSelected ? 'text-blue-900' : 'text-gray-900')}>{list.name}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">
+                          <p className={'font-medium ' + (isSelected ? 'text-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-gray-100')}>{list.name}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                             SharePoint list: {list.listName}{list.description ? ' — ' + list.description : ''}
                           </p>
                         </div>
@@ -274,7 +274,7 @@ export function SharePointImportClient({ workspaces }: { workspaces: any[] }) {
             )}
 
             {loadingCols && (
-              <div className="flex items-center space-x-2 mt-4 text-sm text-gray-500">
+              <div className="flex items-center space-x-2 mt-4 text-sm text-gray-500 dark:text-gray-400">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
                 <span>Loading columns...</span>
               </div>
@@ -291,40 +291,40 @@ export function SharePointImportClient({ workspaces }: { workspaces: any[] }) {
 
         {/* Step 2: Select Columns */}
         {step === 2 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Select Columns to Import</h2>
-                <p className="text-sm text-gray-500 mt-0.5">{selectedCount} of {spColumns.length} columns selected from "{selectedListName}"</p>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Select Columns to Import</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{selectedCount} of {spColumns.length} columns selected from "{selectedListName}"</p>
               </div>
               <div className="flex items-center space-x-2">
                 <button onClick={selectAllColumns} className="text-xs text-blue-600 hover:text-blue-800">Select All</button>
-                <span className="text-gray-300">|</span>
+                <span className="text-gray-300 dark:text-gray-600">|</span>
                 <button onClick={deselectAllColumns} className="text-xs text-blue-600 hover:text-blue-800">Deselect All</button>
               </div>
             </div>
 
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
-              <div className="grid grid-cols-[auto,1fr,120px,120px] gap-2 px-4 py-2 bg-gray-100 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+              <div className="grid grid-cols-[auto,1fr,120px,120px] gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <span></span>
                 <span>Column Name</span>
                 <span>SP Type</span>
                 <span>Agora Type</span>
               </div>
-              <div className="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
+              <div className="divide-y divide-gray-100 dark:divide-gray-800 max-h-[400px] overflow-y-auto">
                 {spColumns.map(function(col) {
                   var isChecked = selectedColumns[col.name] || false;
                   return (
                     <div key={col.name} onClick={function() { toggleColumn(col.name); }}
                       className={'grid grid-cols-[auto,1fr,120px,120px] gap-2 px-4 py-3 items-center cursor-pointer transition-colors ' +
-                        (isChecked ? 'bg-blue-50/50' : 'hover:bg-gray-50')}>
-                      <input type="checkbox" checked={isChecked} onChange={function() {}} className="w-4 h-4 rounded border-gray-300 text-blue-600" />
+                        (isChecked ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800')}>
+                      <input type="checkbox" checked={isChecked} onChange={function() {}} className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600" />
                       <div>
-                        <span className="text-sm text-gray-900 font-medium">{col.displayName}</span>
-                        <span className="text-[10px] text-gray-400 ml-2 font-mono">{col.name}</span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{col.displayName}</span>
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-2 font-mono">{col.name}</span>
                         {col.required && <span className="text-red-500 text-[10px] ml-1">Required</span>}
                       </div>
-                      <span className="text-xs text-gray-500">{getSpTypeLabel(col.type)}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{getSpTypeLabel(col.type)}</span>
                       <span className="text-xs text-blue-600 font-medium">{getAgoraTypeFromSp(col.type)}</span>
                     </div>
                   );
@@ -349,7 +349,7 @@ export function SharePointImportClient({ workspaces }: { workspaces: any[] }) {
             )}
 
             <div className="flex justify-between mt-6">
-              <button onClick={function() { setStep(1); }} className="px-6 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50">Back</button>
+              <button onClick={function() { setStep(1); }} className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">Back</button>
               <button onClick={function() { setStep(3); }} disabled={selectedCount === 0}
                 className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
                 Next: Configure Table
@@ -360,37 +360,37 @@ export function SharePointImportClient({ workspaces }: { workspaces: any[] }) {
 
         {/* Step 3: Configure */}
         {step === 3 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-6">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Configure Your Table</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Configure Your Table</h2>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Table Name <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Table Name <span className="text-red-500">*</span></label>
               <input type="text" value={tableName} onChange={function(e) { setTableName(e.target.value); }}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg dark:bg-gray-800 dark:text-gray-100"
                 placeholder="e.g., Facility Use Requests" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description (Optional)</label>
               <textarea value={tableDesc} onChange={function(e) { setTableDesc(e.target.value); }} rows={2}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100"
                 placeholder="What is this table for?" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Workspace (Optional)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Workspace (Optional)</label>
               <select value={workspaceId} onChange={function(e) { setWorkspaceId(e.target.value); }}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-100">
                 <option value="">No workspace</option>
                 {workspaces.map(function(w) { return <option key={w.id} value={w.id}>{w.icon || '📁'} {w.name}</option>; })}
               </select>
             </div>
 
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="text-sm font-semibold text-blue-800 mb-2">Summary</h3>
-              <div className="text-xs text-blue-700 space-y-1">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">Summary</h3>
+              <div className="text-xs text-blue-700 dark:text-blue-400 space-y-1">
                 <p>SharePoint List: <strong>{selectedListName}</strong></p>
                 <p>Columns to import: <strong>{selectedCount}</strong></p>
                 <p>Sync: <strong>Bidirectional (Agora ↔ SharePoint)</strong></p>
@@ -399,7 +399,7 @@ export function SharePointImportClient({ workspaces }: { workspaces: any[] }) {
             </div>
 
             <div className="flex justify-between">
-              <button onClick={function() { setStep(2); }} className="px-6 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50">Back</button>
+              <button onClick={function() { setStep(2); }} className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">Back</button>
               <button onClick={handleCreate} disabled={creating || !tableName.trim()}
                 className="px-8 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50">
                 {creating ? 'Creating...' : 'Create SharePoint Table'}
@@ -410,14 +410,14 @@ export function SharePointImportClient({ workspaces }: { workspaces: any[] }) {
 
         {/* Step 4: Done */}
         {step === 4 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
             <div className="text-5xl mb-4">{pulling ? '⏳' : '✅'}</div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
               {pulling ? 'Importing data...' : 'Table Created!'}
             </h2>
             {pullResult && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg inline-block text-left">
-                <div className="text-sm text-gray-700 space-y-1">
+              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg inline-block text-left">
+                <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
                   <p>Items imported: <strong className="text-green-600">{pullResult.imported}</strong></p>
                   {pullResult.updated > 0 && <p>Items updated: <strong className="text-blue-600">{pullResult.updated}</strong></p>}
                   {pullResult.errors > 0 && <p>Errors: <strong className="text-red-600">{pullResult.errors}</strong></p>}
@@ -432,7 +432,7 @@ export function SharePointImportClient({ workspaces }: { workspaces: any[] }) {
             )}
             {!pulling && createdTableId && (
               <div className="mt-6 flex items-center justify-center space-x-3">
-                <a href={'/'} className="px-6 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50">Back to Home</a>
+                <a href={'/'} className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">Back to Home</a>
                 <a href={'/tables/' + createdTableId} className="px-8 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700">Open Table</a>
               </div>
             )}

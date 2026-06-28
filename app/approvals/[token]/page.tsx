@@ -19,11 +19,11 @@ export default async function ApprovalPage({ params }: { params: { token: string
 
   if (!request) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-lg p-12 text-center max-w-md">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-12 text-center max-w-md">
           <div className="mb-4"><AgoraLogo size={48} /></div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Approval Not Found</h1>
-          <p className="text-sm text-gray-500">This approval link may have expired or is invalid.</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Approval Not Found</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">This approval link may have expired or is invalid.</p>
         </div>
       </div>
     );
@@ -31,13 +31,13 @@ export default async function ApprovalPage({ params }: { params: { token: string
 
   if (request.status === 'approved' || request.status === 'denied' || request.status === 'cancelled') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-lg p-12 text-center max-w-md">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-12 text-center max-w-md">
           <div className="mb-4"><AgoraLogo size={48} /></div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
             {request.status === 'approved' ? 'Already Approved' : request.status === 'denied' ? 'Already Denied' : 'Cancelled'}
           </h1>
-          <p className="text-sm text-gray-500 mb-6">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
             This approval request has already been {request.status}. No further action is needed.
           </p>
           <a href={'/tables/' + request.tableId} className="inline-flex items-center space-x-2 px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
@@ -54,11 +54,11 @@ export default async function ApprovalPage({ params }: { params: { token: string
 
   if (!row) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-lg p-12 text-center max-w-md">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-12 text-center max-w-md">
           <div className="mb-4"><AgoraLogo size={48} /></div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Record Not Found</h1>
-          <p className="text-sm text-gray-500">The record associated with this approval has been deleted.</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Record Not Found</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">The record associated with this approval has been deleted.</p>
         </div>
       </div>
     );

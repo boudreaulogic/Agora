@@ -186,10 +186,10 @@ export function ConnectGoogleSheetModal({
     <>
       <div className="fixed inset-0 bg-black/50 z-50" onClick={onClose} />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
 
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                 <svg className="w-5 h-5 text-green-600" viewBox="0 0 24 24" fill="currentColor">
@@ -197,8 +197,8 @@ export function ConnectGoogleSheetModal({
                 </svg>
               </div>
               <div>
-                <h2 className="text-base font-bold text-gray-900">Connect Google Sheet</h2>
-                <p className="text-xs text-gray-500">
+                <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Connect Google Sheet</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   {step === 'url' && 'Paste your sheet URL'}
                   {step === 'verify' && 'Verifying access...'}
                   {step === 'tabs' && 'Select tabs to import'}
@@ -207,8 +207,8 @@ export function ConnectGoogleSheetModal({
                 </p>
               </div>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+              <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -224,7 +224,7 @@ export function ConnectGoogleSheetModal({
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <p className="text-xs font-medium text-blue-900 mb-2">First, share your Google Sheet with this email as an Editor:</p>
                     <div className="flex items-center space-x-2">
-                      <code className="flex-1 px-3 py-2 bg-white border border-blue-200 rounded-lg text-xs font-mono text-gray-900 select-all truncate">
+                      <code className="flex-1 px-3 py-2 bg-white dark:bg-gray-800 border border-blue-200 rounded-lg text-xs font-mono text-gray-900 dark:text-gray-100 select-all truncate">
                         {serviceEmail}
                       </code>
                       <button onClick={copyEmail}
@@ -244,13 +244,13 @@ export function ConnectGoogleSheetModal({
 
                 {/* URL input */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Google Sheet URL</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Google Sheet URL</label>
                   <input
                     type="url"
                     value={sheetUrl}
                     onChange={e => { setSheetUrl(e.target.value); setError(''); }}
                     placeholder="https://docs.google.com/spreadsheets/d/..."
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     autoFocus
                     onKeyDown={e => { if (e.key === 'Enter') handleVerify(); }}
                   />
@@ -281,10 +281,10 @@ export function ConnectGoogleSheetModal({
                 {/* Tab selection */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-gray-700">Select tabs to import</label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Select tabs to import</label>
                     <div className="flex items-center space-x-2 text-[10px]">
                       <button onClick={selectAllTabs} className="text-blue-600 hover:text-blue-800">Select all</button>
-                      <span className="text-gray-300">|</span>
+                      <span className="text-gray-300 dark:text-gray-600">|</span>
                       <button onClick={deselectAllTabs} className="text-blue-600 hover:text-blue-800">Deselect all</button>
                     </div>
                   </div>
@@ -295,16 +295,16 @@ export function ConnectGoogleSheetModal({
                       var isDisabled = isAlreadyImported || isEmpty;
                       return (
                         <label key={i} className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
-                          isDisabled ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed' :
-                          tab.selected ? 'border-green-300 bg-green-50 cursor-pointer' : 'border-gray-200 hover:bg-gray-50 cursor-pointer'
+                          isDisabled ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 opacity-60 cursor-not-allowed' :
+                          tab.selected ? 'border-green-300 bg-green-50 cursor-pointer' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer'
                         }`}>
                           <div className="flex items-center space-x-3">
                             <input type="checkbox" checked={tab.selected && !isDisabled} onChange={function() { if (!isDisabled) toggleTab(i); }}
                               disabled={isDisabled}
-                              className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
+                              className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-green-600 focus:ring-green-500" />
                             <div>
-                              <p className="text-sm font-medium text-gray-900">{tab.title}</p>
-                              <p className="text-[10px] text-gray-400">{tab.rowCount} rows × {tab.columnCount} cols</p>
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{tab.title}</p>
+                              <p className="text-[10px] text-gray-400 dark:text-gray-500">{tab.rowCount} rows × {tab.columnCount} cols</p>
                               {isEmpty && <p className="text-[10px] text-amber-600 font-medium">⚠ No columns found — add headers to this tab first</p>}
                               {isAlreadyImported && <p className="text-[10px] text-blue-600 font-medium">✓ Already imported</p>}
                             </div>
@@ -321,7 +321,7 @@ export function ConnectGoogleSheetModal({
                     <p className="text-xs text-blue-800 font-medium">This sheet is already connected. New tabs will be added to the existing connection.</p>
                   </div>
                 )}
-                <p className="text-[10px] text-gray-400">Each selected tab will become a separate table in Agora. Column types will be auto-detected from your data.</p>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500">Each selected tab will become a separate table in Agora. Column types will be auto-detected from your data.</p>
 
                 {error && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-3">
@@ -335,8 +335,8 @@ export function ConnectGoogleSheetModal({
             {step === 'importing' && (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600 mx-auto mb-4" />
-                <p className="text-sm font-medium text-gray-900 mb-1">Importing from Google Sheets...</p>
-                <p className="text-xs text-gray-500">{importProgress || 'Reading sheet data...'}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Importing from Google Sheets...</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{importProgress || 'Reading sheet data...'}</p>
               </div>
             )}
 
@@ -344,17 +344,17 @@ export function ConnectGoogleSheetModal({
             {step === 'done' && (
               <div className="text-center py-6">
                 <div className="text-4xl mb-3">🎉</div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Import Complete!</h3>
-                <p className="text-sm text-gray-600 mb-4">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Import Complete!</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   Successfully imported {importedTables.length} table{importedTables.length !== 1 ? 's' : ''} from "{sheetName}"
                 </p>
                 <div className="space-y-2 text-left max-w-sm mx-auto">
                   {importedTables.map((t: any) => (
-                    <div key={t.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div key={t.id} className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                       <span className="text-lg">{t.icon || '📊'}</span>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{t.name}</p>
-                        <p className="text-[10px] text-gray-400">{t.columnCount} columns, {t.rowCount} rows</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{t.name}</p>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500">{t.columnCount} columns, {t.rowCount} rows</p>
                       </div>
                     </div>
                   ))}
@@ -364,10 +364,10 @@ export function ConnectGoogleSheetModal({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between flex-shrink-0">
+          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
             {step === 'url' && (
               <>
-                <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
+                <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">Cancel</button>
                 <button onClick={handleVerify} disabled={!sheetUrl.trim() || !serviceEmail || loading}
                   className="px-6 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium">
                   {loading ? 'Verifying...' : 'Connect'}
@@ -376,7 +376,7 @@ export function ConnectGoogleSheetModal({
             )}
             {step === 'tabs' && (
               <>
-                <button onClick={() => setStep('url')} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">← Back</button>
+                <button onClick={() => setStep('url')} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">← Back</button>
                 <button onClick={handleImport} disabled={tabs.filter(t => t.selected).length === 0}
                   className="px-6 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium">
                   Import {tabs.filter(t => t.selected).length} Tab{tabs.filter(t => t.selected).length !== 1 ? 's' : ''}
@@ -384,7 +384,7 @@ export function ConnectGoogleSheetModal({
               </>
             )}
             {step === 'importing' && (
-              <div className="w-full text-center text-xs text-gray-400">Please wait...</div>
+              <div className="w-full text-center text-xs text-gray-400 dark:text-gray-500">Please wait...</div>
             )}
             {step === 'done' && (
               <>

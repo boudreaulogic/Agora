@@ -30,14 +30,14 @@ export default async function GroupsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <div className="bg-white shadow">
+      <div className="bg-white dark:bg-gray-900 shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Groups</h1>
-              <p className="mt-1 text-sm text-gray-500">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Groups</h1>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Organize users into teams and departments
               </p>
             </div>
@@ -55,18 +55,18 @@ export default async function GroupsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600">Total Groups</p>
-            <p className="text-3xl font-bold text-gray-900">{groups.length}</p>
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Total Groups</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{groups.length}</p>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600">Total Members</p>
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Total Members</p>
             <p className="text-3xl font-bold text-blue-600">
               {groups.reduce((sum, g) => sum + g._count.members, 0)}
             </p>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600">Avg Members/Group</p>
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Avg Members/Group</p>
             <p className="text-3xl font-bold text-purple-600">
               {groups.length > 0 
                 ? Math.round(groups.reduce((sum, g) => sum + g._count.members, 0) / groups.length)
@@ -83,30 +83,30 @@ export default async function GroupsPage() {
               <Link
                 key={group.id}
                 href={`/admin/groups/${group.id}`}
-                className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow"
+                className="bg-white dark:bg-gray-900 rounded-lg shadow hover:shadow-lg transition-shadow"
               >
                 {/* Header */}
-                <div className="p-6 border-b border-gray-200">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
                     {group.name}
                   </h3>
                   {group.description && (
-                    <p className="text-sm text-gray-600">{group.description}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{group.description}</p>
                   )}
                 </div>
 
                 {/* Stats */}
-                <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between text-sm">
                     <div>
-                      <span className="text-gray-600">Members:</span>
-                      <span className="ml-2 font-semibold text-gray-900">
+                      <span className="text-gray-600 dark:text-gray-400">Members:</span>
+                      <span className="ml-2 font-semibold text-gray-900 dark:text-gray-100">
                         {group._count.members}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Permissions:</span>
-                      <span className="ml-2 font-semibold text-gray-900">
+                      <span className="text-gray-600 dark:text-gray-400">Permissions:</span>
+                      <span className="ml-2 font-semibold text-gray-900 dark:text-gray-100">
                         {group._count.permissions}
                       </span>
                     </div>
@@ -121,19 +121,19 @@ export default async function GroupsPage() {
                         {group.members[0].user.name?.charAt(0) || group.members[0].user.email.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Owner</p>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Owner</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {group.members[0].user.name || group.members[0].user.email}
                         </p>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500 italic">No owner assigned</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 italic">No owner assigned</p>
                   )}
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 bg-gray-50 text-right">
+                <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 text-right">
                   <span className="text-blue-600 hover:text-blue-800 font-medium text-sm">
                     View Details →
                   </span>
@@ -142,12 +142,12 @@ export default async function GroupsPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-12 text-center">
             <div className="text-6xl mb-4">👥</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
               No Groups Yet
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               Get started by creating your first group to organize users.
             </p>
             <Link

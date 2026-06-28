@@ -143,18 +143,18 @@ export function GanttChart({ rows, columns, startColumnId, endColumnId, tableId,
 
   if (items.length === 0) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 24px', color: '#6b7280' }}>
+      <div className="dark:text-gray-400 dark:bg-gray-900" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 24px', color: '#6b7280' }}>
         <div style={{ fontSize: '48px', marginBottom: '16px' }}>═</div>
-        <p style={{ fontSize: '16px', fontWeight: 500, color: '#374151', marginBottom: '4px' }}>No items to show</p>
+        <p className="dark:text-gray-300" style={{ fontSize: '16px', fontWeight: 500, color: '#374151', marginBottom: '4px' }}>No items to show</p>
         <p style={{ fontSize: '13px' }}>Add rows with date values to see them on the Gantt chart.</p>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: '#ffffff' }}>
+    <div className="dark:bg-gray-900 dark:[color-scheme:dark]" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: '#ffffff' }}>
       {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
+      <div className="dark:bg-gray-800 dark:border-gray-700" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '13px', color: '#6b7280' }}>{items.length} item{items.length !== 1 ? 's' : ''}</span>
         </div>
@@ -180,9 +180,9 @@ export function GanttChart({ rows, columns, startColumnId, endColumnId, tableId,
       {/* Chart area */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* Row labels (fixed) */}
-        <div style={{ width: LABEL_WIDTH + 'px', flexShrink: 0, borderRight: '2px solid #e5e7eb', background: '#ffffff', overflow: 'hidden' }}>
+        <div className="dark:bg-gray-900 dark:border-gray-700" style={{ width: LABEL_WIDTH + 'px', flexShrink: 0, borderRight: '2px solid #e5e7eb', background: '#ffffff', overflow: 'hidden' }}>
           {/* Label header */}
-          <div style={{ height: HEADER_HEIGHT + 'px', display: 'flex', alignItems: 'flex-end', padding: '0 12px 8px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
+          <div className="dark:bg-gray-800 dark:border-gray-700" style={{ height: HEADER_HEIGHT + 'px', display: 'flex', alignItems: 'flex-end', padding: '0 12px 8px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
             <span style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Task</span>
           </div>
           {/* Row labels */}
@@ -203,7 +203,7 @@ export function GanttChart({ rows, columns, startColumnId, endColumnId, tableId,
         <div ref={scrollRef} onScroll={handleScroll} style={{ flex: 1, overflowX: 'auto', overflowY: 'auto' }}>
           <div style={{ width: chartWidth + 'px', minHeight: '100%' }}>
             {/* Date headers */}
-            <div style={{ height: HEADER_HEIGHT + 'px', position: 'sticky', top: 0, zIndex: 5, background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+            <div className="dark:bg-gray-800 dark:border-gray-700" style={{ height: HEADER_HEIGHT + 'px', position: 'sticky', top: 0, zIndex: 5, background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
               {/* Month row */}
               <div style={{ display: 'flex', height: '30px' }}>
                 {monthHeaders.map(function(month, i) {

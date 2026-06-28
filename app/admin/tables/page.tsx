@@ -36,62 +36,62 @@ export default async function AdminTablesPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">All Tables</h1>
-        <p className="text-sm text-gray-600 mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">All Tables</h1>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
           System-wide overview of all tables. As a sys admin, you can access any table.
         </p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-sm text-gray-500">Total Tables</div>
-          <div className="text-2xl font-bold text-gray-900 mt-1">{totalTables}</div>
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="text-sm text-gray-500 dark:text-gray-400">Total Tables</div>
+          <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{totalTables}</div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-sm text-gray-500">Total Rows</div>
-          <div className="text-2xl font-bold text-gray-900 mt-1">{totalRows.toLocaleString()}</div>
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="text-sm text-gray-500 dark:text-gray-400">Total Rows</div>
+          <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{totalRows.toLocaleString()}</div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-sm text-gray-500">Active Shares</div>
-          <div className="text-2xl font-bold text-gray-900 mt-1">{totalShares}</div>
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="text-sm text-gray-500 dark:text-gray-400">Active Shares</div>
+          <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{totalShares}</div>
         </div>
       </div>
 
       {/* Tables List */}
       {tables.length === 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
           <div className="text-4xl mb-4">📊</div>
-          <h3 className="text-lg font-medium text-gray-900">No tables yet</h3>
-          <p className="text-sm text-gray-500 mt-1">Tables created by users will appear here.</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No tables yet</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Tables created by users will appear here.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Table</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Owner</th>
-                <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Rows</th>
-                <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Columns</th>
-                <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Views</th>
-                <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Shares</th>
-                <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Security</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Updated</th>
-                <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+              <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Table</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Owner</th>
+                <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rows</th>
+                <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Columns</th>
+                <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Views</th>
+                <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Shares</th>
+                <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Security</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Updated</th>
+                <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {tables.map((table) => (
-                <tr key={table.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={table.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                   {/* Table Name */}
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-3">
                       <span className="text-xl">{table.icon || '📊'}</span>
                       <div>
-                        <div className="font-medium text-gray-900">{table.name}</div>
+                        <div className="font-medium text-gray-900 dark:text-gray-100">{table.name}</div>
                         {table.description && (
-                          <div className="text-xs text-gray-500 truncate max-w-xs">{table.description}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">{table.description}</div>
                         )}
                       </div>
                     </div>
@@ -104,23 +104,23 @@ export default async function AdminTablesPage() {
                         {table.createdBy.name?.charAt(0) || table.createdBy.email.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div className="text-sm text-gray-900">{table.createdBy.name || 'Unnamed'}</div>
-                        <div className="text-xs text-gray-500">{table.createdBy.email}</div>
+                        <div className="text-sm text-gray-900 dark:text-gray-100">{table.createdBy.name || 'Unnamed'}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{table.createdBy.email}</div>
                       </div>
                     </div>
                   </td>
 
                   {/* Counts */}
-                  <td className="px-6 py-4 text-center text-sm text-gray-700">{table._count.rows}</td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-700">{table._count.columns}</td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-700">{table._count.views}</td>
+                  <td className="px-6 py-4 text-center text-sm text-gray-700 dark:text-gray-300">{table._count.rows}</td>
+                  <td className="px-6 py-4 text-center text-sm text-gray-700 dark:text-gray-300">{table._count.columns}</td>
+                  <td className="px-6 py-4 text-center text-sm text-gray-700 dark:text-gray-300">{table._count.views}</td>
                   <td className="px-6 py-4 text-center">
                     {table._count.shares > 0 ? (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         {table._count.shares}
                       </span>
                     ) : (
-                      <span className="text-sm text-gray-400">—</span>
+                      <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
                     )}
                   </td>
 
@@ -131,12 +131,12 @@ export default async function AdminTablesPage() {
                         🔒 RLS
                       </span>
                     ) : (
-                      <span className="text-sm text-gray-400">—</span>
+                      <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
                     )}
                   </td>
 
                   {/* Updated */}
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                     {new Date(table.updatedAt).toLocaleDateString()}
                   </td>
 

@@ -154,21 +154,21 @@ export function BulkActionsBar({
             {showActionPicker && (
               <>
                 <div className="fixed inset-0 z-10" onClick={function() { setShowActionPicker(false); }} />
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                  <div className="px-3 py-2 border-b border-gray-100">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase">Run Automation</span>
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-20">
+                  <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-800">
+                    <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Run Automation</span>
                   </div>
                   {manualAutomations.map(function(auto: any) {
                     return (
                       <button key={auto.id}
                         onClick={function() { handleRunAction(auto.id, auto.name); }}
-                        className="w-full px-3 py-2.5 text-left hover:bg-gray-50 flex items-start space-x-2.5 transition-colors"
+                        className="w-full px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800 flex items-start space-x-2.5 transition-colors"
                       >
                         <span className="text-yellow-500 mt-0.5">⚡</span>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-gray-900 truncate">{auto.name}</p>
-                          {auto.description && (<p className="text-[10px] text-gray-400 truncate mt-0.5">{auto.description}</p>)}
-                          <p className="text-[10px] text-gray-400 mt-0.5">{auto.actions?.length || 0} action{(auto.actions?.length || 0) !== 1 ? 's' : ''}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{auto.name}</p>
+                          {auto.description && (<p className="text-[10px] text-gray-400 dark:text-gray-500 truncate mt-0.5">{auto.description}</p>)}
+                          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">{auto.actions?.length || 0} action{(auto.actions?.length || 0) !== 1 ? 's' : ''}</p>
                         </div>
                       </button>
                     );
@@ -199,18 +199,18 @@ export function BulkActionsBar({
             {showTemplatePicker && templates.length > 1 && (
               <>
                 <div className="fixed inset-0 z-10" onClick={function() { setShowTemplatePicker(false); }} />
-                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                  <div className="px-3 py-2 border-b border-gray-100">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase">Choose Template</span>
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-20">
+                  <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-800">
+                    <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Choose Template</span>
                   </div>
                   {templates.map(function(t: any) {
                     return (
                       <button key={t.id} onClick={function() { handleExport(t.id); }}
-                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
+                        className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-2">
                         <span>📄</span>
                         <div className="min-w-0">
                           <p className="text-xs font-medium truncate">{t.name}</p>
-                          <p className="text-[10px] text-gray-400">{t.originalFilename}</p>
+                          <p className="text-[10px] text-gray-400 dark:text-gray-500">{t.originalFilename}</p>
                         </div>
                       </button>
                     );

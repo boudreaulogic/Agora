@@ -22,8 +22,8 @@ export default async function UsersPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">User Management</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Manage user accounts and permissions
           </p>
         </div>
@@ -37,18 +37,18 @@ export default async function UsersPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-sm text-gray-600">Total Users</p>
-          <p className="text-3xl font-bold text-gray-900">{users.length}</p>
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+          <p className="text-sm text-gray-600 dark:text-gray-400">Total Users</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{users.length}</p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-sm text-gray-600">Active Users</p>
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+          <p className="text-sm text-gray-600 dark:text-gray-400">Active Users</p>
           <p className="text-3xl font-bold text-green-600">
             {users.filter(u => u.isActive).length}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-sm text-gray-600">Inactive Users</p>
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+          <p className="text-sm text-gray-600 dark:text-gray-400">Inactive Users</p>
           <p className="text-3xl font-bold text-red-600">
             {users.filter(u => !u.isActive).length}
           </p>
@@ -56,33 +56,33 @@ export default async function UsersPage() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 User
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Email
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Last Login
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Created
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
             {users.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50">
+              <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="h-10 w-10 flex-shrink-0">
@@ -91,19 +91,19 @@ export default async function UsersPage() {
                       </div>
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {user.name || 'No name'}
                       </div>
-                      <div className="text-sm text-gray-500">ID: {user.id.slice(0, 8)}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">ID: {user.id.slice(0, 8)}</div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{user.email}</div>
+                  <div className="text-sm text-gray-900 dark:text-gray-100">{user.email}</div>
                   {user.isEmailVerified ? (
                     <div className="text-xs text-green-600">✓ Verified</div>
                   ) : (
-                    <div className="text-xs text-gray-500">Not verified</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Not verified</div>
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -117,17 +117,17 @@ export default async function UsersPage() {
                     </span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {user.lastLoginAt ? (
                     <>
                       {formatDistanceToNow(new Date(user.lastLoginAt), { addSuffix: true })}
-                      <div className="text-xs text-gray-400">{user.lastLoginIp}</div>
+                      <div className="text-xs text-gray-400 dark:text-gray-500">{user.lastLoginIp}</div>
                     </>
                   ) : (
                     'Never'
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {formatDistanceToNow(new Date(user.createdAt), { addSuffix: true })}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

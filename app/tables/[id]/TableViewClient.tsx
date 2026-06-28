@@ -515,7 +515,7 @@ export function TableViewClient({
   return (
     <>
       {/* Unified Toolbar */}
-      <div className="bg-white border-b border-gray-200 px-4 py-2.5">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-2.5">
         <div className="flex items-center justify-between">
           {/* Left: Table dropdown + Views + Fields */}
           <div className="flex items-center space-x-3">
@@ -523,84 +523,84 @@ export function TableViewClient({
             <div className="relative" ref={tableMenuRef}>
               <button
                 onClick={() => setShowTableMenu(!showTableMenu)}
-                className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg px-2 py-1.5 transition-colors"
+                className="flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-2 py-1.5 transition-colors"
               >
                 <span className="text-xl">{table.icon || '📊'}</span>
-                <h1 className="text-lg font-bold text-gray-900">{table.name}</h1>
-                <svg className={`w-4 h-4 text-gray-400 transition-transform ${showTableMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">{table.name}</h1>
+                <svg className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform ${showTableMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
                 {isViewer && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">View Only</span>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">View Only</span>
                 )}
                 {!isViewer && !isAdminUser && canEdit && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Editor</span>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">Editor</span>
                 )}
               </button>
 
               {showTableMenu && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowTableMenu(false)} />
-                  <div className="absolute left-0 top-full mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                  <div className="absolute left-0 top-full mt-1 w-64 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-20">
                     {table.description && (
-                      <div className="px-4 py-2 border-b border-gray-100">
-                        <p className="text-xs text-gray-500">{table.description}</p>
+                      <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{table.description}</p>
                       </div>
                     )}
 
                     {isAdminUser && (
                       <>
                         {(table.enabledFeatures as string[] || []).includes('forms') && (
-                        <button onClick={() => { setShowTableMenu(false); setIsFormsOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-3">
+                        <button onClick={() => { setShowTableMenu(false); setIsFormsOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3">
                           <span className="text-base">📋</span><span>Forms</span>
                         </button>
                         )}
                         {(table.enabledFeatures as string[] || []).includes('charts') && (
-                        <button onClick={() => { setShowTableMenu(false); setIsChartsOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-3">
+                        <button onClick={() => { setShowTableMenu(false); setIsChartsOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3">
                           <span className="text-base">📊</span><span>Charts</span>
                         </button>
                         )}
                         {(table.enabledFeatures as string[] || []).includes('approvals') && (
-                        <button onClick={() => { setShowTableMenu(false); setIsApprovalsOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-3">
+                        <button onClick={() => { setShowTableMenu(false); setIsApprovalsOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3">
                           <span className="text-base">✅</span><span>Approvals</span>
                         </button>
                         )}
                         {(table.enabledFeatures as string[] || []).includes('record_export') && (
-						<button onClick={() => { setShowTableMenu(false); setIsRecordExportOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-3">
+						<button onClick={() => { setShowTableMenu(false); setIsRecordExportOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3">
                           <span className="text-base">📄</span><span>Record Export</span>
                         </button>
                         )}
-                        <button onClick={() => { setShowTableMenu(false); setIsNotifSettingsOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-3">
+                        <button onClick={() => { setShowTableMenu(false); setIsNotifSettingsOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3">
                           <span className="text-base">🔔</span><span>Notifications</span>
                         </button>
-                        <button onClick={() => { setShowTableMenu(false); setIsFormattingOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-3">
+                        <button onClick={() => { setShowTableMenu(false); setIsFormattingOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3">
                           <span className="text-base">🎨</span><span>Conditional Formatting</span>
                         </button>
 						{(table.enabledFeatures as string[] || []).includes('data_connectors') && (
-                        <button onClick={() => { setShowTableMenu(false); setIsConnectorsOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-3">
+                        <button onClick={() => { setShowTableMenu(false); setIsConnectorsOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3">
                           <span className="text-base">🔗</span><span>Data Connectors</span>
                         </button>
                         )}
                         {(table.enabledFeatures as string[] || []).includes('api_access') && (
-                        <button onClick={() => { setShowTableMenu(false); setIsApiAccessOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-3">
+                        <button onClick={() => { setShowTableMenu(false); setIsApiAccessOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3">
                           <span className="text-base">🔌</span><span>API Access</span>
                         </button>
                         )}
-                        <button onClick={() => { setShowTableMenu(false); setIsActivityOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-3">
+                        <button onClick={() => { setShowTableMenu(false); setIsActivityOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3">
                           <span className="text-base">🕐</span><span>Activity</span>
                         </button>
-                        <button onClick={() => { setShowTableMenu(false); setIsShareModalOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-3">
+                        <button onClick={() => { setShowTableMenu(false); setIsShareModalOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3">
                           <span className="text-base">🔒</span><span>Share & Permissions</span>
                         </button>
-                        <div className="border-t border-gray-100 my-1" />
-                        <button onClick={() => { setShowTableMenu(false); setIsEditingTable(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-3">
+                        <div className="border-t border-gray-100 dark:border-gray-800 my-1" />
+                        <button onClick={() => { setShowTableMenu(false); setIsEditingTable(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3">
                           <span className="text-base">⚙️</span><span>Edit Table Info</span>
                         </button>
                       </>
                     )}
 
                     {!isAdminUser && (
-                      <button onClick={() => { setShowTableMenu(false); setIsActivityOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-3">
+                      <button onClick={() => { setShowTableMenu(false); setIsActivityOpen(true); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3">
                         <span className="text-base">🕐</span><span>Activity</span>
                       </button>
                     )}
@@ -609,7 +609,7 @@ export function TableViewClient({
               )}
             </div>
 
-            <div className="w-px h-6 bg-gray-200" />
+            <div className="w-px h-6 bg-gray-200 dark:bg-gray-700" />
 
             {/* View Switcher */}
             <ViewSwitcher
@@ -621,14 +621,14 @@ export function TableViewClient({
               columns={table.columns}
             />
 
-            <div className="w-px h-6 bg-gray-200" />
+            <div className="w-px h-6 bg-gray-200 dark:bg-gray-700" />
 
             {/* Fields Toggle */}
             <div className="relative">
               <button
                 onClick={() => setShowFieldsMenu(!showFieldsMenu)}
                 className={`flex items-center space-x-2 px-3 py-1.5 text-sm border rounded-lg transition-colors ${
-                  hiddenCount > 0 ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                  hiddenCount > 0 ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                 }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -643,12 +643,12 @@ export function TableViewClient({
               {showFieldsMenu && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowFieldsMenu(false)} />
-                  <div className="absolute left-0 top-full mt-1 z-20 bg-white rounded-lg shadow-lg border border-gray-200 w-64">
-                    <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-                      <span className="text-sm font-semibold text-gray-900">Fields</span>
+                  <div className="absolute left-0 top-full mt-1 z-20 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 w-64">
+                    <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Fields</span>
                       <div className="flex items-center space-x-2">
                         <button onClick={showAllColumns} className="text-xs text-blue-600 hover:text-blue-800">Show all</button>
-                        <span className="text-gray-300">|</span>
+                        <span className="text-gray-300 dark:text-gray-600">|</span>
                         <button onClick={hideAllColumns} className="text-xs text-blue-600 hover:text-blue-800">Hide all</button>
                       </div>
                     </div>
@@ -694,8 +694,8 @@ export function TableViewClient({
                       })}
                     </div>
                     {hiddenColumnsChanged && (
-                      <div className="px-4 py-3 border-t border-gray-200">
-                        <button onClick={() => { setHiddenColumns(new Set(currentView?.config?.hiddenColumns || [])); setShowFieldsMenu(false); }} className="text-xs text-gray-500 hover:text-gray-700 w-full text-center">
+                      <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+                        <button onClick={() => { setHiddenColumns(new Set(currentView?.config?.hiddenColumns || [])); setShowFieldsMenu(false); }} className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 w-full text-center">
                           ↩ Revert to saved
                         </button>
                       </div>
@@ -709,10 +709,10 @@ export function TableViewClient({
           {/* Right: Undo/Redo + Import + Add Column + Add Row */}
           <div className="flex items-center space-x-2">
             {canEdit && (
-              <div className="flex items-center space-x-1 border border-gray-300 rounded-lg overflow-hidden">
-                <button onClick={handleUndo} disabled={!canUndo} className={`px-3 py-1.5 text-sm transition-colors ${canUndo ? 'text-gray-700 hover:bg-gray-50' : 'text-gray-300 cursor-not-allowed'}`} title="Undo (Ctrl+Z)">↶</button>
-                <div className="w-px h-6 bg-gray-300" />
-                <button onClick={handleRedo} disabled={!canRedo} className={`px-3 py-1.5 text-sm transition-colors ${canRedo ? 'text-gray-700 hover:bg-gray-50' : 'text-gray-300 cursor-not-allowed'}`} title="Redo (Ctrl+Y)">↷</button>
+              <div className="flex items-center space-x-1 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                <button onClick={handleUndo} disabled={!canUndo} className={`px-3 py-1.5 text-sm transition-colors ${canUndo ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800' : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'}`} title="Undo (Ctrl+Z)">↶</button>
+                <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
+                <button onClick={handleRedo} disabled={!canRedo} className={`px-3 py-1.5 text-sm transition-colors ${canRedo ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800' : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'}`} title="Redo (Ctrl+Y)">↷</button>
               </div>
             )}
 
