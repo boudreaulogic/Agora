@@ -7,6 +7,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { RunHistoryPanel } from './RunHistoryPanel';
+import { AutomationAnalytics } from './AutomationAnalytics';
 
 // ---- Types ----
 
@@ -39,6 +41,8 @@ interface Automation {
   sharedTableIcon?: string;
   tableId?: string;
   isOwner?: boolean;
+  maxRetries?: number;
+  retryDelaySec?: number;
 }
 
 interface WorkspaceOption {
@@ -108,32 +112,32 @@ var CRON_PRESETS = [
 
 var READ_ONLY_TYPES = ['formula', 'lookup', 'rollup', 'linked_record', 'attachment'];
 
-// ---- Styles ----
-var inputStyle: React.CSSProperties = { width: '100%', padding: '8px 12px', background: '#ffffff', border: '1px solid #d1d5db', borderRadius: '6px', color: '#111827', fontSize: '13px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' as const };
-var selectStyle: React.CSSProperties = { width: '100%', padding: '8px 12px', background: '#ffffff', border: '1px solid #d1d5db', borderRadius: '6px', color: '#111827', fontSize: '13px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' as const, cursor: 'pointer' };
-var labelStyle: React.CSSProperties = { display: 'block', fontSize: '11px', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: '4px' };
-var iconBtnStyle: React.CSSProperties = { background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '14px', padding: '4px' };
-var addBtnStyle: React.CSSProperties = { background: 'none', border: '1px dashed #d1d5db', borderRadius: '6px', color: '#9ca3af', cursor: 'pointer', fontSize: '12px', padding: '6px 12px', width: '100%' };
-var cardStyle: React.CSSProperties = { background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px' };
-var btnPrimary: React.CSSProperties = { background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 20px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' };
-var btnSecondary: React.CSSProperties = { background: 'none', border: '1px solid #d1d5db', borderRadius: '8px', color: '#6b7280', padding: '8px 16px', fontSize: '12px', cursor: 'pointer' };
+// ---- Style class strings ----
+var inputCls = "w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 text-[13px] placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent box-border";
+var selectCls = "w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 text-[13px] outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent box-border cursor-pointer";
+var labelCls = "block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1";
+var iconBtnCls = "bg-transparent border-none text-gray-400 dark:text-gray-500 cursor-pointer text-sm p-1";
+var addBtnCls = "bg-transparent border border-dashed border-gray-300 dark:border-gray-600 rounded-md text-gray-400 dark:text-gray-500 cursor-pointer text-xs px-3 py-1.5 w-full hover:bg-gray-50 dark:hover:bg-gray-800";
+var cardCls = "bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-[10px] p-4";
+var btnPrimaryCls = "bg-blue-600 text-white border-none rounded-lg px-5 py-2.5 text-[13px] font-semibold cursor-pointer hover:bg-blue-700";
+var btnSecondaryCls = "bg-transparent border border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-300 px-4 py-2 text-xs cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800";
 
 // ---- Dynamic Value Fallback ----
 function DynamicFallback({ value, onChange, triggerColumns, label }: { value: string; onChange: (val: string) => void; triggerColumns: ColumnInfo[]; label: string }) {
   var [isOpen, setIsOpen] = useState(false);
   if (triggerColumns.length === 0) return null;
   return (<div>
-    <button onClick={function() { setIsOpen(!isOpen); }} style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '11px', cursor: 'pointer', padding: '2px 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
-      <span style={{ fontSize: '10px' }}>{isOpen ? '▼' : '▶'}</span> {label}
+    <button onClick={function() { setIsOpen(!isOpen); }} className="bg-transparent border-none text-indigo-500 dark:text-indigo-400 text-[11px] cursor-pointer py-0.5 flex items-center gap-1">
+      <span className="text-[10px]">{isOpen ? '▼' : '▶'}</span> {label}
     </button>
-    {isOpen && (<div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: '4px', padding: '8px', background: '#f5f3ff', border: '1px solid #e0e7ff', borderRadius: '6px', marginTop: '4px' }}>
+    {isOpen && (<div className="flex flex-wrap gap-1 p-2 bg-violet-50 dark:bg-violet-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-md mt-1">
       {triggerColumns.filter(function(c) { return READ_ONLY_TYPES.indexOf(c.type) === -1; }).map(function(col) {
         return (<button key={col.id} onClick={function() { onChange(value ? value + '{{row.' + col.name + '}}' : '{{row.' + col.name + '}}'); setIsOpen(false); }}
-          style={{ background: '#ffffff', border: '1px solid #c7d2fe', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', color: '#4338ca', cursor: 'pointer', fontFamily: 'monospace' }}>
+          className="bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-500/30 rounded text-[11px] px-2 py-[3px] text-indigo-700 dark:text-indigo-300 cursor-pointer font-mono">
           {col.name}
         </button>);
       })}
-      <span style={{ fontSize: '10px', color: '#9ca3af', width: '100%', marginTop: '4px' }}>Click to insert value from triggering row</span>
+      <span className="text-[10px] text-gray-400 dark:text-gray-500 w-full mt-1">Click to insert value from triggering row</span>
     </div>)}
   </div>);
 }
@@ -144,8 +148,8 @@ function DynamicValueInput({ column, value, onChange, triggerColumns }: { column
   var settings = column.settings || {};
 
   if (colType === 'select' && settings.options) {
-    return (<div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-      <select value={value || ''} onChange={function(e) { onChange(e.target.value); }} style={selectStyle}>
+    return (<div className="flex flex-col gap-1">
+      <select value={value || ''} onChange={function(e) { onChange(e.target.value); }} className={selectCls}>
         <option value="">— Pick an option —</option>
         {settings.options.map(function(opt: any) { return <option key={opt.value} value={opt.value}>{opt.label}</option>; })}
       </select>
@@ -154,10 +158,10 @@ function DynamicValueInput({ column, value, onChange, triggerColumns }: { column
   }
   if (colType === 'multi_select' && settings.options) {
     var currentVals = value ? value.split(',') : [];
-    return (<div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: '6px', padding: '8px', background: '#fff', border: '1px solid #d1d5db', borderRadius: '6px' }}>
+    return (<div className="flex flex-col gap-1">
+      <div className="flex flex-wrap gap-1.5 p-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
         {settings.options.map(function(opt: any) { var checked = currentVals.indexOf(opt.value) !== -1;
-          return (<label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', cursor: 'pointer', padding: '2px 6px', borderRadius: '4px', background: checked ? '#dbeafe' : '#f3f4f6' }}>
+          return (<label key={opt.value} className={"flex items-center gap-1 text-xs cursor-pointer px-1.5 py-0.5 rounded " + (checked ? "bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300")}>
             <input type="checkbox" checked={checked} onChange={function() { var nv = checked ? currentVals.filter(function(v) { return v !== opt.value; }) : currentVals.concat([opt.value]); onChange(nv.join(',')); }} /> {opt.label}
           </label>); })}
       </div>
@@ -165,51 +169,51 @@ function DynamicValueInput({ column, value, onChange, triggerColumns }: { column
     </div>);
   }
   if (colType === 'checkbox') {
-    return (<label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
+    return (<label className="flex items-center gap-1.5 text-[13px] text-gray-700 dark:text-gray-300 cursor-pointer">
       <input type="checkbox" checked={value === 'true'} onChange={function(e) { onChange(e.target.checked ? 'true' : 'false'); }} />
       {value === 'true' ? '☑️ Checked' : '☐ Unchecked'}
     </label>);
   }
   if (colType === 'rating') {
-    return (<div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+    return (<div className="flex items-center gap-1">
       {[0,1,2,3,4,5].map(function(n) { var active = parseInt(value||'0') >= n && n > 0;
-        return (<button key={n} onClick={function() { onChange(String(n)); }} style={{ background:'none', border:'none', fontSize:'20px', cursor:'pointer', opacity: n===0?0.4:1, padding:'2px' }}>{n===0?'✕':(active?'⭐':'☆')}</button>); })}
-      <span style={{ fontSize:'11px', color:'#9ca3af', marginLeft:'8px' }}>{value ? value+'/5' : 'No rating'}</span>
+        return (<button key={n} onClick={function() { onChange(String(n)); }} className={"bg-transparent border-none text-xl cursor-pointer p-0.5 " + (n===0 ? "opacity-40" : "opacity-100")}>{n===0?'✕':(active?'⭐':'☆')}</button>); })}
+      <span className="text-[11px] text-gray-400 dark:text-gray-500 ml-2">{value ? value+'/5' : 'No rating'}</span>
     </div>);
   }
   if (colType === 'progress') {
-    return (<div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-      <input type="range" min="0" max="100" value={value||'0'} onChange={function(e) { onChange(e.target.value); }} style={{ flex:1 }} />
-      <span style={{ fontSize:'12px', color:'#374151', fontWeight:500, minWidth:'36px' }}>{value||'0'}%</span>
+    return (<div className="flex items-center gap-2">
+      <input type="range" min="0" max="100" value={value||'0'} onChange={function(e) { onChange(e.target.value); }} className="flex-1" />
+      <span className="text-xs text-gray-700 dark:text-gray-300 font-medium min-w-[36px]">{value||'0'}%</span>
     </div>);
   }
-  if (colType === 'number') { return (<div style={{ display:'flex', flexDirection:'column', gap:'4px' }}><input type="number" value={value||''} onChange={function(e) { onChange(e.target.value); }} style={inputStyle} placeholder="Enter number" /><DynamicFallback value={value} onChange={onChange} triggerColumns={triggerColumns} label="Or use dynamic value" /></div>); }
-  if (colType === 'currency') { return (<div style={{ display:'flex', flexDirection:'column', gap:'4px' }}><div style={{ display:'flex', alignItems:'center', gap:'4px' }}><span style={{ fontSize:'14px', color:'#374151', fontWeight:600 }}>$</span><input type="number" step="0.01" value={value||''} onChange={function(e) { onChange(e.target.value); }} style={Object.assign({},inputStyle,{flex:1})} placeholder="0.00" /></div><DynamicFallback value={value} onChange={onChange} triggerColumns={triggerColumns} label="Or use dynamic value" /></div>); }
-  if (colType === 'percent') { return (<div style={{ display:'flex', flexDirection:'column', gap:'4px' }}><div style={{ display:'flex', alignItems:'center', gap:'4px' }}><input type="number" min="0" max="100" value={value||''} onChange={function(e) { onChange(e.target.value); }} style={Object.assign({},inputStyle,{flex:1})} placeholder="0" /><span style={{ fontSize:'14px', color:'#374151', fontWeight:600 }}>%</span></div><DynamicFallback value={value} onChange={onChange} triggerColumns={triggerColumns} label="Or use dynamic value" /></div>); }
-  if (colType === 'date') { return (<div style={{ display:'flex', flexDirection:'column', gap:'4px' }}><input type="date" value={value||''} onChange={function(e) { onChange(e.target.value); }} style={inputStyle} /><DynamicFallback value={value} onChange={onChange} triggerColumns={triggerColumns} label="Or use dynamic value" /></div>); }
-  if (colType === 'datetime') { return (<div style={{ display:'flex', flexDirection:'column', gap:'4px' }}><input type="datetime-local" value={value||''} onChange={function(e) { onChange(e.target.value); }} style={inputStyle} /><DynamicFallback value={value} onChange={onChange} triggerColumns={triggerColumns} label="Or use dynamic value" /></div>); }
-  if (colType === 'color') { return (<div style={{ display:'flex', alignItems:'center', gap:'8px' }}><input type="color" value={value||'#3B82F6'} onChange={function(e) { onChange(e.target.value); }} style={{ width:'40px', height:'32px', border:'1px solid #d1d5db', borderRadius:'6px', cursor:'pointer' }} /><span style={{ fontSize:'12px', color:'#6b7280' }}>{value||'#3B82F6'}</span></div>); }
+  if (colType === 'number') { return (<div className="flex flex-col gap-1"><input type="number" value={value||''} onChange={function(e) { onChange(e.target.value); }} className={inputCls} placeholder="Enter number" /><DynamicFallback value={value} onChange={onChange} triggerColumns={triggerColumns} label="Or use dynamic value" /></div>); }
+  if (colType === 'currency') { return (<div className="flex flex-col gap-1"><div className="flex items-center gap-1"><span className="text-sm text-gray-700 dark:text-gray-300 font-semibold">$</span><input type="number" step="0.01" value={value||''} onChange={function(e) { onChange(e.target.value); }} className={inputCls + " flex-1"} placeholder="0.00" /></div><DynamicFallback value={value} onChange={onChange} triggerColumns={triggerColumns} label="Or use dynamic value" /></div>); }
+  if (colType === 'percent') { return (<div className="flex flex-col gap-1"><div className="flex items-center gap-1"><input type="number" min="0" max="100" value={value||''} onChange={function(e) { onChange(e.target.value); }} className={inputCls + " flex-1"} placeholder="0" /><span className="text-sm text-gray-700 dark:text-gray-300 font-semibold">%</span></div><DynamicFallback value={value} onChange={onChange} triggerColumns={triggerColumns} label="Or use dynamic value" /></div>); }
+  if (colType === 'date') { return (<div className="flex flex-col gap-1"><input type="date" value={value||''} onChange={function(e) { onChange(e.target.value); }} className={inputCls} /><DynamicFallback value={value} onChange={onChange} triggerColumns={triggerColumns} label="Or use dynamic value" /></div>); }
+  if (colType === 'datetime') { return (<div className="flex flex-col gap-1"><input type="datetime-local" value={value||''} onChange={function(e) { onChange(e.target.value); }} className={inputCls} /><DynamicFallback value={value} onChange={onChange} triggerColumns={triggerColumns} label="Or use dynamic value" /></div>); }
+  if (colType === 'color') { return (<div className="flex items-center gap-2"><input type="color" value={value||'#3B82F6'} onChange={function(e) { onChange(e.target.value); }} className="w-10 h-8 border border-gray-300 dark:border-gray-600 rounded-md cursor-pointer" /><span className="text-xs text-gray-500 dark:text-gray-400">{value||'#3B82F6'}</span></div>); }
   // Text fallback
-  return (<div style={{ display:'flex', flexDirection:'column', gap:'4px' }}>
-    {colType === 'long_text' ? <textarea value={value||''} onChange={function(e) { onChange(e.target.value); }} style={Object.assign({},inputStyle,{minHeight:'60px',resize:'vertical' as const})} placeholder="Enter text" />
-    : <input type="text" value={value||''} onChange={function(e) { onChange(e.target.value); }} style={inputStyle} placeholder={colType==='email'?'email@example.com':colType==='url'?'https://...':colType==='phone'?'(555) 555-5555':'Enter value'} />}
+  return (<div className="flex flex-col gap-1">
+    {colType === 'long_text' ? <textarea value={value||''} onChange={function(e) { onChange(e.target.value); }} className={inputCls + " min-h-[60px] resize-y"} placeholder="Enter text" />
+    : <input type="text" value={value||''} onChange={function(e) { onChange(e.target.value); }} className={inputCls} placeholder={colType==='email'?'email@example.com':colType==='url'?'https://...':colType==='phone'?'(555) 555-5555':'Enter value'} />}
     <DynamicFallback value={value} onChange={onChange} triggerColumns={triggerColumns} label="Or insert dynamic value" />
   </div>);
 }
 
 // ---- User Picker for Notify ----
 function UserPicker({ selectedIds, onChange, users }: { selectedIds: string[]; onChange: (ids: string[]) => void; users: UserInfo[] }) {
-  return (<div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
-    {selectedIds.length > 0 && (<div style={{ display:'flex', flexWrap:'wrap' as const, gap:'4px' }}>
+  return (<div className="flex flex-col gap-1.5">
+    {selectedIds.length > 0 && (<div className="flex flex-wrap gap-1">
       {selectedIds.map(function(uid) {
         var user = users.find(function(u) { return u.id === uid; });
-        return (<span key={uid} style={{ display:'inline-flex', alignItems:'center', gap:'4px', padding:'3px 8px', background:'#dbeafe', borderRadius:'12px', fontSize:'11px', color:'#1e40af' }}>
+        return (<span key={uid} className="inline-flex items-center gap-1 px-2 py-[3px] bg-blue-100 dark:bg-blue-500/20 rounded-xl text-[11px] text-blue-800 dark:text-blue-300">
           {user ? (user.name || user.email) : uid}
-          <button onClick={function() { onChange(selectedIds.filter(function(id) { return id !== uid; })); }} style={{ background:'none', border:'none', cursor:'pointer', color:'#3b82f6', fontSize:'12px', padding:0 }}>✕</button>
+          <button onClick={function() { onChange(selectedIds.filter(function(id) { return id !== uid; })); }} className="bg-transparent border-none cursor-pointer text-blue-500 dark:text-blue-400 text-xs p-0">✕</button>
         </span>);
       })}
     </div>)}
-    <select value="" onChange={function(e) { if (e.target.value && selectedIds.indexOf(e.target.value) === -1) { onChange(selectedIds.concat([e.target.value])); } }} style={selectStyle}>
+    <select value="" onChange={function(e) { if (e.target.value && selectedIds.indexOf(e.target.value) === -1) { onChange(selectedIds.concat([e.target.value])); } }} className={selectCls}>
       <option value="">— Add user —</option>
       {users.filter(function(u) { return selectedIds.indexOf(u.id) === -1; }).map(function(u) {
         return <option key={u.id} value={u.id}>{u.name ? u.name + ' (' + u.email + ')' : u.email}</option>;
@@ -220,9 +224,15 @@ function UserPicker({ selectedIds, onChange, users }: { selectedIds: string[]; o
 
 // ---- Status Badge ----
 function StatusBadge({ status }: { status: string }) {
-  var cm: Record<string,{bg:string;fg:string}> = { success:{bg:'#dcfce7',fg:'#166534'}, failed:{bg:'#fee2e2',fg:'#991b1b'}, running:{bg:'#dbeafe',fg:'#1e40af'}, pending:{bg:'#f3f4f6',fg:'#374151'}, skipped:{bg:'#f3f4f6',fg:'#6b7280'} };
+  var cm: Record<string,string> = {
+    success: "bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300",
+    failed: "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300",
+    running: "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300",
+    pending: "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300",
+    skipped: "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400",
+  };
   var c = cm[status] || cm.pending;
-  return <span style={{ padding:'2px 8px', borderRadius:'4px', fontSize:'11px', fontWeight:600, letterSpacing:'0.5px', textTransform:'uppercase' as const, background:c.bg, color:c.fg }}>{status}</span>;
+  return <span className={"px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide uppercase " + c}>{status}</span>;
 }
 
 // ---- Main Component ----
@@ -234,7 +244,7 @@ export default function AutomationsManager() {
   var [approvalWorkflows, setApprovalWorkflows] = useState<Record<string, any[]>>({});
   var [workspaces, setWorkspaces] = useState<WorkspaceOption[]>([]);
   var [loading, setLoading] = useState(true);
-  var [view, setView] = useState<'list'|'builder'|'detail'>('list');
+  var [view, setView] = useState<'list'|'builder'|'detail'|'analytics'>('list');
   var [selectedAutomation, setSelectedAutomation] = useState<Automation|null>(null);
   var [selectedId, setSelectedId] = useState<string|null>(null);
   var [builderName, setBuilderName] = useState('');
@@ -246,9 +256,9 @@ export default function AutomationsManager() {
   var [editingId, setEditingId] = useState<string|null>(null);
   var [builderWorkspaceId, setBuilderWorkspaceId] = useState<string|null>(null);
   var [builderTableId, setBuilderTableId] = useState<string|null>(null);
-  var [expandedRunId, setExpandedRunId] = useState<string|null>(null);
+  var [builderMaxRetries, setBuilderMaxRetries] = useState(0);
+  var [builderRetryDelaySec, setBuilderRetryDelaySec] = useState(0);
   var [testing, setTesting] = useState(false);
-  var [testResult, setTestResult] = useState<any>(null);
   var [testResult, setTestResult] = useState<any>(null);
 
   var fetchAutomations = useCallback(async function() { try { var r = await fetch('/api/automations'); if (r.ok) setAutomations(await r.json()); } catch(e) { console.error(e); } }, []);
@@ -260,7 +270,7 @@ export default function AutomationsManager() {
     if (forms[tableId]) return;
     try { var r = await fetch("/api/tables/" + tableId + "/forms"); if (r.ok) { var d = await r.json(); setForms(function(prev) { var next = Object.assign({}, prev); next[tableId] = d.forms || []; return next; }); } } catch(e) { console.error(e); }
   }, [forms]);
-  
+
   var fetchApprovalWorkflows = useCallback(async function(tableId: string) {
     if (approvalWorkflows[tableId]) return;
     try { var r = await fetch("/api/tables/" + tableId + "/approvals"); if (r.ok) { var d = await r.json(); setApprovalWorkflows(function(prev) { var next = Object.assign({}, prev); next[tableId] = d ? [d] : []; return next; }); } } catch(e) { console.error(e); }
@@ -296,7 +306,9 @@ export default function AutomationsManager() {
       setBuilderActions(auto.actions.map(function(a:any,i:number) { return { actionType:a.actionType||a.actiontype, actionConfig:a.actionConfig||a.actionconfig||{}, conditionExpr:a.conditionExpr||a.conditionexpr, sortOrder:i }; }));
       setBuilderWorkspaceId(auto.workspaceId || null);
       setBuilderTableId(auto.tableId || null);
-    } else { setEditingId(null); setBuilderName(''); setBuilderDesc(''); setBuilderTrigger('row_created'); setBuilderTriggerConfig({}); setBuilderActions([]); setBuilderWorkspaceId(null); setBuilderTableId(null); }
+      setBuilderMaxRetries(auto.maxRetries||0);
+      setBuilderRetryDelaySec(auto.retryDelaySec||0);
+    } else { setEditingId(null); setBuilderName(''); setBuilderDesc(''); setBuilderTrigger('row_created'); setBuilderTriggerConfig({}); setBuilderActions([]); setBuilderWorkspaceId(null); setBuilderTableId(null); setBuilderMaxRetries(0); setBuilderRetryDelaySec(0); }
     setView('builder');
   }
 
@@ -310,7 +322,7 @@ export default function AutomationsManager() {
     setSaving(true);
     try {
       var url = editingId ? '/api/automations/'+editingId : '/api/automations';
-      var r = await fetch(url, { method:editingId?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name:builderName, description:builderDesc||null, triggerType:builderTrigger, triggerConfig:builderTriggerConfig, actions:builderActions, workspaceId:builderWorkspaceId, tableId:builderTableId }) });
+      var r = await fetch(url, { method:editingId?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name:builderName, description:builderDesc||null, triggerType:builderTrigger, triggerConfig:builderTriggerConfig, actions:builderActions, workspaceId:builderWorkspaceId, tableId:builderTableId, maxRetries:builderMaxRetries, retryDelaySec:builderRetryDelaySec }) });
       if (r.ok) { await fetchAutomations(); setView('list'); } else { var e = await r.json(); alert('Error: '+(e.error||'Unknown')); }
     } catch(e) { console.error(e); } finally { setSaving(false); }
   }
@@ -318,65 +330,65 @@ export default function AutomationsManager() {
   // ---- Trigger Config ----
   function TriggerConfigEditor() {
     var needsTable = ['row_created','row_updated','row_deleted','column_match','form_submit'].indexOf(builderTrigger)!==-1;
-    return (<div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
-      {needsTable && (<div><label style={labelStyle}>Table</label>
-        <select value={builderTriggerConfig.tableId||''} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{tableId:e.target.value}); }); }} style={selectStyle}>
+    return (<div className="flex flex-col gap-3">
+      {needsTable && (<div><label className={labelCls}>Table</label>
+        <select value={builderTriggerConfig.tableId||''} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{tableId:e.target.value}); }); }} className={selectCls}>
           <option value="">— Select table —</option>
           {tables.map(function(t) { return <option key={t.id} value={t.id}>{t.name}</option>; })}
         </select></div>)}
       {builderTrigger==='column_match' && builderTriggerConfig.tableId && (<>
-        <div><label style={labelStyle}>Column</label>
-          <select value={builderTriggerConfig.column||''} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{column:e.target.value,value:''}); }); }} style={selectStyle}>
+        <div><label className={labelCls}>Column</label>
+          <select value={builderTriggerConfig.column||''} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{column:e.target.value,value:''}); }); }} className={selectCls}>
             <option value="">— Select column —</option>
             {getSettableColumns(builderTriggerConfig.tableId).map(function(c) { return <option key={c.id} value={c.id}>{c.name}</option>; })}
           </select></div>
         {builderTriggerConfig.column && (function() {
           var col = getTableColumns(builderTriggerConfig.tableId).find(function(c) { return c.id === builderTriggerConfig.column; });
-          if (!col) return <div><label style={labelStyle}>Equals Value</label><input type="text" value={builderTriggerConfig.value||''} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{value:e.target.value}); }); }} style={inputStyle} /></div>;
-          return <div><label style={labelStyle}>Equals Value</label><DynamicValueInput column={col} value={builderTriggerConfig.value||''} onChange={function(v) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{value:v}); }); }} triggerColumns={[]} /></div>;
+          if (!col) return <div><label className={labelCls}>Equals Value</label><input type="text" value={builderTriggerConfig.value||''} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{value:e.target.value}); }); }} className={inputCls} /></div>;
+          return <div><label className={labelCls}>Equals Value</label><DynamicValueInput column={col} value={builderTriggerConfig.value||''} onChange={function(v) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{value:v}); }); }} triggerColumns={[]} /></div>;
         })()}
       </>)}
       {builderTrigger==="form_submit" && builderTriggerConfig.tableId && (function() {
         fetchFormsForTable(builderTriggerConfig.tableId);
         var tableForms = forms[builderTriggerConfig.tableId] || [];
-        return (<div><label style={labelStyle}>Form</label>
-          <select value={builderTriggerConfig.formId||""} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{formId:e.target.value}); }); }} style={selectStyle}>
+        return (<div><label className={labelCls}>Form</label>
+          <select value={builderTriggerConfig.formId||""} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{formId:e.target.value}); }); }} className={selectCls}>
             <option value="">— Any form on this table —</option>
             {tableForms.map(function(f:any) { return <option key={f.id} value={f.id}>{f.name}</option>; })}
           </select>
-          {tableForms.length===0 && <span style={{ fontSize:"11px", color:"#9ca3af", marginTop:"4px", display:"block" }}>No forms found for this table</span>}
+          {tableForms.length===0 && <span className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 block">No forms found for this table</span>}
         </div>);
       })()}
-      {builderTrigger==='scheduled' && (<div><label style={labelStyle}>Schedule</label>
-        <select value={CRON_PRESETS.find(function(p) { return p.value===builderTriggerConfig.cron; }) ? builderTriggerConfig.cron : 'custom'} onChange={function(e) { if(e.target.value!=='custom') setBuilderTriggerConfig(function(p) { return Object.assign({},p,{cron:e.target.value}); }); }} style={selectStyle}>
+      {builderTrigger==='scheduled' && (<div><label className={labelCls}>Schedule</label>
+        <select value={CRON_PRESETS.find(function(p) { return p.value===builderTriggerConfig.cron; }) ? builderTriggerConfig.cron : 'custom'} onChange={function(e) { if(e.target.value!=='custom') setBuilderTriggerConfig(function(p) { return Object.assign({},p,{cron:e.target.value}); }); }} className={selectCls}>
           {CRON_PRESETS.map(function(p) { return <option key={p.value} value={p.value}>{p.label}</option>; })}
           <option value="custom">Custom...</option>
         </select>
-        <input type="text" value={builderTriggerConfig.cron||''} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{cron:e.target.value}); }); }} style={Object.assign({},inputStyle,{marginTop:'8px'})} placeholder="*/5 * * * *" />
+        <input type="text" value={builderTriggerConfig.cron||''} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{cron:e.target.value}); }); }} className={inputCls + " mt-2"} placeholder="*/5 * * * *" />
       </div>)}
-      {builderTrigger==='webhook' && (<div style={{ padding:'12px', background:'#eff6ff', borderRadius:'8px', border:'1px solid #bfdbfe' }}>
-        <span style={{ fontSize:'12px', color:'#1e40af' }}>A unique webhook URL will be generated when saved.</span>
+      {builderTrigger==='webhook' && (<div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-lg border border-blue-200 dark:border-blue-500/20">
+        <span className="text-xs text-blue-700 dark:text-blue-300">A unique webhook URL will be generated when saved.</span>
       </div>)}
-	  {builderTrigger==='manual' && (<div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
-        <div><label style={labelStyle}>Table</label>
-          <select value={builderTriggerConfig.tableId||''} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{tableId:e.target.value}); }); }} style={selectStyle}>
+	  {builderTrigger==='manual' && (<div className="flex flex-col gap-3">
+        <div><label className={labelCls}>Table</label>
+          <select value={builderTriggerConfig.tableId||''} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{tableId:e.target.value}); }); }} className={selectCls}>
             <option value="">— Select table —</option>
             {tables.map(function(t) { return <option key={t.id} value={t.id}>{t.name}</option>; })}
           </select>
         </div>
-        <div style={{ padding:'12px', background:'#fefce8', borderRadius:'8px', border:'1px solid #fde68a' }}>
-          <span style={{ fontSize:'12px', color:'#92400e' }}>👆 This automation will appear in the "Run Action" menu when users select rows in the table. It will not run automatically.</span>
+        <div className="p-3 bg-amber-50 dark:bg-amber-500/10 rounded-lg border border-amber-200 dark:border-amber-500/20">
+          <span className="text-xs text-amber-700 dark:text-amber-300">👆 This automation will appear in the "Run Action" menu when users select rows in the table. It will not run automatically.</span>
         </div>
       </div>)}
-      {(builderTrigger==='approval_completed' || builderTrigger==='approval_denied') && (<div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
-        <div><label style={labelStyle}>Table</label>
-          <select value={builderTriggerConfig.tableId||''} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{tableId:e.target.value}); }); }} style={selectStyle}>
+      {(builderTrigger==='approval_completed' || builderTrigger==='approval_denied') && (<div className="flex flex-col gap-3">
+        <div><label className={labelCls}>Table</label>
+          <select value={builderTriggerConfig.tableId||''} onChange={function(e) { setBuilderTriggerConfig(function(p) { return Object.assign({},p,{tableId:e.target.value}); }); }} className={selectCls}>
             <option value="">— Select table —</option>
             {tables.map(function(t) { return <option key={t.id} value={t.id}>{t.name}</option>; })}
           </select>
         </div>
-        <div style={{ padding:'12px', background: builderTrigger==='approval_completed' ? '#f0fdf4' : '#fef2f2', borderRadius:'8px', border: builderTrigger==='approval_completed' ? '1px solid #bbf7d0' : '1px solid #fecaca' }}>
-          <span style={{ fontSize:'12px', color: builderTrigger==='approval_completed' ? '#166534' : '#991b1b' }}>
+        <div className={"p-3 rounded-lg border " + (builderTrigger==='approval_completed' ? "bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20" : "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20")}>
+          <span className={"text-xs " + (builderTrigger==='approval_completed' ? "text-green-700 dark:text-green-300" : "text-red-700 dark:text-red-300")}>
             {builderTrigger==='approval_completed' ? '✅ This automation fires when an approval workflow on this table is fully approved. Use it to send emails, update fields, fire webhooks, etc.' : '❌ This automation fires when an approval workflow on this table is denied. Use it to notify the requester, update status fields, etc.'}
           </span>
         </div>
@@ -392,23 +404,23 @@ export default function AutomationsManager() {
     function setConfig(k:string,v:any) { updateAction(index, { actionConfig: Object.assign({},config,{[k]:v}) }); }
     var targetTableId = config.targetTableId || builderTriggerConfig.tableId || '';
     var targetColumns = getSettableColumns(targetTableId);
- 
+
     // Dynamic content panel — renders for text/email fields
     function DynamicContentPanel({ value, onChange, showMeta }: { value: string; onChange: (val: string) => void; showMeta?: boolean }) {
       if (triggerCols.length === 0 && !showMeta) return null;
-      return (<div style={{ padding:'10px', background:'#f8f7ff', border:'1px solid #e0e7ff', borderRadius:'8px', marginTop:'6px' }}>
-        <div style={{ fontSize:'10px', fontWeight:700, color:'#6b7280', textTransform:'uppercase' as const, letterSpacing:'0.5px', marginBottom:'6px' }}>INSERT DYNAMIC CONTENT</div>
-        {triggerCols.length > 0 && (<div style={{ display:'flex', flexWrap:'wrap' as const, gap:'4px', marginBottom:'8px' }}>
+      return (<div className="p-2.5 bg-violet-50 dark:bg-violet-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-lg mt-1.5">
+        <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">INSERT DYNAMIC CONTENT</div>
+        {triggerCols.length > 0 && (<div className="flex flex-wrap gap-1 mb-2">
           {triggerCols.filter(function(c) { return READ_ONLY_TYPES.indexOf(c.type) === -1; }).map(function(col) {
             return (<button key={col.id} onClick={function() { onChange(value + '{{row.' + col.name + '}}'); }}
-              style={{ background:'#ffffff', border:'1px solid #c7d2fe', borderRadius:'4px', padding:'3px 8px', fontSize:'11px', color:'#4338ca', cursor:'pointer', fontFamily:'monospace' }}>
+              className="bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-500/30 rounded text-[11px] px-2 py-[3px] text-indigo-700 dark:text-indigo-300 cursor-pointer font-mono">
               {col.name}
             </button>);
           })}
         </div>)}
         {showMeta && (<>
-          <div style={{ fontSize:'9px', fontWeight:600, color:'#9ca3af', textTransform:'uppercase' as const, marginBottom:'4px', marginTop:'4px' }}>Metadata</div>
-          <div style={{ display:'flex', flexWrap:'wrap' as const, gap:'4px', marginBottom:'4px' }}>
+          <div className="text-[9px] font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1 mt-1">Metadata</div>
+          <div className="flex flex-wrap gap-1 mb-1">
             {[
               { label:'Date', val:'{{meta.date}}' },
               { label:'Time', val:'{{meta.time}}' },
@@ -418,15 +430,15 @@ export default function AutomationsManager() {
               { label:'Automation', val:'{{meta.automationName}}' },
             ].map(function(m) {
               return (<button key={m.val} onClick={function() { onChange(value + m.val); }}
-                style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:'4px', padding:'3px 8px', fontSize:'10px', color:'#166534', cursor:'pointer', fontFamily:'monospace' }}>
+                className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded text-[10px] px-2 py-[3px] text-green-700 dark:text-green-300 cursor-pointer font-mono">
                 {m.label}
               </button>);
             })}
           </div>
         </>)}
         {(builderTrigger === 'approval_completed' || builderTrigger === 'approval_denied') && (<>
-          <div style={{ fontSize:'9px', fontWeight:600, color:'#9ca3af', textTransform:'uppercase' as const, marginBottom:'4px', marginTop:'4px' }}>Approval Data</div>
-          <div style={{ display:'flex', flexWrap:'wrap' as const, gap:'4px' }}>
+          <div className="text-[9px] font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1 mt-1">Approval Data</div>
+          <div className="flex flex-wrap gap-1">
             {[
               { label:'Workflow Name', val:'{{approval.workflowName}}' },
               { label:'Request ID', val:'{{approval.requestId}}' },
@@ -434,81 +446,81 @@ export default function AutomationsManager() {
               { label:'Workflow ID', val:'{{approval.workflowId}}' },
             ].concat(builderTrigger === 'approval_denied' ? [{ label:'Reason', val:'{{approval.reason}}' }] : []).map(function(m) {
               return (<button key={m.val} onClick={function() { onChange(value + m.val); }}
-                style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:'4px', padding:'3px 8px', fontSize:'10px', color:'#991b1b', cursor:'pointer', fontFamily:'monospace' }}>
+                className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded text-[10px] px-2 py-[3px] text-red-700 dark:text-red-300 cursor-pointer font-mono">
                 {m.label}
               </button>);
             })}
           </div>
         </>)}
-        {triggerCols.length > 0 && (<div style={{ fontSize:'9px', fontWeight:600, color:'#9ca3af', textTransform:'uppercase' as const, marginBottom:'4px', marginTop:'8px' }}>Operators</div>)}
-        {triggerCols.length > 0 && (<div style={{ display:'flex', flexWrap:'wrap' as const, gap:'4px' }}>
+        {triggerCols.length > 0 && (<div className="text-[9px] font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1 mt-2">Operators</div>)}
+        {triggerCols.length > 0 && (<div className="flex flex-wrap gap-1">
           {['==','!=','>','<','>=','<=','contains','startsWith','isEmpty'].map(function(op) {
             return (<button key={op} onClick={function() { onChange(value + ' ' + op + ' '); }}
-              style={{ background:'#fff7ed', border:'1px solid #fed7aa', borderRadius:'4px', padding:'2px 8px', fontSize:'10px', color:'#c2410c', cursor:'pointer', fontFamily:'monospace' }}>
+              className="bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 rounded text-[10px] px-2 py-0.5 text-orange-700 dark:text-orange-300 cursor-pointer font-mono">
               {op}
             </button>);
           })}
         </div>)}
       </div>);
     }
- 
-    return (<div style={{ display:'flex', flexDirection:'column', gap:'10px', marginTop:'8px' }}>
-      {['update_field','create_row','lock_row','unlock_row'].indexOf(action.actionType)!==-1 && (<div><label style={labelStyle}>Target Table</label>
-        <select value={config.targetTableId||''} onChange={function(e) { setConfig('targetTableId',e.target.value); }} style={selectStyle}>
+
+    return (<div className="flex flex-col gap-2.5 mt-2">
+      {['update_field','create_row','lock_row','unlock_row'].indexOf(action.actionType)!==-1 && (<div><label className={labelCls}>Target Table</label>
+        <select value={config.targetTableId||''} onChange={function(e) { setConfig('targetTableId',e.target.value); }} className={selectCls}>
           <option value="">— Select table —</option>
           {tables.map(function(t) { return <option key={t.id} value={t.id}>{t.name}</option>; })}
         </select></div>)}
- 
-      {['update_field','create_row'].indexOf(action.actionType)!==-1 && (<div><label style={labelStyle}>Set Field Values</label>
+
+      {['update_field','create_row'].indexOf(action.actionType)!==-1 && (<div><label className={labelCls}>Set Field Values</label>
         {(config.fieldMappings||[]).map(function(mapping:any, fi:number) {
           var selectedCol = targetColumns.find(function(c) { return c.name===mapping.column; });
-          return (<div key={fi} style={{ marginBottom:'10px', padding:'10px', background:'#ffffff', border:'1px solid #e5e7eb', borderRadius:'8px' }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'6px' }}>
-              <select value={mapping.column||''} onChange={function(e) { var m=(config.fieldMappings||[]).slice(); m[fi]={column:e.target.value,value:''}; setConfig('fieldMappings',m); }} style={Object.assign({},selectStyle,{flex:1})}>
+          return (<div key={fi} className="mb-2.5 p-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div className="flex justify-between items-center mb-1.5">
+              <select value={mapping.column||''} onChange={function(e) { var m=(config.fieldMappings||[]).slice(); m[fi]={column:e.target.value,value:''}; setConfig('fieldMappings',m); }} className={selectCls + " flex-1"}>
                 <option value="">— Select column —</option>
                 {targetColumns.map(function(c) { return <option key={c.id} value={c.name}>{c.name} ({c.type})</option>; })}
               </select>
-              <button onClick={function() { setConfig('fieldMappings',(config.fieldMappings||[]).filter(function(_:any,i:number) { return i!==fi; })); }} style={Object.assign({},iconBtnStyle,{color:'#ef4444',marginLeft:'8px'})}>✕</button>
+              <button onClick={function() { setConfig('fieldMappings',(config.fieldMappings||[]).filter(function(_:any,i:number) { return i!==fi; })); }} className={iconBtnCls + " text-red-500 ml-2"}>✕</button>
             </div>
             {mapping.column && selectedCol ? <DynamicValueInput column={selectedCol} value={mapping.value||''} onChange={function(v) { var m=(config.fieldMappings||[]).slice(); m[fi]=Object.assign({},m[fi],{value:v}); setConfig('fieldMappings',m); }} triggerColumns={triggerCols} />
-            : mapping.column ? (<div><input type="text" value={mapping.value||''} onChange={function(e) { var m=(config.fieldMappings||[]).slice(); m[fi]=Object.assign({},m[fi],{value:e.target.value}); setConfig('fieldMappings',m); }} style={inputStyle} placeholder="Enter value or use dynamic content below" /><DynamicContentPanel value={mapping.value||''} onChange={function(v) { var m=(config.fieldMappings||[]).slice(); m[fi]=Object.assign({},m[fi],{value:v}); setConfig('fieldMappings',m); }} showMeta={true} /></div>) : null}
+            : mapping.column ? (<div><input type="text" value={mapping.value||''} onChange={function(e) { var m=(config.fieldMappings||[]).slice(); m[fi]=Object.assign({},m[fi],{value:e.target.value}); setConfig('fieldMappings',m); }} className={inputCls} placeholder="Enter value or use dynamic content below" /><DynamicContentPanel value={mapping.value||''} onChange={function(v) { var m=(config.fieldMappings||[]).slice(); m[fi]=Object.assign({},m[fi],{value:v}); setConfig('fieldMappings',m); }} showMeta={true} /></div>) : null}
           </div>);
         })}
-        <button onClick={function() { setConfig('fieldMappings',(config.fieldMappings||[]).concat([{column:'',value:''}])); }} style={addBtnStyle}>+ Add Field</button>
+        <button onClick={function() { setConfig('fieldMappings',(config.fieldMappings||[]).concat([{column:'',value:''}])); }} className={addBtnCls}>+ Add Field</button>
       </div>)}
- 
-      {['update_field','lock_row','unlock_row'].indexOf(action.actionType)!==-1 && (<div style={{ padding:'8px', background:'#f3f4f6', borderRadius:'6px' }}>
-        <label style={Object.assign({},labelStyle,{color:'#9ca3af',fontSize:'10px'})}>Row ID (advanced — leave blank for triggering row)</label>
-        <input type="text" value={config.targetRowId||''} onChange={function(e) { setConfig('targetRowId',e.target.value); }} style={Object.assign({},inputStyle,{background:'#f9fafb',fontSize:'12px'})} placeholder="Leave blank" />
+
+      {['update_field','lock_row','unlock_row'].indexOf(action.actionType)!==-1 && (<div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-md">
+        <label className={labelCls + " text-gray-400 dark:text-gray-500 text-[10px]"}>Row ID (advanced — leave blank for triggering row)</label>
+        <input type="text" value={config.targetRowId||''} onChange={function(e) { setConfig('targetRowId',e.target.value); }} className={inputCls + " bg-gray-50 dark:bg-gray-800 text-xs"} placeholder="Leave blank" />
       </div>)}
- 
+
       {action.actionType==='send_email' && (<>
-        <div><label style={labelStyle}>To (comma-separated for multiple)</label>
-          <input type="text" value={config.to||''} onChange={function(e) { setConfig('to',e.target.value); }} style={inputStyle} placeholder="email@example.com, {{row.Contact Email}}" />
+        <div><label className={labelCls}>To (comma-separated for multiple)</label>
+          <input type="text" value={config.to||''} onChange={function(e) { setConfig('to',e.target.value); }} className={inputCls} placeholder="email@example.com, {{row.Contact Email}}" />
           <DynamicContentPanel value={config.to||''} onChange={function(v) { setConfig('to',v); }} />
         </div>
-        <div><label style={labelStyle}>Subject</label>
-          <input type="text" value={config.subject||''} onChange={function(e) { setConfig('subject',e.target.value); }} style={inputStyle} placeholder="Your request has been {{row.Status}}" />
+        <div><label className={labelCls}>Subject</label>
+          <input type="text" value={config.subject||''} onChange={function(e) { setConfig('subject',e.target.value); }} className={inputCls} placeholder="Your request has been {{row.Status}}" />
           <DynamicContentPanel value={config.subject||''} onChange={function(v) { setConfig('subject',v); }} showMeta={true} />
         </div>
-        <div><label style={labelStyle}>Body (HTML)</label>
-          <textarea value={config.body||''} onChange={function(e) { setConfig('body',e.target.value); }} style={Object.assign({},inputStyle,{minHeight:'100px',resize:'vertical' as const})} placeholder="Hi {{row.Contact Name}},&#10;&#10;Your purchase order for {{row.Total}} has been processed." />
+        <div><label className={labelCls}>Body (HTML)</label>
+          <textarea value={config.body||''} onChange={function(e) { setConfig('body',e.target.value); }} className={inputCls + " min-h-[100px] resize-y"} placeholder="Hi {{row.Contact Name}},&#10;&#10;Your purchase order for {{row.Total}} has been processed." />
           <DynamicContentPanel value={config.body||''} onChange={function(v) { setConfig('body',v); }} showMeta={true} />
         </div>
       </>)}
- 
+
       {action.actionType==='webhook' && (<>
-        <div><label style={labelStyle}>URL</label>
-          <input type="text" value={config.url||''} onChange={function(e) { setConfig('url',e.target.value); }} style={inputStyle} placeholder="https://..." />
+        <div><label className={labelCls}>URL</label>
+          <input type="text" value={config.url||''} onChange={function(e) { setConfig('url',e.target.value); }} className={inputCls} placeholder="https://..." />
         </div>
-        <div><label style={labelStyle}>Method</label>
-          <select value={config.method||'POST'} onChange={function(e) { setConfig('method',e.target.value); }} style={selectStyle}>
+        <div><label className={labelCls}>Method</label>
+          <select value={config.method||'POST'} onChange={function(e) { setConfig('method',e.target.value); }} className={selectCls}>
             <option value="POST">POST</option><option value="PUT">PUT</option><option value="PATCH">PATCH</option><option value="DELETE">DELETE</option>
           </select>
         </div>
         {config.url && (<div>
-          <label style={labelStyle}>Retry on failure (5xx errors)</label>
-          <select value={config.retryCount||'0'} onChange={function(e) { setConfig('retryCount',e.target.value); }} style={selectStyle}>
+          <label className={labelCls}>Retry on failure (5xx errors)</label>
+          <select value={config.retryCount||'0'} onChange={function(e) { setConfig('retryCount',e.target.value); }} className={selectCls}>
             <option value="0">No retry</option>
             <option value="1">1 retry</option>
             <option value="2">2 retries</option>
@@ -516,190 +528,193 @@ export default function AutomationsManager() {
           </select>
         </div>)}
       </>)}
- 
+
       {action.actionType==='notify' && (<>
-        <div><label style={labelStyle}>Notify Users</label>
+        <div><label className={labelCls}>Notify Users</label>
           <UserPicker selectedIds={config.userIds||[]} onChange={function(ids) { setConfig('userIds',ids); }} users={users} />
         </div>
-        <div><label style={labelStyle}>Title</label>
-          <input type="text" value={config.title||''} onChange={function(e) { setConfig('title',e.target.value); }} style={inputStyle} placeholder="Notification title" />
+        <div><label className={labelCls}>Title</label>
+          <input type="text" value={config.title||''} onChange={function(e) { setConfig('title',e.target.value); }} className={inputCls} placeholder="Notification title" />
           <DynamicContentPanel value={config.title||''} onChange={function(v) { setConfig('title',v); }} />
         </div>
-        <div><label style={labelStyle}>Message</label>
-          <input type="text" value={config.message||''} onChange={function(e) { setConfig('message',e.target.value); }} style={inputStyle} placeholder="Notification message" />
+        <div><label className={labelCls}>Message</label>
+          <input type="text" value={config.message||''} onChange={function(e) { setConfig('message',e.target.value); }} className={inputCls} placeholder="Notification message" />
           <DynamicContentPanel value={config.message||''} onChange={function(v) { setConfig('message',v); }} showMeta={true} />
         </div>
-        <label style={{ display:'flex', alignItems:'center', gap:'6px', fontSize:'12px', color:'#6b7280', cursor:'pointer' }}>
+        <label className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
           <input type="checkbox" checked={config.sendEmail||false} onChange={function(e) { setConfig('sendEmail',e.target.checked); }} />
           Also send as email notification
         </label>
       </>)}
- 
+
       {action.actionType==='trigger_approval' && (function() {
         var approvalTableId = config.targetTableId || builderTriggerConfig.tableId || '';
         if (approvalTableId) fetchApprovalWorkflows(approvalTableId);
         var workflows = approvalWorkflows[approvalTableId] || [];
-        return (<div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-          <div><label style={labelStyle}>Table</label>
-            <select value={config.targetTableId||''} onChange={function(e) { setConfig('targetTableId',e.target.value); setConfig('workflowId',''); }} style={selectStyle}>
+        return (<div className="flex flex-col gap-2.5">
+          <div><label className={labelCls}>Table</label>
+            <select value={config.targetTableId||''} onChange={function(e) { setConfig('targetTableId',e.target.value); setConfig('workflowId',''); }} className={selectCls}>
               <option value="">— Use trigger table —</option>
               {tables.map(function(t) { return <option key={t.id} value={t.id}>{t.name}</option>; })}
             </select>
           </div>
-          <div><label style={labelStyle}>Approval Workflow</label>
+          <div><label className={labelCls}>Approval Workflow</label>
             {workflows.length === 0 ? (
-              <div style={{ padding:'10px', background:'#fefce8', borderRadius:'6px', border:'1px solid #fde68a' }}>
-                <span style={{ fontSize:'11px', color:'#92400e' }}>No approval workflows found. Install from Marketplace first.</span>
+              <div className="p-2.5 bg-amber-50 dark:bg-amber-500/10 rounded-md border border-amber-200 dark:border-amber-500/20">
+                <span className="text-[11px] text-amber-700 dark:text-amber-300">No approval workflows found. Install from Marketplace first.</span>
               </div>
             ) : (
-              <select value={config.workflowId||''} onChange={function(e) { setConfig('workflowId',e.target.value); }} style={selectStyle}>
+              <select value={config.workflowId||''} onChange={function(e) { setConfig('workflowId',e.target.value); }} className={selectCls}>
                 <option value="">— Select workflow —</option>
                 {workflows.map(function(wf: any) { return <option key={wf.id} value={wf.id}>{wf.name} ({(wf.stages||[]).length} stage{(wf.stages||[]).length!==1?'s':''})</option>; })}
               </select>
             )}
           </div>
-          <div style={{ padding:'10px', background:'#f0fdf4', borderRadius:'6px', border:'1px solid #bbf7d0' }}>
-            <span style={{ fontSize:'11px', color:'#166534' }}>✅ Submits the row into the approval workflow, locks the row, and notifies approvers.</span>
+          <div className="p-2.5 bg-green-50 dark:bg-green-500/10 rounded-md border border-green-200 dark:border-green-500/20">
+            <span className="text-[11px] text-green-700 dark:text-green-300">✅ Submits the row into the approval workflow, locks the row, and notifies approvers.</span>
           </div>
         </div>);
       })()}
- 
-      {action.actionType==='unlock_row' && (<div style={{ padding:'10px', background:'#f0fdf4', borderRadius:'6px', border:'1px solid #bbf7d0' }}>
-        <span style={{ fontSize:'11px', color:'#166534' }}>🔓 Unlocks the row, allowing it to be edited again.</span>
+
+      {action.actionType==='unlock_row' && (<div className="p-2.5 bg-green-50 dark:bg-green-500/10 rounded-md border border-green-200 dark:border-green-500/20">
+        <span className="text-[11px] text-green-700 dark:text-green-300">🔓 Unlocks the row, allowing it to be edited again.</span>
       </div>)}
-	  
-	  {action.actionType==='push_to_sharepoint' && (<div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-        <div style={{ padding:'10px', background:'#e0f2fe', borderRadius:'6px', border:'1px solid #7dd3fc' }}>
-          <span style={{ fontSize:'11px', color:'#0c4a6e' }}>Pushes the current row data to the linked SharePoint list. The table must have SharePoint sync configured in the admin panel. Columns marked as "Agora Only" will be excluded from the push.</span>
+
+	  {action.actionType==='push_to_sharepoint' && (<div className="flex flex-col gap-2.5">
+        <div className="p-2.5 bg-sky-50 dark:bg-sky-500/10 rounded-md border border-sky-200 dark:border-sky-500/20">
+          <span className="text-[11px] text-sky-700 dark:text-sky-300">Pushes the current row data to the linked SharePoint list. The table must have SharePoint sync configured in the admin panel. Columns marked as "Agora Only" will be excluded from the push.</span>
         </div>
-        <label style={{ display:'flex', alignItems:'center', gap:'8px', fontSize:'12px', color:'#374151', cursor:'pointer' }}>
+        <label className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 cursor-pointer">
           <input type="checkbox" checked={config.includeAttachments||false} onChange={function(e) { setConfig('includeAttachments',e.target.checked); }} />
           Include row attachments (PDFs, images, etc.) - uploads to SharePoint list item
         </label>
         {config.includeAttachments && (
-          <div style={{ padding:'10px', background:'#fef3c7', borderRadius:'6px', border:'1px solid #fbbf24' }}>
-            <div style={{ fontSize:'11px', fontWeight:600, color:'#92400e', marginBottom:'4px' }}>One-time SharePoint setup required</div>
-            <div style={{ fontSize:'11px', color:'#92400e', lineHeight:'1.5' }}>
-              Before this can attach files, you (or your SP admin) must add a <strong>Hyperlink</strong> column to the target SharePoint list with the name <code style={{ background:'#fff7ed', padding:'1px 5px', borderRadius:'3px', border:'1px solid #fed7aa', fontFamily:'monospace' }}>SupportDocs</code> (no space, capital S and D).
+          <div className="p-2.5 bg-amber-50 dark:bg-amber-500/10 rounded-md border border-amber-200 dark:border-amber-500/20">
+            <div className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 mb-1">One-time SharePoint setup required</div>
+            <div className="text-[11px] text-amber-700 dark:text-amber-300 leading-normal">
+              Before this can attach files, you (or your SP admin) must add a <strong>Hyperlink</strong> column to the target SharePoint list with the name <code className="bg-orange-50 dark:bg-orange-500/10 px-[5px] py-px rounded-[3px] border border-orange-200 dark:border-orange-500/20 font-mono">SupportDocs</code> (no space, capital S and D).
               <br /><br />
-              Agora tries to create this column automatically, but some SharePoint tenants block API-driven column creation. If you see <code style={{ background:'#fff7ed', padding:'1px 4px', borderRadius:'3px', fontFamily:'monospace' }}>accessDenied</code> in your logs, that's why - create it manually one time in your SharePoint list settings and Agora will populate it on every push.
+              Agora tries to create this column automatically, but some SharePoint tenants block API-driven column creation. If you see <code className="bg-orange-50 dark:bg-orange-500/10 px-1 py-px rounded-[3px] font-mono">accessDenied</code> in your logs, that's why - create it manually one time in your SharePoint list settings and Agora will populate it on every push.
               <br /><br />
-              Files will still be uploaded to the SharePoint document library at <code style={{ background:'#fff7ed', padding:'1px 4px', borderRadius:'3px', fontFamily:'monospace' }}>Shared Documents/Agora Attachments/</code> either way - the SupportDocs column just adds a clickable link on the list item.
+              Files will still be uploaded to the SharePoint document library at <code className="bg-orange-50 dark:bg-orange-500/10 px-1 py-px rounded-[3px] font-mono">Shared Documents/Agora Attachments/</code> either way - the SupportDocs column just adds a clickable link on the list item.
             </div>
           </div>
         )}
       </div>)}
-	  
-	  {action.actionType==='generate_record_export' && (<div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-        <div style={{ padding:'10px', background:'#fef3c7', borderRadius:'6px', border:'1px solid #fde68a' }}>
-          <span style={{ fontSize:'11px', color:'#92400e' }}>📄 Generates a Record Export PDF using the table's template and attaches it to the row. The table must have a Record Export template configured.</span>
+
+	  {action.actionType==='generate_record_export' && (<div className="flex flex-col gap-2.5">
+        <div className="p-2.5 bg-amber-50 dark:bg-amber-500/10 rounded-md border border-amber-200 dark:border-amber-500/20">
+          <span className="text-[11px] text-amber-700 dark:text-amber-300">📄 Generates a Record Export PDF using the table's template and attaches it to the row. The table must have a Record Export template configured.</span>
         </div>
-        <div><label style={labelStyle}>After attaching, update column (optional)</label>
-          <select value={config.updateColumnId||''} onChange={function(e) { setConfig('updateColumnId',e.target.value); }} style={selectStyle}>
+        <div><label className={labelCls}>After attaching, update column (optional)</label>
+          <select value={config.updateColumnId||''} onChange={function(e) { setConfig('updateColumnId',e.target.value); }} className={selectCls}>
             <option value="">— None —</option>
             {targetColumns.map(function(c) { return <option key={c.id} value={c.id}>{c.name}</option>; })}
           </select>
         </div>
-        {config.updateColumnId && (<div><label style={labelStyle}>Set value to</label>
-          <input type="text" value={config.updateValue||''} onChange={function(e) { setConfig('updateValue',e.target.value); }} style={inputStyle} placeholder="e.g. true or Exported" />
+        {config.updateColumnId && (<div><label className={labelCls}>Set value to</label>
+          <input type="text" value={config.updateValue||''} onChange={function(e) { setConfig('updateValue',e.target.value); }} className={inputCls} placeholder="e.g. true or Exported" />
         </div>)}
       </div>)}
-      {action.actionType==='generate_audit_trail' && (<div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-        <div style={{ padding:'10px', background:'#ede9fe', borderRadius:'6px', border:'1px solid #c4b5fd' }}>
-          <span style={{ fontSize:'11px', color:'#5b21b6' }}>🔏 Generates a standalone Audit Trail PDF with the approval chain and SHA-256 ledger, then attaches it to the row. Requires an approved approval request on this row.</span>
+      {action.actionType==='generate_audit_trail' && (<div className="flex flex-col gap-2.5">
+        <div className="p-2.5 bg-purple-50 dark:bg-purple-500/10 rounded-md border border-purple-200 dark:border-purple-500/20">
+          <span className="text-[11px] text-purple-700 dark:text-purple-300">🔏 Generates a standalone Audit Trail PDF with the approval chain and SHA-256 ledger, then attaches it to the row. Requires an approved approval request on this row.</span>
         </div>
-        <div><label style={labelStyle}>After attaching, update column (optional)</label>
-          <select value={config.updateColumnId||''} onChange={function(e) { setConfig('updateColumnId',e.target.value); }} style={selectStyle}>
+        <div><label className={labelCls}>After attaching, update column (optional)</label>
+          <select value={config.updateColumnId||''} onChange={function(e) { setConfig('updateColumnId',e.target.value); }} className={selectCls}>
             <option value="">— None —</option>
             {targetColumns.map(function(c) { return <option key={c.id} value={c.id}>{c.name}</option>; })}
           </select>
         </div>
-        {config.updateColumnId && (<div><label style={labelStyle}>Set value to</label>
-          <input type="text" value={config.updateValue||''} onChange={function(e) { setConfig('updateValue',e.target.value); }} style={inputStyle} placeholder="e.g. true or Audit Attached" />
+        {config.updateColumnId && (<div><label className={labelCls}>Set value to</label>
+          <input type="text" value={config.updateValue||''} onChange={function(e) { setConfig('updateValue',e.target.value); }} className={inputCls} placeholder="e.g. true or Audit Attached" />
         </div>)}
       </div>)}
-      {action.actionType==='push_to_google_sheets' && (<div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-        <div style={{ padding:'10px', background:'#d1fae5', borderRadius:'6px', border:'1px solid #6ee7b7' }}>
-          <span style={{ fontSize:'11px', color:'#065f46' }}>📗 Pushes the current row data to the connected Google Sheet. The table must have a Google Sheet connection configured. Columns marked as "Agora Only" will be excluded.</span>
+      {action.actionType==='push_to_google_sheets' && (<div className="flex flex-col gap-2.5">
+        <div className="p-2.5 bg-green-50 dark:bg-green-500/10 rounded-md border border-green-200 dark:border-green-500/20">
+          <span className="text-[11px] text-green-700 dark:text-green-300">📗 Pushes the current row data to the connected Google Sheet. The table must have a Google Sheet connection configured. Columns marked as "Agora Only" will be excluded.</span>
         </div>
-        <label style={{ display:'flex', alignItems:'center', gap:'8px', fontSize:'12px', color:'#374151', cursor:'pointer' }}>
+        <label className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 cursor-pointer">
           <input type="checkbox" checked={config.includeAttachments||false} onChange={function(e) { setConfig('includeAttachments',e.target.checked); }} />
           📎 Include attachments — merges PDFs, uploads to Google Drive, adds hyperlink in sheet
         </label>
       </div>)}
- 
-      {action.actionType==='delay' && (<div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-        <div style={{ display:'flex', gap:'10px', alignItems:'flex-end' }}>
-          <div style={{ flex:1 }}><label style={labelStyle}>Hours</label>
-            <input type="number" min="0" max="24" value={config.delayHours||'0'} onChange={function(e) { setConfig('delayHours',e.target.value); }} style={inputStyle} />
+
+      {action.actionType==='delay' && (<div className="flex flex-col gap-2.5">
+        <div className="flex gap-2.5 items-end">
+          <div className="flex-1"><label className={labelCls}>Hours</label>
+            <input type="number" min="0" max="24" value={config.delayHours||'0'} onChange={function(e) { setConfig('delayHours',e.target.value); }} className={inputCls} />
           </div>
-          <div style={{ flex:1 }}><label style={labelStyle}>Minutes</label>
-            <input type="number" min="0" max="59" value={config.delayMinutes||'0'} onChange={function(e) { setConfig('delayMinutes',e.target.value); }} style={inputStyle} />
+          <div className="flex-1"><label className={labelCls}>Minutes</label>
+            <input type="number" min="0" max="59" value={config.delayMinutes||'0'} onChange={function(e) { setConfig('delayMinutes',e.target.value); }} className={inputCls} />
           </div>
-          <div style={{ flex:1 }}><label style={labelStyle}>Seconds</label>
-            <input type="number" min="0" max="59" value={config.delaySeconds||'0'} onChange={function(e) { setConfig('delaySeconds',e.target.value); }} style={inputStyle} />
+          <div className="flex-1"><label className={labelCls}>Seconds</label>
+            <input type="number" min="0" max="59" value={config.delaySeconds||'0'} onChange={function(e) { setConfig('delaySeconds',e.target.value); }} className={inputCls} />
           </div>
         </div>
-        <div style={{ padding:'10px', background:'#fefce8', borderRadius:'6px', border:'1px solid #fde68a' }}>
-          <span style={{ fontSize:'11px', color:'#92400e' }}>⏳ Pauses before the next step. Maximum 1 hour.</span>
+        <div className="p-2.5 bg-amber-50 dark:bg-amber-500/10 rounded-md border border-amber-200 dark:border-amber-500/20">
+          <span className="text-[11px] text-amber-700 dark:text-amber-300">⏳ Pauses before the next step. Maximum 1 hour.</span>
         </div>
       </div>)}
- 
-      {action.actionType==='condition' && (<div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-        <div><label style={labelStyle}>IF Condition</label>
-          <input type="text" value={config.conditionExpr||''} onChange={function(e) { setConfig('conditionExpr',e.target.value); }} style={inputStyle} placeholder="e.g. {{row.Total}} > 500" />
+
+      {action.actionType==='condition' && (<div className="flex flex-col gap-2.5">
+        <div><label className={labelCls}>IF Condition</label>
+          <input type="text" value={config.conditionExpr||''} onChange={function(e) { setConfig('conditionExpr',e.target.value); }} className={inputCls} placeholder="e.g. {{row.Total}} > 500" />
           <DynamicContentPanel value={config.conditionExpr||''} onChange={function(v) { setConfig('conditionExpr',v); }} showMeta={true} />
         </div>
-        <div style={{ padding:'10px', background:'#ede9fe', borderRadius:'6px', border:'1px solid #c4b5fd' }}>
-          <span style={{ fontSize:'11px', color:'#5b21b6' }}>🔀 Steps after this run on the TRUE or FALSE branch. Set the condition on each step.</span>
+        <div className="p-2.5 bg-purple-50 dark:bg-purple-500/10 rounded-md border border-purple-200 dark:border-purple-500/20">
+          <span className="text-[11px] text-purple-700 dark:text-purple-300">🔀 Steps after this run on the TRUE or FALSE branch. Set the condition on each step.</span>
         </div>
       </div>)}
- 
-      <div style={{ padding:'8px', background:'#f3f4f6', borderRadius:'6px' }}>
-        <label style={Object.assign({},labelStyle,{color:'#9ca3af',fontSize:'10px'})}>Step condition (leave blank to always run)</label>
-        <input type="text" value={action.conditionExpr||''} onChange={function(e) { updateAction(index,{conditionExpr:e.target.value}); }} style={Object.assign({},inputStyle,{background:'#f9fafb',fontSize:'12px'})} placeholder="e.g. {{row.Status}} == 'Approved'" />
+
+      <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-md">
+        <label className={labelCls + " text-gray-400 dark:text-gray-500 text-[10px]"}>Step condition (leave blank to always run)</label>
+        <input type="text" value={action.conditionExpr||''} onChange={function(e) { updateAction(index,{conditionExpr:e.target.value}); }} className={inputCls + " bg-gray-50 dark:bg-gray-800 text-xs"} placeholder="e.g. {{row.Status}} == 'Approved'" />
       </div>
     </div>);
   }
-  if (loading) return <div style={{ padding:'40px', textAlign:'center', color:'#9ca3af' }}>Loading automations...</div>;
+  if (loading) return <div className="p-10 text-center text-gray-400 dark:text-gray-500">Loading automations...</div>;
 
   // ==== LIST ====
   if (view==='list') {
-    return (<div style={{ maxWidth:'960px', margin:'0 auto', padding:'32px 24px' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'24px' }}>
-        <div><h1 style={{ fontSize:'22px', fontWeight:700, color:'#111827', margin:0 }}>⚡ Automations</h1><p style={{ fontSize:'13px', color:'#6b7280', margin:'4px 0 0' }}>Automate workflows across your tables</p></div>
-        <button onClick={function() { openBuilder(); }} style={btnPrimary}>+ New Automation</button>
+    return (<div className="max-w-[960px] mx-auto px-6 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <div><h1 className="text-[22px] font-bold text-gray-900 dark:text-gray-100 m-0">⚡ Automations</h1><p className="text-[13px] text-gray-500 dark:text-gray-400 mt-1 mb-0">Automate workflows across your tables</p></div>
+        <div className="flex gap-2 items-center">
+          <button onClick={function() { setView('analytics'); }} className={btnSecondaryCls}>Analytics</button>
+          <button onClick={function() { openBuilder(); }} className={btnPrimaryCls}>+ New Automation</button>
+        </div>
       </div>
       {automations.length===0 ? (
-        <div style={Object.assign({},cardStyle,{textAlign:'center' as const, padding:'60px 24px', color:'#6b7280'})}>
-          <div style={{ fontSize:'32px', marginBottom:'12px' }}>⚡</div>
-          <p style={{ fontSize:'15px', fontWeight:500, color:'#374151' }}>No automations yet</p>
-          <p style={{ fontSize:'13px', marginTop:'4px' }}>Create your first automation to start automating workflows.</p>
+        <div className={cardCls + " text-center px-6 py-[60px] text-gray-500 dark:text-gray-400"}>
+          <div className="text-[32px] mb-3">⚡</div>
+          <p className="text-[15px] font-medium text-gray-700 dark:text-gray-300">No automations yet</p>
+          <p className="text-[13px] mt-1">Create your first automation to start automating workflows.</p>
         </div>
       ) : (
-        <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+        <div className="flex flex-col gap-2">
           {automations.map(function(auto) { return (
-            <div key={auto.id} style={Object.assign({},cardStyle,{display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer'})} onClick={function() { loadDetail(auto.id); }}>
-              <div style={{ flex:1 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-                  <span style={{ fontSize:'14px', fontWeight:600, color:auto.enabled?'#111827':'#9ca3af' }}>{auto.name}</span>
-                  {!auto.enabled && <span style={{ fontSize:'10px', color:'#9ca3af', textTransform:'uppercase' as const, letterSpacing:'1px', fontWeight:600 }}>Disabled</span>}
+            <div key={auto.id} className={cardCls + " flex justify-between items-center cursor-pointer"} onClick={function() { loadDetail(auto.id); }}>
+              <div className="flex-1">
+                <div className="flex items-center gap-2.5">
+                  <span className={"text-sm font-semibold " + (auto.enabled ? "text-gray-900 dark:text-gray-100" : "text-gray-400 dark:text-gray-500")}>{auto.name}</span>
+                  {!auto.enabled && <span className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-semibold">Disabled</span>}
                 </div>
-                <div style={{ fontSize:'12px', color:'#6b7280', marginTop:'4px', display:'flex', gap:'16px', flexWrap:'wrap' as const }}>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex gap-4 flex-wrap">
                   <span>{getTriggerLabel(auto.triggerType)}</span>
                   <span>{auto.actions.length} action{auto.actions.length!==1?'s':''}</span>
                   {auto._count && <span>{auto._count.runs} run{auto._count.runs!==1?'s':''}</span>}
-                  {auto.creatorName && <span style={{ color:'#9ca3af' }}>by {auto.creatorName}</span>}
-                  {auto.workspaceName && <span style={{ padding:'1px 6px', background:'#f3e8ff', color:'#7c3aed', borderRadius:'4px', fontSize:'10px', fontWeight:600 }}>{auto.workspaceIcon || '📁'} {auto.workspaceName}</span>}
-                  {auto.sharedTableName && <span style={{ padding:'1px 6px', background:'#dbeafe', color:'#1e40af', borderRadius:'4px', fontSize:'10px', fontWeight:600 }}>{auto.sharedTableIcon || '📊'} {auto.sharedTableName}</span>}
-                  {auto.isOwner === false && <span style={{ padding:'1px 6px', background:'#f0fdf4', color:'#166534', borderRadius:'4px', fontSize:'10px', fontWeight:600 }}>Shared</span>}
+                  {auto.creatorName && <span className="text-gray-400 dark:text-gray-500">by {auto.creatorName}</span>}
+                  {auto.workspaceName && <span className="px-1.5 py-px bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 rounded text-[10px] font-semibold">{auto.workspaceIcon || '📁'} {auto.workspaceName}</span>}
+                  {auto.sharedTableName && <span className="px-1.5 py-px bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 rounded text-[10px] font-semibold">{auto.sharedTableIcon || '📊'} {auto.sharedTableName}</span>}
+                  {auto.isOwner === false && <span className="px-1.5 py-px bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-300 rounded text-[10px] font-semibold">Shared</span>}
                 </div>
               </div>
-              <div style={{ display:'flex', gap:'6px', alignItems:'center' }}>
-                <button onClick={function(e) { e.stopPropagation(); toggleEnabled(auto.id,auto.enabled); }} style={Object.assign({},iconBtnStyle,{fontSize:'18px',color:auto.enabled?'#22c55e':'#d1d5db'})} title={auto.enabled?'Disable':'Enable'}>{auto.enabled?'●':'○'}</button>
-                <button onClick={function(e) { e.stopPropagation(); duplicateAutomation(auto); }} style={iconBtnStyle} title="Duplicate">⧉</button>
-                <button onClick={function(e) { e.stopPropagation(); openBuilder(auto); }} style={iconBtnStyle} title="Edit">✎</button>
-                <button onClick={function(e) { e.stopPropagation(); deleteAutomation(auto.id); }} style={Object.assign({},iconBtnStyle,{color:'#ef4444'})} title="Delete">✕</button>
+              <div className="flex gap-1.5 items-center">
+                <button onClick={function(e) { e.stopPropagation(); toggleEnabled(auto.id,auto.enabled); }} className={iconBtnCls + " text-lg " + (auto.enabled ? "text-green-500" : "text-gray-300 dark:text-gray-600")} title={auto.enabled?'Disable':'Enable'}>{auto.enabled?'●':'○'}</button>
+                <button onClick={function(e) { e.stopPropagation(); duplicateAutomation(auto); }} className={iconBtnCls} title="Duplicate">⧉</button>
+                <button onClick={function(e) { e.stopPropagation(); openBuilder(auto); }} className={iconBtnCls} title="Edit">✎</button>
+                <button onClick={function(e) { e.stopPropagation(); deleteAutomation(auto.id); }} className={iconBtnCls + " text-red-500"} title="Delete">✕</button>
               </div>
             </div>); })}
         </div>
@@ -707,85 +722,106 @@ export default function AutomationsManager() {
     </div>);
   }
 
+  // ==== ANALYTICS ====
+  if (view==='analytics') {
+    return (<div className="max-w-5xl mx-auto p-6">
+      <button onClick={function() { setView('list'); }} className={btnSecondaryCls + " mb-4"}>← Back to list</button>
+      <AutomationAnalytics />
+    </div>);
+  }
+
   // ==== BUILDER ====
   if (view==='builder') {
-    return (<div style={{ maxWidth:'720px', margin:'0 auto', padding:'32px 24px' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'24px' }}>
-        <h1 style={{ fontSize:'18px', fontWeight:700, color:'#111827', margin:0 }}>{editingId?'Edit Automation':'New Automation'}</h1>
-        <button onClick={function() { setView('list'); }} style={btnSecondary}>← Back to list</button>
+    return (<div className="max-w-[720px] mx-auto px-6 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 m-0">{editingId?'Edit Automation':'New Automation'}</h1>
+        <button onClick={function() { setView('list'); }} className={btnSecondaryCls}>← Back to list</button>
       </div>
 
-      <div style={Object.assign({},cardStyle,{marginBottom:'16px'})}>
-        <div style={{ marginBottom:'12px' }}><label style={labelStyle}>Name</label><input type="text" value={builderName} onChange={function(e) { setBuilderName(e.target.value); }} style={inputStyle} placeholder="e.g. Notify on approval" /></div>
-        <div><label style={labelStyle}>Description (optional)</label><input type="text" value={builderDesc} onChange={function(e) { setBuilderDesc(e.target.value); }} style={inputStyle} placeholder="What does this automation do?" /></div>
-        <div style={{ marginTop:'12px' }}><label style={labelStyle}>Share with</label>
-          <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+      <div className={cardCls + " mb-4"}>
+        <div className="mb-3"><label className={labelCls}>Name</label><input type="text" value={builderName} onChange={function(e) { setBuilderName(e.target.value); }} className={inputCls} placeholder="e.g. Notify on approval" /></div>
+        <div><label className={labelCls}>Description (optional)</label><input type="text" value={builderDesc} onChange={function(e) { setBuilderDesc(e.target.value); }} className={inputCls} placeholder="What does this automation do?" /></div>
+        <div className="mt-3"><label className={labelCls}>Share with</label>
+          <div className="flex flex-col gap-2">
             <div>
-              <span style={{ fontSize:'10px', fontWeight:600, color:'#9ca3af', textTransform:'uppercase' as const, letterSpacing:'0.5px' }}>Workspace</span>
+              <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Workspace</span>
               {workspaces.length > 0 ? (
-                <select value={builderWorkspaceId||''} onChange={function(e) { setBuilderWorkspaceId(e.target.value||null); }} style={selectStyle}>
+                <select value={builderWorkspaceId||''} onChange={function(e) { setBuilderWorkspaceId(e.target.value||null); }} className={selectCls}>
                   <option value="">None</option>
                   {workspaces.map(function(ws) { return <option key={ws.id} value={ws.id}>{ws.icon || '📁'} {ws.name}</option>; })}
                 </select>
               ) : (
-                <div style={{ padding:'6px 10px', background:'#f9fafb', borderRadius:'6px', border:'1px solid #e5e7eb', fontSize:'11px', color:'#9ca3af' }}>No workspaces — create one from the sidebar</div>
+                <div className="px-2.5 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 text-[11px] text-gray-400 dark:text-gray-500">No workspaces — create one from the sidebar</div>
               )}
             </div>
             <div>
-              <span style={{ fontSize:'10px', fontWeight:600, color:'#9ca3af', textTransform:'uppercase' as const, letterSpacing:'0.5px' }}>Table</span>
-              <select value={builderTableId||''} onChange={function(e) { setBuilderTableId(e.target.value||null); }} style={selectStyle}>
+              <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Table</span>
+              <select value={builderTableId||''} onChange={function(e) { setBuilderTableId(e.target.value||null); }} className={selectCls}>
                 <option value="">None</option>
                 {tables.map(function(t) { return <option key={t.id} value={t.id}>{t.name}</option>; })}
               </select>
             </div>
-            <span style={{ fontSize:'11px', color:'#9ca3af', display:'block' }}>
+            <span className="text-[11px] text-gray-400 dark:text-gray-500 block">
               {builderWorkspaceId && builderTableId ? 'Shared with workspace members and table members.' : builderWorkspaceId ? 'All workspace members can see this. Admins can edit.' : builderTableId ? 'Anyone with access to this table can see this automation.' : 'Private — only you and system admins.'}
             </span>
           </div>
         </div>
       </div>
 
-      <div style={Object.assign({},cardStyle,{marginBottom:'16px'})}>
-        <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'12px' }}><span style={{ color:'#2563eb', fontWeight:700, fontSize:'12px', textTransform:'uppercase' as const, letterSpacing:'1px' }}>TRIGGER</span><span style={{ fontSize:'11px', color:'#9ca3af' }}>When this happens...</span></div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(160px, 1fr))', gap:'8px', marginBottom:'16px' }}>
+      <div className={cardCls + " mb-4"}>
+        <div className="flex items-center gap-2 mb-3"><span className="text-blue-600 dark:text-blue-400 font-bold text-xs uppercase tracking-widest">TRIGGER</span><span className="text-[11px] text-gray-400 dark:text-gray-500">When this happens...</span></div>
+        <div className="grid gap-2 mb-4" style={{ gridTemplateColumns:'repeat(auto-fill, minmax(160px, 1fr))' }}>
           {TRIGGER_TYPES.map(function(t) { var sel=builderTrigger===t.value; return (
             <button key={t.value} onClick={function() { setBuilderTrigger(t.value); setBuilderTriggerConfig({}); }}
-              style={{ background:sel?'#eff6ff':'#ffffff', border:sel?'1px solid #2563eb':'1px solid #e5e7eb', borderRadius:'8px', padding:'10px 12px', cursor:'pointer', textAlign:'left' as const, color:sel?'#1d4ed8':'#6b7280', fontSize:'12px', fontWeight:sel?600:400 }}>
-              <span style={{ fontSize:'16px' }}>{t.icon}</span><div style={{ marginTop:'4px' }}>{t.label}</div>
+              className={"rounded-lg px-3 py-2.5 cursor-pointer text-left text-xs border " + (sel ? "bg-blue-50 dark:bg-blue-500/15 border-blue-600 text-blue-700 dark:text-blue-300 font-semibold" : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-normal")}>
+              <span className="text-base">{t.icon}</span><div className="mt-1">{t.label}</div>
             </button>); })}
         </div>
         <TriggerConfigEditor />
       </div>
 
-      <div style={{ textAlign:'center', margin:'4px 0' }}><div style={{ width:'2px', height:'24px', background:'#d1d5db', margin:'0 auto' }} /><span style={{ fontSize:'10px', color:'#9ca3af', textTransform:'uppercase' as const }}>then</span><div style={{ width:'2px', height:'24px', background:'#d1d5db', margin:'0 auto' }} /></div>
+      <div className="text-center my-1"><div className="w-0.5 h-6 bg-gray-300 dark:bg-gray-600 mx-auto" /><span className="text-[10px] text-gray-400 dark:text-gray-500 uppercase">then</span><div className="w-0.5 h-6 bg-gray-300 dark:bg-gray-600 mx-auto" /></div>
 
-      <div style={{ marginBottom:'16px' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'12px' }}><span style={{ color:'#16a34a', fontWeight:700, fontSize:'12px', textTransform:'uppercase' as const, letterSpacing:'1px' }}>ACTIONS</span><span style={{ fontSize:'11px', color:'#9ca3af' }}>Do these things...</span></div>
+      <div className="mb-4">
+        <div className="flex items-center gap-2 mb-3"><span className="text-green-600 dark:text-green-400 font-bold text-xs uppercase tracking-widest">ACTIONS</span><span className="text-[11px] text-gray-400 dark:text-gray-500">Do these things...</span></div>
         {builderActions.map(function(action,idx) { return (<div key={idx}>
-          <div style={Object.assign({},cardStyle,{marginBottom:'8px'})}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-                <span style={{ color:'#6b7280', fontSize:'11px', fontWeight:600 }}>Step {idx+1}</span>
-                <select value={action.actionType} onChange={function(e) { updateAction(idx,{actionType:e.target.value,actionConfig:{}}); }} style={Object.assign({},selectStyle,{width:'auto',padding:'4px 8px',fontSize:'12px'})}>
+          <div className={cardCls + " mb-2"}>
+            <div className="flex justify-between items-center mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500 dark:text-gray-400 text-[11px] font-semibold">Step {idx+1}</span>
+                <select value={action.actionType} onChange={function(e) { updateAction(idx,{actionType:e.target.value,actionConfig:{}}); }} className={selectCls + " w-auto px-2 py-1 text-xs"}>
                   {ACTION_TYPES.map(function(a) { return <option key={a.value} value={a.value}>{a.icon} {a.label}</option>; })}
                 </select>
               </div>
-              <div style={{ display:'flex', gap:'4px' }}>
-                <button onClick={function() { moveAction(idx,-1); }} style={iconBtnStyle}>↑</button>
-                <button onClick={function() { moveAction(idx,1); }} style={iconBtnStyle}>↓</button>
-                <button onClick={function() { removeAction(idx); }} style={Object.assign({},iconBtnStyle,{color:'#ef4444'})}>✕</button>
+              <div className="flex gap-1">
+                <button onClick={function() { moveAction(idx,-1); }} className={iconBtnCls}>↑</button>
+                <button onClick={function() { moveAction(idx,1); }} className={iconBtnCls}>↓</button>
+                <button onClick={function() { removeAction(idx); }} className={iconBtnCls + " text-red-500"}>✕</button>
               </div>
             </div>
             {renderActionConfig(action, idx)}
           </div>
-          {idx<builderActions.length-1 && <div style={{ textAlign:'center', margin:'2px 0' }}><div style={{ width:'2px', height:'16px', background:'#d1d5db', margin:'0 auto' }} /></div>}
+          {idx<builderActions.length-1 && <div className="text-center my-0.5"><div className="w-0.5 h-4 bg-gray-300 dark:bg-gray-600 mx-auto" /></div>}
         </div>); })}
-        <button onClick={addAction} style={Object.assign({},addBtnStyle,{marginTop:'8px',padding:'12px'})}>+ Add Action Step</button>
+        <button onClick={addAction} className={addBtnCls + " mt-2 p-3"}>+ Add Action Step</button>
       </div>
 
-      <div style={{ display:'flex', gap:'12px', justifyContent:'flex-end', marginTop:'24px' }}>
-        <button onClick={function() { setView('list'); }} style={btnSecondary}>Cancel</button>
-        <button onClick={saveAutomation} disabled={saving} style={Object.assign({},btnPrimary,{opacity:saving?0.7:1})}>{saving?'Saving...':(editingId?'Save Changes':'Create Automation')}</button>
+      <div className={cardCls + " mb-4"}>
+        <div className="flex items-center gap-2 mb-3"><span className="text-orange-600 dark:text-orange-400 font-bold text-xs uppercase tracking-widest">RETRY ON FAILURE</span></div>
+        <div className="flex gap-2.5 items-end">
+          <div className="flex-1"><label className={labelCls}>Max retries</label>
+            <input type="number" min="0" max="10" value={builderMaxRetries} onChange={function(e) { setBuilderMaxRetries(parseInt(e.target.value)||0); }} className={inputCls} />
+          </div>
+          <div className="flex-1"><label className={labelCls}>Retry delay (seconds)</label>
+            <input type="number" min="0" max="300" value={builderRetryDelaySec} onChange={function(e) { setBuilderRetryDelaySec(parseInt(e.target.value)||0); }} className={inputCls} />
+          </div>
+        </div>
+        <span className="text-[11px] text-gray-400 dark:text-gray-500 block mt-2">A failed step is retried this many times with linear backoff before the run fails.</span>
+      </div>
+
+      <div className="flex gap-3 justify-end mt-6">
+        <button onClick={function() { setView('list'); }} className={btnSecondaryCls}>Cancel</button>
+        <button onClick={saveAutomation} disabled={saving} className={btnPrimaryCls + (saving ? " opacity-70" : "")}>{saving?'Saving...':(editingId?'Save Changes':'Create Automation')}</button>
       </div>
     </div>);
   }
@@ -793,104 +829,67 @@ export default function AutomationsManager() {
   // ==== DETAIL ====
   if (view==='detail' && selectedAutomation) {
     var auto = selectedAutomation;
-    return (<div style={{ maxWidth:'720px', margin:'0 auto', padding:'32px 24px' }}>
-      <button onClick={function() { setView('list'); setSelectedAutomation(null); }} style={Object.assign({},btnSecondary,{marginBottom:'16px'})}>← Back to list</button>
+    return (<div className="max-w-[720px] mx-auto px-6 py-8">
+      <button onClick={function() { setView('list'); setSelectedAutomation(null); }} className={btnSecondaryCls + " mb-4"}>← Back to list</button>
 
-      <div style={Object.assign({},cardStyle,{marginBottom:'16px'})}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-          <div><h2 style={{ fontSize:'18px', fontWeight:700, color:'#111827', margin:0 }}>{auto.name}</h2>{auto.description && <p style={{ fontSize:'13px', color:'#6b7280', margin:'4px 0 0' }}>{auto.description}</p>}</div>
-          <div style={{ display:'flex', gap:'6px', flexWrap:'wrap' as const }}>
-            <button onClick={function() { openBuilder(auto); }} style={btnSecondary}>Edit</button>
-            <button onClick={function() { duplicateAutomation(auto); }} style={btnSecondary}>Duplicate</button>
-            <button onClick={function() { testAutomation(auto.id); }} disabled={testing} style={Object.assign({},btnSecondary,{color:"#7c3aed",borderColor:"#c4b5fd"})}>{testing?"Testing...":"Test Run"}</button>
-            <button onClick={function() { toggleEnabled(auto.id,auto.enabled); }} style={Object.assign({},btnSecondary,{ background:auto.enabled?'#dcfce7':'#f3f4f6', borderColor:auto.enabled?'#86efac':'#d1d5db', color:auto.enabled?'#166534':'#6b7280' })}>{auto.enabled?'Enabled':'Disabled'}</button>
+      <div className={cardCls + " mb-4"}>
+        <div className="flex justify-between items-center">
+          <div><h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 m-0">{auto.name}</h2>{auto.description && <p className="text-[13px] text-gray-500 dark:text-gray-400 mt-1 mb-0">{auto.description}</p>}</div>
+          <div className="flex gap-1.5 flex-wrap">
+            <button onClick={function() { openBuilder(auto); }} className={btnSecondaryCls}>Edit</button>
+            <button onClick={function() { duplicateAutomation(auto); }} className={btnSecondaryCls}>Duplicate</button>
+            <button onClick={function() { testAutomation(auto.id); }} disabled={testing} className={btnSecondaryCls + " text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-500/40"}>{testing?"Testing...":"Test Run"}</button>
+            <button onClick={function() { toggleEnabled(auto.id,auto.enabled); }} className={btnSecondaryCls + " " + (auto.enabled ? "bg-green-100 dark:bg-green-500/15 border-green-300 dark:border-green-500/30 text-green-700 dark:text-green-300" : "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400")}>{auto.enabled?'Enabled':'Disabled'}</button>
           </div>
         </div>
-        <div style={{ marginTop:'16px', display:'flex', gap:'16px', fontSize:'12px', color:'#6b7280', flexWrap:'wrap' as const }}>
+        <div className="mt-4 flex gap-4 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
           <span>{getTriggerLabel(auto.triggerType)}</span>
           {auto.triggerConfig && (auto.triggerConfig as any).tableId && <span>Table: {getTableName((auto.triggerConfig as any).tableId)}</span>}
           <span>{auto.actions.length} action{auto.actions.length!==1?'s':''}</span>
-          {auto.webhookSlug && <span style={{ color:'#7c3aed', fontFamily:'monospace', fontSize:'11px' }}>/api/automations/webhook/{auto.webhookSlug}</span>}
+          {auto.webhookSlug && <span className="text-purple-600 dark:text-purple-400 font-mono text-[11px]">/api/automations/webhook/{auto.webhookSlug}</span>}
         </div>
       </div>
 
       {/* Flow */}
-      <div style={Object.assign({},cardStyle,{marginBottom:'16px'})}>
-        <div style={{ fontSize:'11px', fontWeight:600, color:'#6b7280', textTransform:'uppercase' as const, letterSpacing:'1px', marginBottom:'12px' }}>Flow</div>
-        <div style={{ display:'flex', alignItems:'center', gap:'8px', flexWrap:'wrap' as const }}>
-          <span style={{ background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:'6px', padding:'6px 12px', fontSize:'12px', color:'#1d4ed8', fontWeight:500 }}>{getTriggerLabel(auto.triggerType)}</span>
-          {auto.actions.map(function(a:any,i:number) { var at=a.actionType||a.actiontype; return (<span key={i} style={{ display:'flex', alignItems:'center', gap:'8px' }}><span style={{ color:'#d1d5db' }}>→</span><span style={{ background:'#dcfce7', border:'1px solid #86efac', borderRadius:'6px', padding:'6px 12px', fontSize:'12px', color:'#166534', fontWeight:500 }}>{getActionLabel(at)}</span></span>); })}
+      <div className={cardCls + " mb-4"}>
+        <div className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3">Flow</div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-md px-3 py-1.5 text-xs text-blue-700 dark:text-blue-300 font-medium">{getTriggerLabel(auto.triggerType)}</span>
+          {auto.actions.map(function(a:any,i:number) { var at=a.actionType||a.actiontype; return (<span key={i} className="flex items-center gap-2"><span className="text-gray-300 dark:text-gray-600">→</span><span className="bg-green-100 dark:bg-green-500/15 border border-green-300 dark:border-green-500/20 rounded-md px-3 py-1.5 text-xs text-green-700 dark:text-green-300 font-medium">{getActionLabel(at)}</span></span>); })}
         </div>
       </div>
 
       {/* Test Results */}
-      {testResult && (<div style={Object.assign({},cardStyle,{marginBottom:'16px', border: testResult.error ? '1px solid #fecaca' : '1px solid #86efac'})}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px' }}>
-          <div style={{ fontSize:'11px', fontWeight:600, color: testResult.error ? '#991b1b' : '#166534', textTransform:'uppercase' as const, letterSpacing:'1px' }}>{testResult.error ? 'Test Failed' : 'Test Results (Dry Run)'}</div>
-          <button onClick={function() { setTestResult(null); }} style={Object.assign({},iconBtnStyle,{fontSize:'12px'})}>✕ Close</button>
+      {testResult && (<div className={cardCls + " mb-4 " + (testResult.error ? "border-red-300 dark:border-red-500/30" : "border-green-300 dark:border-green-500/30")}>
+        <div className="flex justify-between items-center mb-3">
+          <div className={"text-[11px] font-semibold uppercase tracking-widest " + (testResult.error ? "text-red-700 dark:text-red-300" : "text-green-700 dark:text-green-300")}>{testResult.error ? 'Test Failed' : 'Test Results (Dry Run)'}</div>
+          <button onClick={function() { setTestResult(null); }} className={iconBtnCls + " text-xs"}>✕ Close</button>
         </div>
-        {testResult.error ? (<p style={{ fontSize:'13px', color:'#dc2626' }}>{testResult.error}</p>) : (<div>
-          <p style={{ fontSize:'12px', color:'#6b7280', marginBottom:'8px' }}>{testResult.note}</p>
-          {testResult.steps && testResult.steps.map(function(step:any) { return (<div key={step.stepNumber} style={{ padding:'10px', marginBottom:'6px', background:'#ffffff', border:'1px solid #e5e7eb', borderRadius:'6px' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'4px' }}>
-              <span style={{ fontSize:'11px', fontWeight:600, color:'#374151' }}>Step {step.stepNumber}</span>
-              <span style={{ fontSize:'12px', color:'#6b7280' }}>{getActionLabel(step.actionType)}</span>
-              {!step.conditionMet && <span style={{ fontSize:'10px', padding:'2px 6px', background:'#f3f4f6', borderRadius:'4px', color:'#6b7280' }}>Would be skipped</span>}
-              {step.conditionMet && <span style={{ fontSize:'10px', padding:'2px 6px', background:'#dcfce7', borderRadius:'4px', color:'#166534' }}>Would execute</span>}
+        {testResult.error ? (<p className="text-[13px] text-red-600 dark:text-red-400">{testResult.error}</p>) : (<div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{testResult.note}</p>
+          {testResult.steps && testResult.steps.map(function(step:any) { return (<div key={step.stepNumber} className="p-2.5 mb-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Step {step.stepNumber}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{getActionLabel(step.actionType)}</span>
+              {!step.conditionMet && <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-500 dark:text-gray-400">Would be skipped</span>}
+              {step.conditionMet && <span className="text-[10px] px-1.5 py-0.5 bg-green-100 dark:bg-green-500/15 rounded text-green-700 dark:text-green-300">Would execute</span>}
             </div>
-            {step.conditionExpr && <div style={{ fontSize:'11px', color:'#9ca3af', marginBottom:'4px' }}>Condition: {step.conditionResolved} = {step.conditionMet ? 'true' : 'false'}</div>}
-            {step.resolvedValues && Object.keys(step.resolvedValues).length > 0 && (<pre style={{ fontSize:'11px', color:'#374151', background:'#f9fafb', padding:'8px', borderRadius:'4px', overflow:'auto' as const, margin:0, whiteSpace:'pre-wrap' as const }}>{JSON.stringify(step.resolvedValues, null, 2)}</pre>)}
+            {step.conditionExpr && <div className="text-[11px] text-gray-400 dark:text-gray-500 mb-1">Condition: {step.conditionResolved} = {step.conditionMet ? 'true' : 'false'}</div>}
+            {step.resolvedValues && Object.keys(step.resolvedValues).length > 0 && (<pre className="text-[11px] text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-2 rounded overflow-auto m-0 whitespace-pre-wrap">{JSON.stringify(step.resolvedValues, null, 2)}</pre>)}
           </div>); })}
         </div>)}
       </div>)}
+
+      {/* Analytics */}
+      <div className={cardCls + " mb-4"}>
+        <div className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3">Analytics</div>
+        <AutomationAnalytics automationId={auto.id} />
+      </div>
+
       {/* Run History */}
-      <div style={cardStyle}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px' }}>
-          <div style={{ fontSize:'11px', fontWeight:600, color:'#6b7280', textTransform:'uppercase' as const, letterSpacing:'1px' }}>Run History</div>
-        </div>
-        {(!auto.runs || auto.runs.length===0) ? <p style={{ fontSize:'13px', color:'#9ca3af' }}>No runs yet. Trigger the automation to see results here.</p> : (
-          <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
-            {auto.runs.map(function(run:any) {
-              var st = run.startedAt||run.startedat; var et = run.completedAt||run.completedat; var em = run.errorMessage||run.errormessage;
-              var steps = run.stepResults||run.stepresults||[];
-              var isExpanded = expandedRunId===run.id;
-              var duration = et ? Math.round(new Date(et).getTime()-new Date(st).getTime()) : null;
-              return (<div key={run.id}>
-                <div onClick={function() { setExpandedRunId(isExpanded?null:run.id); }} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', background:em?'#fef2f2':'#ffffff', border:'1px solid '+(em?'#fecaca':'#e5e7eb'), borderRadius:isExpanded?'6px 6px 0 0':'6px', fontSize:'12px', cursor:'pointer' }}>
-                  <div style={{ display:'flex', gap:'12px', alignItems:'center' }}>
-                    <StatusBadge status={run.status} />
-                    <span style={{ color:'#6b7280' }}>{new Date(st).toLocaleString()}</span>
-                    {duration!==null && <span style={{ color:'#9ca3af', fontSize:'11px' }}>{duration}ms</span>}
-                  </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-                    {em && <span style={{ color:'#dc2626', fontSize:'11px', maxWidth:'250px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{em}</span>}
-                    <span style={{ color:'#9ca3af', fontSize:'10px' }}>{isExpanded?'▼':'▶'}</span>
-                  </div>
-                </div>
-                {isExpanded && steps.length>0 && (<div style={{ border:'1px solid #e5e7eb', borderTop:'none', borderRadius:'0 0 6px 6px', padding:'12px', background:'#fafafa' }}>
-                  <div style={{ fontSize:'10px', fontWeight:600, color:'#6b7280', textTransform:'uppercase' as const, marginBottom:'8px' }}>Step Details</div>
-                  {steps.map(function(step:any, si:number) {
-                    return (<div key={si} style={{ display:'flex', alignItems:'flex-start', gap:'10px', padding:'8px', marginBottom:'4px', background:'#ffffff', borderRadius:'6px', border:'1px solid #e5e7eb' }}>
-                      <StatusBadge status={step.status} />
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontSize:'12px', fontWeight:500, color:'#374151' }}>{getActionLabel(step.actionType)}</div>
-                        {step.error && <div style={{ fontSize:'11px', color:'#dc2626', marginTop:'4px', padding:'6px 8px', background:'#fef2f2', borderRadius:'4px', wordBreak:'break-all' as const }}>{step.error}</div>}
-                        {step.output && !step.error && <div style={{ fontSize:'11px', color:'#6b7280', marginTop:'4px' }}>
-                          {step.output.updated && <span>Updated row: {step.output.updated}</span>}
-                          {step.output.createdRowId && <span>Created row: {step.output.createdRowId}</span>}
-                          {step.output.sent !== undefined && <span>Email sent: {step.output.sent ? 'Yes' : 'No'}</span>}
-                          {step.output.locked && <span>Locked row: {step.output.locked}</span>}
-                          {step.output.reason && <span>Skipped: {step.output.reason}</span>}
-                        </div>}
-                        <div style={{ fontSize:'10px', color:'#9ca3af', marginTop:'2px' }}>{step.durationMs}ms</div>
-                      </div>
-                    </div>);
-                  })}
-                </div>)}
-              </div>);
-            })}
-          </div>
-        )}
+      <div className={cardCls}>
+        <div className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3">Run History</div>
+        <RunHistoryPanel automationId={auto.id} canRerun={auto.isOwner !== false} />
       </div>
     </div>);
   }

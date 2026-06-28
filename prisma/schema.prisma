@@ -1149,10 +1149,15 @@ model Automation {
   // Webhook trigger gets a unique URL slug + optional HMAC secret
   webhookSlug   String?  @unique @map("webhookslug")
   webhookSecret String?  @map("webhooksecret") // HMAC-SHA256 signing secret; null = no signature required
-  
+
+  // Retry policy — a failed step is retried up to maxRetries times with linear
+  // backoff (retryDelaySec * attempt) before the run is marked failed. 0 = off.
+  maxRetries    Int      @default(0) @map("maxretries")
+  retryDelaySec Int      @default(0) @map("retrydelaysec")
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   actions     AutomationAction[]
   runs        AutomationRun[]
   
@@ -1200,17 +1205,28 @@ model AutomationRun {
   // pending | running | success | failed | skipped
   
   triggerData   Json?    @map("triggerdata")
+  // { type, tableId, rowId, userId, timestamp, rowSnapshot, previousSnapshot, webhookPayload }
+  // rowSnapshot is captured so a run can be re-run with its ORIGINAL inputs (resubmit).
   stepResults   Json?    @map("stepresults")
-  // [{ actionId, actionType, status, output, error, durationMs }]
-  
+  // [{ actionId, actionType, name, status, input, output, error, durationMs, attempts }]
+
   errorMessage  String?  @map("errormessage")
-  
+
+  // Observability + resubmit lineage
+  triggerSource     String?  @map("triggersource")     // row_created | row_updated | manual | cron | webhook | rerun
+  triggeredByUserId String?  @map("triggeredbyuserid")
+  durationMs        Int?     @map("durationms")
+  rerunOfId         String?  @map("rerunofid")
+  rerunOf           AutomationRun?  @relation("RunReruns", fields: [rerunOfId], references: [id], onDelete: SetNull)
+  reruns            AutomationRun[] @relation("RunReruns")
+
   startedAt     DateTime @default(now()) @map("startedat")
   completedAt   DateTime? @map("completedat")
-  
+
   @@index([automationId])
   @@index([status])
   @@index([startedAt])
+  @@index([rerunOfId])
   @@map("automation_runs")
 }
 

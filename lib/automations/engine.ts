@@ -53,10 +53,64 @@ export interface TriggerEvent {
 interface StepResult {
   actionId: string;
   actionType: string;
+  name?: string;        // human label, e.g. "Send email"
   status: 'success' | 'failed' | 'skipped';
+  input?: any;          // resolved config the step actually ran with (templates expanded)
   output?: any;
   error?: string;
   durationMs: number;
+  attempts?: number;    // how many tries (>1 means it was retried)
+}
+
+// Human-readable labels for each action type, surfaced in the run timeline.
+var ACTION_LABELS: Record<string, string> = {
+  update_field: 'Update field',
+  create_row: 'Create row',
+  send_email: 'Send email',
+  webhook: 'Call webhook',
+  lock_row: 'Lock row',
+  unlock_row: 'Unlock row',
+  notify: 'Notify users',
+  trigger_approval: 'Start approval',
+  push_to_sharepoint: 'Push to SharePoint',
+  generate_record_export: 'Generate record export',
+  generate_audit_trail: 'Generate audit trail',
+  push_to_google_sheets: 'Push to Google Sheets',
+  delay: 'Delay',
+  condition: 'Condition',
+};
+
+function actionLabel(actionType: string): string {
+  return ACTION_LABELS[actionType] || actionType;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(function(resolve) { setTimeout(resolve, ms); });
+}
+
+// Deep-resolve {{templates}} inside a config object purely so the run log can
+// show what values a step actually used (Power Automate "inputs"). Never throws.
+function resolveInputPreview(value: any, context: Record<string, any>): any {
+  try {
+    if (typeof value === 'string') {
+      return value.indexOf('{{') !== -1 ? resolveTemplate(value, context) : value;
+    }
+    if (Array.isArray(value)) {
+      return value.map(function(v) { return resolveInputPreview(v, context); });
+    }
+    if (value && typeof value === 'object') {
+      var out: Record<string, any> = {};
+      Object.keys(value).forEach(function(k) {
+        // Don't echo secrets into the run log
+        if (/secret|password|token|authorization|apikey|api_key/i.test(k)) { out[k] = '••••••'; return; }
+        out[k] = resolveInputPreview(value[k], context);
+      });
+      return out;
+    }
+    return value;
+  } catch (e) {
+    return value;
+  }
 }
 
 // ---- Template Engine ----
@@ -519,15 +573,20 @@ async function executeAction(
 ): Promise<StepResult> {
   var start = Date.now();
   var config = action.actionConfig || action.actionconfig || {};
+  var actType = action.actionType || action.actiontype;
+  var name = actionLabel(actType);
+  var input = resolveInputPreview(config, context);
 
   try {
     var condExpr = action.conditionExpr || action.conditionexpr || '';
     if (condExpr && !evaluateCondition(condExpr, context)) {
       return {
         actionId: action.id,
-        actionType: action.actionType || action.actiontype,
+        actionType: actType,
+        name: name,
         status: 'skipped',
-        output: { reason: 'Condition not met' },
+        input: input,
+        output: { reason: 'Condition not met', condition: resolveTemplate(condExpr, context) },
         durationMs: Date.now() - start,
       };
     }
@@ -540,15 +599,17 @@ async function executeAction(
       if (lastConditionResult && lastConditionResult.branch !== branchKey) {
         return {
           actionId: action.id,
-          actionType: action.actionType || action.actiontype,
+          actionType: actType,
+          name: name,
           status: 'skipped',
+          input: input,
           output: { reason: 'Branch condition: expected ' + branchKey + ', got ' + lastConditionResult.branch },
           durationMs: Date.now() - start,
         };
       }
     }
 
-    var actionType = action.actionType || action.actiontype;
+    var actionType = actType;
     var output: any;
 
     switch (actionType) {
@@ -603,19 +664,146 @@ async function executeAction(
     return {
       actionId: action.id,
       actionType: actionType,
+      name: name,
       status: 'success',
+      input: input,
       output: output,
       durationMs: Date.now() - start,
     };
   } catch (error: any) {
     return {
       actionId: action.id,
-      actionType: action.actionType || action.actiontype,
+      actionType: actType,
+      name: name,
       status: 'failed',
+      input: input,
       error: error.message,
       durationMs: Date.now() - start,
     };
   }
+}
+
+// Retry wrapper: re-runs a failed step up to the automation's policy with linear
+// backoff (retryDelaySec * attempt), capped so we never sleep absurdly long.
+async function executeActionWithRetry(
+  action: any,
+  context: Record<string, any>,
+  policy: { maxRetries: number; retryDelaySec: number }
+): Promise<StepResult> {
+  var maxAttempts = 1 + Math.max(0, policy.maxRetries || 0);
+  var result: StepResult = await executeAction(action, context);
+  var attempt = 1;
+  while (result.status === 'failed' && attempt < maxAttempts) {
+    var delayMs = Math.min((policy.retryDelaySec || 0) * 1000 * attempt, 30000);
+    if (delayMs > 0) await sleep(delayMs);
+    attempt++;
+    result = await executeAction(action, context);
+  }
+  result.attempts = attempt;
+  return result;
+}
+
+// ---- Unified run executor ----
+// Single place that creates an AutomationRun, executes the action chain (with
+// retry + per-step logging), and finalizes the run record. Used by every entry
+// point: row/form/approval triggers, manual runs, scheduled, webhooks, reruns.
+async function executeAutomationRun(
+  automation: any,
+  event: TriggerEvent,
+  opts?: { triggerSource?: string; triggeredByUserId?: string; rerunOfId?: string }
+): Promise<{ runId: string; status: 'success' | 'failed'; errorMessage: string | null }> {
+  var startMs = Date.now();
+  opts = opts || {};
+
+  var run = await db.automationRun.create({
+    data: {
+      automationId: automation.id,
+      status: 'running',
+      triggerSource: opts.triggerSource || event.type,
+      triggeredByUserId: opts.triggeredByUserId || event.userId || null,
+      rerunOfId: opts.rerunOfId || null,
+      triggerData: {
+        type: event.type,
+        tableId: event.tableId,
+        rowId: event.rowId,
+        userId: event.userId,
+        timestamp: new Date().toISOString(),
+        // Snapshot the inputs so this run can be resubmitted with its ORIGINAL data.
+        rowSnapshot: event.rowData || null,
+        previousSnapshot: event.previousData || null,
+        webhookPayload: event.webhookPayload || null,
+      } as any,
+    },
+  });
+
+  var context = buildContext(automation, event);
+  var policy = {
+    maxRetries: automation.maxRetries || 0,
+    retryDelaySec: automation.retryDelaySec || 0,
+  };
+
+  var stepResults: StepResult[] = [];
+  var overallStatus: 'success' | 'failed' = 'success';
+
+  for (var a = 0; a < automation.actions.length; a++) {
+    var action = automation.actions[a];
+    var result = await executeActionWithRetry(action, context, policy);
+    stepResults.push(result);
+    context['step_' + a] = result.output;
+
+    if (result.status === 'failed') {
+      overallStatus = 'failed';
+      break;
+    }
+  }
+
+  var errorMessage: string | null = overallStatus === 'failed'
+    ? (stepResults.find(function(r) { return r.status === 'failed'; }) || {}).error || null
+    : null;
+
+  await db.automationRun.update({
+    where: { id: run.id },
+    data: {
+      status: overallStatus,
+      stepResults: stepResults as any,
+      completedAt: new Date(),
+      durationMs: Date.now() - startMs,
+      errorMessage: errorMessage,
+    },
+  });
+
+  return { runId: run.id, status: overallStatus, errorMessage: errorMessage };
+}
+
+// Fetch a row and key its data by BOTH column id and column name (templates use
+// names; internals use ids). Returns null if the row no longer exists.
+async function fetchRowNamedData(
+  tableId: string,
+  rowId: string,
+  colNameMap?: Record<string, string>
+): Promise<Record<string, any> | null> {
+  var row = await db.agoraRow.findFirst({ where: { id: rowId, tableId: tableId } });
+  if (!row) return null;
+
+  var map = colNameMap;
+  if (!map) {
+    var columns = await db.agoraColumn.findMany({
+      where: { tableId: tableId },
+      select: { id: true, name: true },
+    });
+    map = {};
+    var m = map;
+    columns.forEach(function(c) { m[c.id] = c.name; });
+  }
+
+  var rawData = (row.data as any) || {};
+  var namedData: Record<string, any> = { id: rowId };
+  Object.keys(rawData).forEach(function(colId) {
+    var colName = (map as any)[colId];
+    if (colName) namedData[colName] = rawData[colId];
+    namedData[colId] = rawData[colId];
+  });
+  return namedData;
 }
 
 // ---- Context Builder ----
@@ -703,50 +891,7 @@ export async function fireTrigger(event: TriggerEvent): Promise<void> {
   });
 
   for (var m = 0; m < matching.length; m++) {
-    var automation = matching[m];
-
-    var run = await db.automationRun.create({
-      data: {
-        automationId: automation.id,
-        status: 'running',
-        triggerData: {
-          type: event.type,
-          tableId: event.tableId,
-          rowId: event.rowId,
-          timestamp: new Date().toISOString(),
-        },
-      },
-    });
-
-    var context = buildContext(automation, event);
-
-    var stepResults: StepResult[] = [];
-    var overallStatus: 'success' | 'failed' = 'success';
-
-    for (var a = 0; a < automation.actions.length; a++) {
-      var action = automation.actions[a];
-      var result = await executeAction(action, context);
-      stepResults.push(result);
-
-      context['step_' + a] = result.output;
-
-      if (result.status === 'failed') {
-        overallStatus = 'failed';
-        break;
-      }
-    }
-
-    await db.automationRun.update({
-      where: { id: run.id },
-      data: {
-        status: overallStatus,
-        stepResults: stepResults as any,
-        completedAt: new Date(),
-        errorMessage: overallStatus === 'failed'
-          ? (stepResults.find(function(r) { return r.status === 'failed'; }) || {}).error || null
-          : null,
-      },
-    });
+    await executeAutomationRun(matching[m], event, { triggerSource: event.type });
   }
 }
 
@@ -784,33 +929,8 @@ export async function runManualAutomation(
     var rowId = rowIds[ri];
 
     try {
-      var row = await db.agoraRow.findFirst({
-        where: { id: rowId, tableId: tableId },
-      });
-      if (!row) { errors.push('Row ' + rowId + ' not found'); continue; }
-
-      var rawData = (row.data as any) || {};
-      var namedData: Record<string, any> = { id: rowId };
-      Object.keys(rawData).forEach(function(colId) {
-        var colName = colNameMap[colId];
-        if (colName) namedData[colName] = rawData[colId];
-        namedData[colId] = rawData[colId];
-      });
-
-      var run = await db.automationRun.create({
-        data: {
-          automationId: automation.id,
-          status: 'running',
-          triggerData: {
-            type: 'manual',
-            tableId: tableId,
-            rowId: rowId,
-            userId: userId,
-            timestamp: new Date().toISOString(),
-          },
-        },
-      });
-      runIds.push(run.id);
+      var namedData = await fetchRowNamedData(tableId, rowId, colNameMap);
+      if (!namedData) { errors.push('Row ' + rowId + ' not found'); continue; }
 
       var event: TriggerEvent = {
         type: 'manual',
@@ -820,41 +940,63 @@ export async function runManualAutomation(
         userId: userId,
       };
 
-      var context = buildContext(automation, event);
-
-      var stepResults: StepResult[] = [];
-      var overallStatus: 'success' | 'failed' = 'success';
-
-      for (var a = 0; a < automation.actions.length; a++) {
-        var action = automation.actions[a];
-        var result = await executeAction(action, context);
-        stepResults.push(result);
-        context['step_' + a] = result.output;
-
-        if (result.status === 'failed') {
-          overallStatus = 'failed';
-          errors.push('Row ' + rowId + ' step ' + (a + 1) + ': ' + (result.error || 'Unknown error'));
-          break;
-        }
-      }
-
-      await db.automationRun.update({
-        where: { id: run.id },
-        data: {
-          status: overallStatus,
-          stepResults: stepResults as any,
-          completedAt: new Date(),
-          errorMessage: overallStatus === 'failed'
-            ? (stepResults.find(function(r) { return r.status === 'failed'; }) || {}).error || null
-            : null,
-        },
+      var res = await executeAutomationRun(automation, event, {
+        triggerSource: 'manual',
+        triggeredByUserId: userId,
       });
+      runIds.push(res.runId);
+      if (res.status === 'failed') {
+        errors.push('Row ' + rowId + ': ' + (res.errorMessage || 'Run failed'));
+      }
     } catch (err: any) {
       errors.push('Row ' + rowId + ': ' + err.message);
     }
   }
 
   return { runIds: runIds, errors: errors };
+}
+
+// ---- Resubmit / Re-run ----
+// Replays a past run with its ORIGINAL trigger inputs (the row snapshot captured
+// at run time), mirroring Power Automate "Resubmit". Falls back to the row's
+// current data for legacy runs created before snapshots were stored. Creates a
+// brand-new run linked to the original via rerunOfId.
+export async function rerunAutomationRun(
+  runId: string,
+  userId: string
+): Promise<{ runId: string; status: 'success' | 'failed'; errorMessage: string | null }> {
+  var original = await db.automationRun.findUnique({ where: { id: runId } });
+  if (!original) throw new Error('Run not found');
+
+  var automation = await db.automation.findUnique({
+    where: { id: original.automationId },
+    include: { actions: { orderBy: { sortOrder: 'asc' } } },
+  });
+  if (!automation) throw new Error('Automation not found');
+
+  var td: any = (original.triggerData as any) || {};
+  var rowData = td.rowSnapshot;
+
+  // Legacy run without a snapshot: re-fetch the row's current data if we can.
+  if (!rowData && td.tableId && td.rowId) {
+    rowData = await fetchRowNamedData(td.tableId, td.rowId);
+  }
+
+  var event: TriggerEvent = {
+    type: td.type || automation.triggerType,
+    tableId: td.tableId,
+    rowId: td.rowId,
+    rowData: rowData || {},
+    previousData: td.previousSnapshot || {},
+    webhookPayload: td.webhookPayload || undefined,
+    userId: userId,
+  };
+
+  return executeAutomationRun(automation, event, {
+    triggerSource: 'rerun',
+    triggeredByUserId: userId,
+    rerunOfId: runId,
+  });
 }
 
 // ---- Webhook Handler ----

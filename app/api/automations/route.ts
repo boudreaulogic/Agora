@@ -183,6 +183,8 @@ export async function POST(req: NextRequest) {
         tableId: tableId,
         webhookSlug: webhookSlug,
         webhookSecret: webhookSecret,
+        maxRetries: Math.max(0, Math.min(10, parseInt(body.maxRetries, 10) || 0)),
+        retryDelaySec: Math.max(0, Math.min(300, parseInt(body.retryDelaySec, 10) || 0)),
         actions: {
           create: (actions || []).map(function(action: any, index: number) {
             return {
