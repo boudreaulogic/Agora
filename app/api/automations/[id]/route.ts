@@ -1,63 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-
-async function isSystemAdmin(userId: string): Promise<boolean> {
-  var userRoles = await db.userRole.findMany({
-    where: { userId: userId },
-    include: { role: true },
-  });
-  return userRoles.some(function(ur) {
-    return ur.role.slug === 'admin' || ur.role.slug === 'super_admin';
-  });
-}
-
-async function canUserAccessTable(userId: string, tableId: string): Promise<boolean> {
-  // Created the table
-  var table = await db.agoraTable.findUnique({ where: { id: tableId }, select: { createdById: true, workspaceId: true } });
-  if (!table) return false;
-  if (table.createdById === userId) return true;
-  // Shared with user
-  var share = await db.tableShare.findUnique({ where: { tableId_userId: { tableId: tableId, userId: userId } } });
-  if (share) return true;
-  // Table is in a workspace user belongs to
-  if (table.workspaceId) {
-    var wsMember = await db.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId: table.workspaceId, userId: userId } } });
-    if (wsMember) return true;
-  }
-  return false;
-}
-
-async function canAccessAutomation(userId: string, automation: any): Promise<'owner' | 'workspace_member' | 'table_member' | 'admin' | null> {
-  if (automation.createdById === userId) return 'owner';
-  var admin = await isSystemAdmin(userId);
-  if (admin) return 'admin';
-  if (automation.workspaceId) {
-    var membership = await db.workspaceMember.findUnique({
-      where: { workspaceId_userId: { workspaceId: automation.workspaceId, userId: userId } },
-    });
-    if (membership) return 'workspace_member';
-  }
-  if (automation.tableId) {
-    var hasTableAccess = await canUserAccessTable(userId, automation.tableId);
-    if (hasTableAccess) return 'table_member';
-  }
-  return null;
-}
-
-async function canEditAutomation(userId: string, automation: any): Promise<boolean> {
-  if (automation.createdById === userId) return true;
-  var admin = await isSystemAdmin(userId);
-  if (admin) return true;
-  if (automation.workspaceId) {
-    var membership = await db.workspaceMember.findUnique({
-      where: { workspaceId_userId: { workspaceId: automation.workspaceId, userId: userId } },
-    });
-    if (membership && (membership.permission === 'admin' || membership.permission === 'owner')) return true;
-  }
-  // Table members can view but not edit (only creator/admin can edit)
-  return false;
-}
+import { canAccessAutomation, canEditAutomation } from '@/lib/automations/access';
 
 export async function GET(
   req: NextRequest,
@@ -126,6 +70,8 @@ export async function PUT(
     if (body.triggerConfig !== undefined) updateData.triggerConfig = body.triggerConfig;
     if (body.workspaceId !== undefined) updateData.workspaceId = body.workspaceId || null;
     if (body.tableId !== undefined) updateData.tableId = body.tableId || null;
+    if (body.maxRetries !== undefined) updateData.maxRetries = Math.max(0, Math.min(10, parseInt(body.maxRetries, 10) || 0));
+    if (body.retryDelaySec !== undefined) updateData.retryDelaySec = Math.max(0, Math.min(300, parseInt(body.retryDelaySec, 10) || 0));
 
     await db.automation.update({ where: { id: id }, data: updateData });
 
