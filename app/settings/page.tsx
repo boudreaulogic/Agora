@@ -15,6 +15,7 @@ export default async function SettingsPage() {
       name: true,
       email: true,
       createdAt: true,
+      theme: true,
     },
   });
 

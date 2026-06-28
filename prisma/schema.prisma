@@ -30,7 +30,11 @@ model User {
   
   isActive      Boolean   @default(true)
   isEmailVerified Boolean @default(false)
-  
+
+  // Account-bound appearance preference ('light' | 'dark'). Default light for
+  // everyone; only changeable from the user's own profile settings.
+  theme         String    @default("light")
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
